@@ -2,6 +2,7 @@ import os
 
 from typing import Optional
 from library import *
+from ./classes/ResourceManager import *
 
 
 class MyAgent(IDABot):
