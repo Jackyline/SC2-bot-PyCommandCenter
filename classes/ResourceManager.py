@@ -4,8 +4,10 @@ class ResourceManager():
     def __init__(self, minerals, gas, supply, bot: IDABot):
         self.resources = Resources(minerals, gas, supply)
         self.bot = bot
+
         # Reservations have an id as key, and resources used as value (Resources object)
         self.reservations = {}
+
         # Total reserved resources
         self.reserved = Resources(0, 0, 0)
 
