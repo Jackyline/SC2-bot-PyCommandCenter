@@ -1,5 +1,3 @@
-#TODO
-#1. Test everything
 from library import *
 
 class ResourceManager():
