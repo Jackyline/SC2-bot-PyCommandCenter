@@ -2,18 +2,19 @@ import os
 
 from typing import Optional
 from library import *
+from unitManager import UnitManager
 
 
 class MyAgent(IDABot):
     def __init__(self):
         IDABot.__init__(self)
+        self.unit_manager = UnitManager(self)
 
     def on_game_start(self):
         IDABot.on_game_start(self)
 
     def on_step(self):
         IDABot.on_step(self)
-
 
 def main():
     coordinator = Coordinator(r"D:\StarCraft II\Versions\Base69232\SC2_x64.exe")
