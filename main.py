@@ -15,7 +15,7 @@ class MyAgent(IDABot):
     def on_game_start(self):
         IDABot.on_game_start(self)
 
-    def on_step(self):
+    def on_step(self): 
         IDABot.on_step(self)
         self.resource_manager.sync()
         self.unit_manager.on_step(self.get_my_units())
