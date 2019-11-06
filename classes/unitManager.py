@@ -1,5 +1,5 @@
-from militaryUnit import MilitaryUnit
-from workerUnit import WorkerUnit
+from classes.militaryUnit import MilitaryUnit
+from classes.workerUnit import WorkerUnit
 
 from library import UnitType, UNIT_TYPEID
 

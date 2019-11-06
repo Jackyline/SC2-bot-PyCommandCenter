@@ -3,7 +3,7 @@ import os
 from typing import Optional
 from library import *
 from classes.ResourceManager import ResourceManager
-from unitManager import UnitManager
+from classes.unitManager import UnitManager
 
 
 class MyAgent(IDABot):
