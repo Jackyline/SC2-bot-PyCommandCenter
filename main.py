@@ -2,19 +2,23 @@ import os
 
 from typing import Optional
 from library import *
+from classes.ResourceManager import ResourceManager
+from classes.unitManager import UnitManager
 
 
 class MyAgent(IDABot):
     def __init__(self):
         IDABot.__init__(self)
+        self.resource_manager = ResourceManager(self.minerals, self.gas, self.current_supply, self)
+        self.unit_manager = UnitManager(self)
 
     def on_game_start(self):
         IDABot.on_game_start(self)
 
     def on_step(self):
         IDABot.on_step(self)
-
-
+        self.resource_manager.sync()
+        self.unit_manager.on_step(self.get_my_units())
 def main():
     coordinator = Coordinator(r"D:\StarCraft II\Versions\Base69232\SC2_x64.exe")
 
@@ -25,7 +29,7 @@ def main():
     # participant_2 = create_participants(Race.Terran, bot2)
     participant_2 = create_computer(Race.Random, Difficulty.Easy)
 
-    coordinator.set_real_time(True)
+    coordinator.set_real_time(False)
     coordinator.set_participants([participant_1, participant_2])
     coordinator.launch_starcraft()
 
