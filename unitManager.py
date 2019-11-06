@@ -1,24 +1,27 @@
+from militaryUnit import MilitaryUnit
+from workerUnit import WorkerUnit
+
 from library import UnitType, UNIT_TYPEID
 
 
 class UnitManager:
 
-    def __init__(self):
+    def __init__(self, idabot):
         # All military types
-        self.MILITARY_TYPES = [UnitType(UNIT_TYPEID.TERRAN_MARINE, self), UnitType(UNIT_TYPEID.TERRAN_MARAUDER, self),
-                               UnitType(UNIT_TYPEID.TERRAN_REAPER, self), UnitType(UNIT_TYPEID.TERRAN_GHOST, self),
-                               UnitType(UNIT_TYPEID.TERRAN_HELLION, self), UnitType(UNIT_TYPEID.TERRAN_SIEGETANK, self),
-                               UnitType(UNIT_TYPEID.TERRAN_CYCLONE, self), UnitType(UNIT_TYPEID.TERRAN_WIDOWMINE, self),
-                               UnitType(UNIT_TYPEID.TERRAN_THOR, self),
-                               UnitType(UNIT_TYPEID.TERRAN_VIKINGASSAULT, self),
-                               UnitType(UNIT_TYPEID.TERRAN_VIKINGFIGHTER, self),
-                               UnitType(UNIT_TYPEID.TERRAN_MEDIVAC, self),
-                               UnitType(UNIT_TYPEID.TERRAN_LIBERATOR, self), UnitType(UNIT_TYPEID.TERRAN_RAVEN, self),
-                               UnitType(UNIT_TYPEID.TERRAN_BANSHEE, self),
-                               UnitType(UNIT_TYPEID.TERRAN_BATTLECRUISER, self),
-                               UnitType(UNIT_TYPEID.TERRAN_AUTOTURRET, self)]
+        self.MILITARY_TYPES = [UnitType(UNIT_TYPEID.TERRAN_MARINE, idabot), UnitType(UNIT_TYPEID.TERRAN_MARAUDER, idabot),
+                               UnitType(UNIT_TYPEID.TERRAN_REAPER, idabot), UnitType(UNIT_TYPEID.TERRAN_GHOST, idabot),
+                               UnitType(UNIT_TYPEID.TERRAN_HELLION, idabot), UnitType(UNIT_TYPEID.TERRAN_SIEGETANK, idabot),
+                               UnitType(UNIT_TYPEID.TERRAN_CYCLONE, idabot), UnitType(UNIT_TYPEID.TERRAN_WIDOWMINE, idabot),
+                               UnitType(UNIT_TYPEID.TERRAN_THOR, idabot),
+                               UnitType(UNIT_TYPEID.TERRAN_VIKINGASSAULT, idabot),
+                               UnitType(UNIT_TYPEID.TERRAN_VIKINGFIGHTER, idabot),
+                               UnitType(UNIT_TYPEID.TERRAN_MEDIVAC, idabot),
+                               UnitType(UNIT_TYPEID.TERRAN_LIBERATOR, idabot), UnitType(UNIT_TYPEID.TERRAN_RAVEN, idabot),
+                               UnitType(UNIT_TYPEID.TERRAN_BANSHEE, idabot),
+                               UnitType(UNIT_TYPEID.TERRAN_BATTLECRUISER, idabot),
+                               UnitType(UNIT_TYPEID.TERRAN_AUTOTURRET, idabot)]
         # Worker types
-        self.WORKER_TYPES = [UnitType(UNIT_TYPEID.TERRAN_SCV, self)]
+        self.WORKER_TYPES = [UnitType(UNIT_TYPEID.TERRAN_SCV, idabot)]
 
         # List of our abstracted worker units
         self.worker_units = []
@@ -27,8 +30,17 @@ class UnitManager:
         self.military_units = []
 
     def get_unit_of_type(self, unit_type):
-        # TODO implement this
-        pass
+        """
+        Gets all the unit with the unit type.
+        :param unit_type: Game unit type, e.g SCV
+        :return: list of units with the specific unit type.
+        """
+        return [unit for unit in self.worker_units if unit.get_unit_type() == unit_type] + \
+               [unit for unit in self.military_units if unit.get_unit_type() == unit_type]
+
+    def get_free_unit_of_type(self, unit_type):
+        return [unit for unit in self.worker_units if unit.get_unit_type() == unit_type and unit.is_free()] + \
+               [unit for unit in self.military_units if unit.get_unit_type() == unit_type and unit.is_free()]
 
     def on_step(self, latest_units_list):
         """
@@ -43,18 +55,18 @@ class UnitManager:
         self.update_dead_units(self.military_units)
 
         # Update our workers
-        self.add_new_units(latest_units_list, self.worker_units, self.is_worker_type, WorkerUnit())
+        self.add_new_units(latest_units_list, self.worker_units, self.is_worker_type, WorkerUnit)
 
         # Update our military units
-        self.add_new_units(latest_units_list, self.military_units, self.is_military_type, MilitaryUnit())
+        self.add_new_units(latest_units_list, self.military_units, self.is_military_type, MilitaryUnit)
 
     def add_new_units(self, latest_units_list, known_units, unit_type_checker, unit_class):
         for latest_unit in latest_units_list:
             # If unit is of requested type
             if unit_type_checker(latest_unit):
                 # Check if unit is not already in our list
-                if not any(latest_unit.id == unit.id for unit in known_units):
-                    known_units.append(unit_class(latest_unit))  # TODO append new worker
+                if not any(latest_unit.id == unit.get_id() for unit in known_units):
+                    known_units.append(unit_class(latest_unit))
 
     def update_dead_units(self, unit_list):
         '''
@@ -62,7 +74,7 @@ class UnitManager:
         :param unit_list: List of abstraction units
         '''
         for current_unit in unit_list:
-            if not current_unit.object.is_alive:
+            if not current_unit.is_alive():
                 # current_unit.die()
                 unit_list.remove(current_unit)
 
@@ -79,15 +91,3 @@ class UnitManager:
         :return:  If given unit is any worker unit type
         '''
         return any(unit.unit_type == unit_type for unit_type in self.WORKER_TYPES)
-
-
-class WorkerUnit:
-    # TODO make this into own file etc etc
-    def __init__(self):
-        pass
-
-
-class MilitaryUnit:
-    # TODO make this into own file etc etc
-    def __init__(self):
-        pass
