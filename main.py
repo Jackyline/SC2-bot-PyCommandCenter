@@ -2,8 +2,8 @@ import os
 
 from typing import Optional
 from library import *
-from classes.ResourceManager import ResourceManager
-from classes.unitManager import UnitManager
+from classes.resource_manager import ResourceManager
+from classes.unit_manager import UnitManager
 
 
 class MyAgent(IDABot):
