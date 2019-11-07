@@ -5,6 +5,8 @@ __pycache__/
 *.pyc
 
 # files in .idea/
+misc.xml
+starcraft-ai.iml
 workspace.xml
 usage.statistics.xml
 tasks.xml
