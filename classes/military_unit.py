@@ -1,8 +1,11 @@
 
 class MilitaryUnit:
     def __init__(self, military_unit):
+        self.in_combat = False
         self.unit = military_unit
         self.target = None
+    def on_step(self, in_combat):
+        self.in_combat = in_combat
 
     def get_id(self):
         return self.unit.id
