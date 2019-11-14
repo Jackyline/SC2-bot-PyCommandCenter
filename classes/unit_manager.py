@@ -29,6 +29,8 @@ class UnitManager:
         # List of our abstracted military units
         self.military_units = []
 
+        self.idabot = idabot
+
     def get_unit_of_type(self, unit_type):
         """
         Gets all the unit with the unit type.
@@ -43,6 +45,7 @@ class UnitManager:
                [unit for unit in self.military_units if unit.get_unit_type() == unit_type and unit.is_free()]
 
     def on_step(self, latest_units_list):
+
         """
         Updates all units states accordingly with our data-structures.
         In short terms, removing dead units and adding new.
@@ -59,6 +62,13 @@ class UnitManager:
 
         # Update our military units
         self.add_new_units(latest_units_list, self.military_units, self.is_military_type, MilitaryUnit)
+
+
+        for unit in self.military_units:
+            unit.on_step(is_in_combat(unit))
+
+    def is_in_combat(self, unit):
+        unit.
 
     def add_new_units(self, latest_units_list, known_units, unit_type_checker, unit_class):
         for latest_unit in latest_units_list:
