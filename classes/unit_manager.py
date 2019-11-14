@@ -35,7 +35,6 @@ class UnitManager:
         # List of our abstracted military units
         self.military_units = []
 
-<<<<<<< HEAD
     def get_info(self):
         '''
         :return: Info about all units and their type/workstation
