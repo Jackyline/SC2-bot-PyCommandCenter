@@ -4,8 +4,8 @@ __pycache__/
 *.pyd
 *.pyc
 
-maps/*
 venv/*
+maps/*
 
 # files in .idea/
 workspace.xml
