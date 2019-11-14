@@ -18,7 +18,7 @@ class MyAgent(IDABot):
     def on_step(self):
         IDABot.on_step(self)
         self.resource_manager.sync()
-        self.unit_manager.on_step(self.get_my_units())
+        self.unit_manager.on_step(self.get_all_units())
 def main():
     coordinator = Coordinator(r"D:\StarCraft II\Versions\Base69232\SC2_x64.exe")
 
