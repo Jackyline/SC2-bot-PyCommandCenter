@@ -1,7 +1,7 @@
 from classes.military_unit import MilitaryUnit
 from classes.worker_unit import WorkerUnit
 
-from library import UnitType, UNIT_TYPEID, PLAYER_SELF
+from library import *
 
 
 class UnitManager:
@@ -34,6 +34,9 @@ class UnitManager:
 
         # List of our abstracted military units
         self.military_units = []
+
+        #list of visible military units
+        self.visible_enemies = []
 
     def get_info(self):
         '''
@@ -100,17 +103,25 @@ class UnitManager:
         # Update our military units
         self.add_new_units(latest_units_list, self.military_units, self.is_military_type, MilitaryUnit)
 
+        #update visible enemies
+        self.visible_enemies = [unit for unit in latest_units_list if unit.player == PLAYER_ENEMY and unit.unit_type.is_combat_unit]
 
+        self.update_in_combat()
+
+    def update_in_combat(self):
         for unit in self.military_units:
-            unit.on_step(is_in_combat(unit))
+            for enemy in self.visible_enemies:
+                if self.idabot.map_tools.get_ground_distance(unit.get_unit().position, enemy.position) < unit.get_unit().unit_type.sight_range:
+                    unit.update_in_combat(True)
+                    break
+            else:
+                unit.update_in_combat(False)
 
-    def is_in_combat(self, unit):
-        unit.
 
     def add_new_units(self, latest_units_list, known_units, unit_type_checker, unit_class):
         for latest_unit in latest_units_list:
             # If unit is of requested type
-            if unit_type_checker(latest_unit):
+            if latest_unit.player == PLAYER_SELF and unit_type_checker(latest_unit):
                 # Check if unit is not already in our list
                 if not any(latest_unit.id == unit.get_id() for unit in known_units):
                     known_units.append(unit_class(latest_unit))
