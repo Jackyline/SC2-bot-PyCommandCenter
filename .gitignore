@@ -6,7 +6,6 @@ __pycache__/
 
 venv/*
 maps/*
-
 # files in .idea/
 misc.xml
 starcraft-ai.iml

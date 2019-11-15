@@ -1,5 +1,4 @@
 from library import *
-import numpy
 import time
 import math
 

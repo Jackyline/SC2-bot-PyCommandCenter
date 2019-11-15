@@ -1,9 +1,10 @@
 class WorkerUnit:
-    def __init__(self, worker_unit):
+    def __init__(self, worker_unit, idabot, q_table):
         self.unit = worker_unit
         self.current_work_station = None
         self.current_work_position = None
         self.building = False
+        self.idabot = idabot
 
     def set_idle(self):
         self.current_work_station = None

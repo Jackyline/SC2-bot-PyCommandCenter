@@ -1,6 +1,6 @@
 from classes.military_unit import MilitaryUnit
 from classes.worker_unit import WorkerUnit
-
+from classes.q_table import QTable
 from library import *
 
 
@@ -37,6 +37,8 @@ class UnitManager:
 
         #list of visible military units
         self.visible_enemies = []
+
+        self.q_table = QTable(self.idabot)
 
     def get_info(self):
         '''
@@ -106,16 +108,20 @@ class UnitManager:
         #update visible enemies
         self.visible_enemies = [unit for unit in latest_units_list if unit.player == PLAYER_ENEMY and unit.unit_type.is_combat_unit]
 
-        self.update_in_combat()
+        self.update_in_range()
 
-    def update_in_combat(self):
+
+
+
+    def update_in_range(self):
+        unit : MilitaryUnit
         for unit in self.military_units:
+            in_range = []
             for enemy in self.visible_enemies:
-                if self.idabot.map_tools.get_ground_distance(unit.get_unit().position, enemy.position) < unit.get_unit().unit_type.sight_range:
-                    unit.update_in_combat(True)
-                    break
-            else:
-                unit.update_in_combat(False)
+                if self.idabot.map_tools.get_ground_distance(unit.get_unit().position, enemy.position) <= unit.get_unit().unit_type.sight_range:
+                    in_range.append(enemy)
+
+            unit.update_in_range(in_range)
 
 
     def add_new_units(self, latest_units_list, known_units, unit_type_checker, unit_class):
@@ -124,7 +130,7 @@ class UnitManager:
             if latest_unit.player == PLAYER_SELF and unit_type_checker(latest_unit):
                 # Check if unit is not already in our list
                 if not any(latest_unit.id == unit.get_id() for unit in known_units):
-                    known_units.append(unit_class(latest_unit))
+                    known_units.append(unit_class(latest_unit, self.idabot, self.q_table))
 
     def update_dead_units(self, unit_list):
         '''
