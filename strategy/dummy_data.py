@@ -3,38 +3,38 @@
 import random
 import json
 
-AMOUNT = 1000
+def random_data(amount):
+    output = []
+    for i in range(amount):
+        armie = round(random.uniform(0, 1), 2)
+        match_stage = random.randint(1, 3)
 
-output = []
+        strategy = 0  # Defensive
+        if armie > 0.8 and match_stage == 3:
+            strategy = 1  # Offensive
+        elif armie > 0.6 and match_stage == 2:
+            strategy = 1  # Offensive
+        elif armie > 0.4 and match_stage == 1:
+            strategy = 1  # Offensive
+        else:
+            strategy = 2  # Defensive
 
-for i in range(AMOUNT):
-    armie = round(random.uniform(0, 1), 1)
-    match_stage = random.randint(1, 3)
+        random_numer = round(random.uniform(0, 10),1)
 
-    strategy = 0  # Defensive
-    if armie > 0.8 and match_stage == 3:
-        strategy = 1  # Offensive
-    elif armie > 0.6 and match_stage == 2:
-        strategy = 1  # Offensive
-    elif armie > 0.4 and match_stage == 1:
-        strategy = 1  # Offensive
-    else:
-        strategy = 2  # Defensive
-
-    output.append({"input": [match_stage, armie], "output": [strategy]})
+        output.append({"input": [match_stage, armie, random_numer], "output": [strategy]})
+    return output
 
 
-def write_to_file(data):
-    with open("dummyBadData.txt", "w") as file:
+def write_to_file(data, filename):
+    with open(filename, "w") as file:
         file.write(json.dumps(data, indent=4))
 
 
-def read_from_file():
-    with open("dummyBadData.txt", "r") as file:
+def read_from_file(filename):
+    with open(filename, "r") as file:
         return json.loads(file.read())
 
 
-#write_to_file(output)
+write_to_file(random_data(10000), "dummyBadData.txt")
 
-
-print(read_from_file())
+write_to_file(random_data(1000), "dummyTrainingData.txt")

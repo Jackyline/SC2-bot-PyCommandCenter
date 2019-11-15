@@ -3,9 +3,12 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 
+import torchvision
+
 from dummy_data import read_from_file
 
-output_classes = ("Offensive", "Defensive")
+
+# output_classes = ("Offensive", "Defensive")
 
 
 class StrategyNet(nn.Module):
@@ -17,69 +20,110 @@ class StrategyNet(nn.Module):
         self.fc2 = nn.Linear(hidden_size1, hidden_size2)
         self.relu2 = nn.ReLU()
         self.fc3 = nn.Linear(hidden_size2, output_classes)
+        self.relu3 = nn.ReLU()
 
     def forward(self, input):
         output = self.fc1(input)
+        # output = F.relu(output)
+
         output = self.relu1(output)
         output = self.fc2(output)
         output = self.relu2(output)
+        # output = F.relu(output)
         output = self.fc3(output)
+        #output = self.relu3(output)
+        # output = F.relu(output)
+
         return output
 
 
-net = StrategyNet(2, 6, 4, 2)
+net = StrategyNet(3, 4, 4, 2)
 
-"""
-print(net)
+training_data = read_from_file("dummyBadData.txt")
+testing_data = read_from_file("dummyTrainingData.txt")
 
-params = list(net.parameters())
-print(len(params))
-
-input = torch.randn(2)
-output = net(input)
-print(input)
-print(output)"""
-
-training_data = read_from_file()
-
-criterion = nn.CrossEntropyLoss()
+criterion = nn.MSELoss()
 optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 
-
-for epoch in range(2):  # loop over the dataset multiple times
+for epoch in range(10):  # loop over the dataset multiple times
 
     running_loss = 0.0
     for i, data in enumerate(training_data, 0):
         # get the inputs; data is a list of [inputs, labels]
         inputs = torch.FloatTensor(data["input"])
-        #labels = torch.FloatTensor(data["output"])
+        target = torch.FloatTensor(data["output"])
 
         if data["output"] == [2]:
-            labels = torch.FloatTensor([0, 1])
+            target = torch.FloatTensor([0, 1])
         else:
-            labels = torch.FloatTensor([1, 0])
-
-        inputs = torch.randn(1, 2)
-        labels = torch.randn(1, 2)
-
-        print(inputs.size())
-        print(labels.size())
+            target = torch.FloatTensor([1, 0])
 
         # zero the parameter gradients
         optimizer.zero_grad()
 
         # forward + backward + optimize
         outputs = net(inputs)
-        print(outputs.size())
-        loss = criterion(outputs, labels)
-        #loss.backward()
-        #optimizer.step()
+        loss = criterion(outputs, target)
+        loss.backward()
+        optimizer.step()
+
+        #print("Input: {}".format(inputs))
+        #print("Target: {}".format(target))
+        #print("Output: {}".format(outputs))
+
 
         # print statistics
-        #running_loss += loss.item()
-        if i % 200 == 199:  # print every 2000 mini-batches
+        running_loss += loss.item()
+        if i % 2000 == 1999:  # print every 2000 mini-batches
             print('[%d, %5d] loss: %.3f' %
-                  (epoch + 1, i + 1, running_loss / 200))
+                  (epoch + 1, i + 1, running_loss / 2000))
             running_loss = 0.0
 
 print('Finished Training')
+
+
+def closest_to(a, b, nr):
+    if abs(nr - a) < abs(nr - b):
+        return a
+    return b
+
+
+# Test model
+correct = 0
+for i, data in enumerate(testing_data, 0):
+    inputs = torch.FloatTensor(data["input"])
+    target = torch.FloatTensor(data["output"])
+
+    if data["output"] == [2]:
+        target = torch.FloatTensor([0, 1])
+    else:
+        target = torch.FloatTensor([1, 0])
+
+    output = net(inputs)
+
+    output_list = output.tolist()
+    target_list = target.tolist()
+
+    # If highest percent class is same as actual class
+    if output_list.index(max(output_list)) == target_list.index(max(target_list)):
+        # print("{} == {}".format(target_list, output_list))
+        correct += 1
+    #else:
+        #print("{} => {} != {}".format(inputs.tolist(), target_list, output_list))
+
+print("Percent correct classifications on test data: {}".format(correct / len(testing_data)))
+
+print(net(torch.FloatTensor([2, 0.45, 7.50])))
+print(net(torch.FloatTensor([2, 0.55, 7.50])))
+print(net(torch.FloatTensor([2, 0.60, 7.50])))
+print(net(torch.FloatTensor([2, 0.65, 7.50])))
+
+print("")
+
+print(net(torch.FloatTensor([2, 0.60, 2.3])))
+print(net(torch.FloatTensor([2, 0.60, 4.2])))
+print(net(torch.FloatTensor([2, 0.60, 5.58])))
+print(net(torch.FloatTensor([2, 0.60, 7.50])))
+print(net(torch.FloatTensor([2, 0.60, 9.90])))
+
+
