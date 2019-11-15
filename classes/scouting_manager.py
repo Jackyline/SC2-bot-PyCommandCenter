@@ -15,20 +15,19 @@ class ScoutingManger:
         self.timestamp = 0
         self.width_ratio = 0
         self.height_ratio = 0
-        self.game = True
+        self.start_time = time.time()
 
     def on_step(self, all_units, width, height):
         self.width_ratio = int(math.floor(float(width) / rows))
         self.height_ratio = int(math.floor(float(height) / columns))
-        if self.game:
+        if 60.0 - (time.time() - self.start_time) % 60:
             print("updating")
+            self.log.clear()
             self.update_log(all_units)
-            self.game = False
 
     def update_log(self, all_units):
         for cell in self.log:
             self.check_for_units(all_units)
-
 
     def create_log(self):
         log = []
