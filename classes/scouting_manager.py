@@ -7,7 +7,7 @@ rows = 6
 columns = 7
 
 
-class ScoutingManger:
+class ScoutingManager:
 
     def __init__(self, bot: IDABot):
         self.bot = IDABot
@@ -22,7 +22,6 @@ class ScoutingManger:
         self.height_ratio = int(math.floor(float(height) / columns))
         if 60.0 - (time.time() - self.start_time) % 60:
             print("updating")
-            self.log.clear()
             self.update_log(all_units)
 
     def update_log(self, all_units):
