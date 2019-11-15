@@ -15,17 +15,20 @@ class ScoutingManger:
         self.timestamp = 0
         self.width_ratio = 0
         self.height_ratio = 0
+        self.game = True
 
     def on_step(self, all_units, width, height):
         self.width_ratio = int(math.floor(float(width) / rows))
         self.height_ratio = int(math.floor(float(height) / columns))
-        if time.clock() % 10000:
+        if self.game:
             print("updating")
             self.update_log(all_units)
+            self.game = False
 
     def update_log(self, all_units):
         for cell in self.log:
             self.check_for_units(all_units)
+
 
     def create_log(self):
         log = []
@@ -47,8 +50,11 @@ class ScoutingManger:
         y = unit.tile_position.y
         x_ratio = math.floor(x / self.width_ratio)
         y_ratio = math.floor(y / self.height_ratio)
-        if unit not in self.log[x_ratio][y_ratio]:
-            self.log[x_ratio][y_ratio].append(unit)
+        print("X = " + str(x) +  "  Y  =  "+ str(y))
+        print("CHECKING UNIT:  " + str(unit.id) + "   LIST CONTAINS:  " + str(self.log[x_ratio][y_ratio]))
+        if unit.id not in self.log[x_ratio][y_ratio]:
+            print("ADDING")
+            self.log[x_ratio][y_ratio].append(unit.id)
 
     def print_debug(self):
         output = ""
@@ -56,8 +62,6 @@ class ScoutingManger:
             count = 0
             for j in range(0, columns, 1):
                 if len(self.log[i][j]) > 0:
-                    count += 1
-            if count > 0:
-                output += "[" + str(i) + "]" + "[" + str(j) + "]" + " = " + str(count)
-                output += '\n'
-        print(output)
+                    output += "[" + str(i) + "]" + "[" + str(j) + "]" + " = " + str(len(self.log[i][j]))
+                    output += '\n'
+        return output
