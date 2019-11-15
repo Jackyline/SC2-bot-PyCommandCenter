@@ -31,7 +31,10 @@ def write_to_file(data):
 
 def read_from_file():
     with open("dummyBadData.txt", "r") as file:
-        return file.read()
+        return json.loads(file.read())
 
 
-write_to_file(output)
+#write_to_file(output)
+
+
+print(read_from_file())
