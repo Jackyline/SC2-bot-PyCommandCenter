@@ -9,18 +9,19 @@ class PrintDebug:
         self.building_manager = building_manager
         self.unit_manager = unit_manager
         self.on = on
+        self.print_on_unit = False;
 
     def on_step(self):
         if not self.on:
             return
 
         # BuildingManager.print_debug returns a string in the format "type: nr\ntype: nr\n"
-        # UnitManager.print_debug returns a dictionary with two keys, "workerUnits", "militaryUnits" each with a dict
+        # UnitManager.get_info returns a dictionary with two keys, "workerUnits", "militaryUnits" each with a dict
         # of the unit summary as its value.
         building_str = self.building_manager.print_debug()
-        units = self.unit_manager.print_debug()
-        worker_units = sorted(units["workerUnits"].items, key=(lambda x: x[0]))
-        military_units = sorted(units["militaryUnits"].items, key=(lambda x: x[0]))
+        units = self.unit_manager.get_info()
+        worker_units = sorted(units["workerUnits"].items(), key=(lambda x: x[0]))
+        military_units = sorted(units["militaryUnits"].items(), key=(lambda x: x[0]))
         worker_str = ""
         for type, count in worker_units:
             worker_str += "{}: {}\n".format(type, count)
@@ -35,6 +36,9 @@ class PrintDebug:
         # Player base location, used to retrieve mineral fields and geysers.
         base_location = self.ida_bot.base_location_manager.get_player_starting_base_location(
             player_constant=PLAYER_SELF)
+
+        if not self.print_on_unit:
+            return
 
         # Prints unit debug information on each unit
         units = list(self.ida_bot.get_my_units())

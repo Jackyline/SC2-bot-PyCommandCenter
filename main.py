@@ -4,6 +4,8 @@ from typing import Optional
 from library import *
 from classes.resource_manager import ResourceManager
 from classes.unit_manager import UnitManager
+from classes.print_debug import PrintDebug
+from classes.building_manager import BuildingManager
 
 
 class MyAgent(IDABot):
@@ -11,6 +13,8 @@ class MyAgent(IDABot):
         IDABot.__init__(self)
         self.resource_manager = ResourceManager(self.minerals, self.gas, self.current_supply, self)
         self.unit_manager = UnitManager(self)
+        self.building_manager = BuildingManager(self)
+        self.print_debug = PrintDebug(self, self.building_manager, self.unit_manager, True)
 
     def on_game_start(self):
         IDABot.on_game_start(self)
@@ -19,6 +23,9 @@ class MyAgent(IDABot):
         IDABot.on_step(self)
         self.resource_manager.sync()
         self.unit_manager.on_step(self.get_my_units())
+        self.building_manager.on_step(self.get_my_units())
+        self.print_debug.on_step()
+
 def main():
     coordinator = Coordinator(r"D:\StarCraft II\Versions\Base69232\SC2_x64.exe")
 
