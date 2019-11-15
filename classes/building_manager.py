@@ -50,6 +50,6 @@ class BuildingManager:
         for b in self.buildings:
             types_buildings[b.get_unit_type_id()] = types_buildings.get(b.get_unit_type_id(), 0) +1
         for key, value in types_buildings.items():
-            return_string += "{}: {}\n".format(key.split("."[1:]), value)
+            return_string += "{}: {}\n".format(key, value)
 
         return return_string
