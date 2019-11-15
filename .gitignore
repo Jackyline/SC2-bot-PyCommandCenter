@@ -4,6 +4,9 @@ __pycache__/
 *.pyd
 *.pyc
 
+venv/*
+maps/*
+
 # files in .idea/
 workspace.xml
 usage.statistics.xml
