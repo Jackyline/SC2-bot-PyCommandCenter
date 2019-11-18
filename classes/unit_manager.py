@@ -108,20 +108,28 @@ class UnitManager:
         #update visible enemies
         self.visible_enemies = [unit for unit in latest_units_list if unit.player == PLAYER_ENEMY and unit.unit_type.is_combat_unit]
 
-        self.update_in_range()
+        self.update_military_units()
+        self.q_table.on_step()
 
 
-
-
-    def update_in_range(self):
+    def update_military_units(self):
         unit : MilitaryUnit
         for unit in self.military_units:
-            in_range = []
+            e_in_range = []  # enemies
+            a_in_range = []  # allies
             for enemy in self.visible_enemies:
-                if self.idabot.map_tools.get_ground_distance(unit.get_unit().position, enemy.position) <= unit.get_unit().unit_type.sight_range:
-                    in_range.append(enemy)
+                if self.idabot.map_tools.get_ground_distance(unit.get_unit().position, enemy.position) <= \
+                        unit.get_unit_type().sight_range:
+                    e_in_range.append(enemy)
 
-            unit.update_in_range(in_range)
+            for ally in self.military_units:
+                if self.idabot.map_tools.get_ground_distance(unit.get_unit().position, ally.get_unit().position) <= \
+                        unit.get_unit_type().sight_range and ally != unit:
+                    a_in_range.append(ally)
+
+
+
+            unit.on_step(e_in_range, a_in_range)
 
 
     def add_new_units(self, latest_units_list, known_units, unit_type_checker, unit_class):
