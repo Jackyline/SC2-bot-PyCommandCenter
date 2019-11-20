@@ -80,8 +80,8 @@ def open_replay(replay_name):
     baseBuild = header['m_version']['m_baseBuild']
     protocol = versions.build(baseBuild)
 
-    contents = archive.read_file('replay.game.events')
-    gameEvents = protocol.decode_replay_game_events(contents)
+    contents = archive.read_file('replay.tracker.events')
+    gameEvents = protocol.decode_replay_tracker_events(contents)
 
     print(gameEvents)
 
@@ -116,7 +116,7 @@ def army_counter(replay, second, player_id):
         if event.name == "UnitBornEvent" and event.control_pid == player_id:
             if event.unit.is_army:
                 armie.append(event.unit)
-                print(event.unit.name)
+                #print(event.unit.name)
 
         if event.name == "UnitDiedEvent":
             if event.unit in armie:
@@ -129,8 +129,12 @@ def army_counter(replay, second, player_id):
 
 def building_counter(replay, second, player_id):
     buildings = []
+    unit_types = set()
     for event in replay.events:
-        if event.name == "UnitBornEvent" and event.control_pid == player_id:
+        if event.name == "PlayerStatsEvent":
+            print(event)
+            continue
+            unit_types.add(event.unit)
             if event.unit.is_building:
                 buildings.append(event.unit)
                 print(event.unit.name)
@@ -142,26 +146,46 @@ def building_counter(replay, second, player_id):
         if event.second > second:
             break
 
+    print("Types of units")
+    for type in unit_types:
+        print(type)
+
+    print("")
+
     return len(buildings)
 
 
+"""
+TargetPointCommandEvent - BuildCommandCenter (EXPAND)
 
+"""
 def open_replay2(replay_name):
+    # TODO: make this modular to work on all computers, by finding the dir it was started in
     replay = sc2reader.load_replay(
         '/home/hugo/LIU/tddd92-projekt-2019-storgrupp-2-01/strategy/replays_p3/{filename}'.format(filename=replay_name),
-        load_map=True)
+        load_map=True, load_level=4)
+    print(replay)
     print(replay)
     print(type(replay))
 
-    event_names = set([event.name for event in replay.events])
-    print(event_names)
+    for event in replay.events:
+        print(event.control_pid) if event.control_pid else print("")
+        print("{} ::: {}".format(event.name, event))
 
+    return
+
+    event_names = set([event.name for event in replay.events])
+    for elem in event_names:
+        print("{} ::: {}".format(elem, elem.name))
+
+    return
     events_of_type = {name: [] for name in event_names}
     for event in replay.events:
         events_of_type[event.name].append(event)
 
     for event in events_of_type:
         print(event)
+
 
     #for elem in replay.events:
     #    print(elem)
@@ -175,8 +199,8 @@ def open_replay2(replay_name):
     print(army_counter(replay, 400, 2))
 
     print("Buildings")
-    print(building_counter(replay, 600, 1))
-    print(building_counter(replay, 600, 2))
+    print(building_counter(replay, 200, 1))
+    print(building_counter(replay, 200, 2))
 
     length_of_game = replay.frames // 24
 
