@@ -1,5 +1,6 @@
 import pickle
 import mpyq
+import os
 
 
 class MatchStates:
@@ -24,7 +25,7 @@ class MatchState:
     def __init__(self):
         # Observed game state
         self.minerals = None  # [0, ..., n]
-        self.gas = None         # [0, .., n]
+        self.gas = None  # [0, .., n]
         self.expansions = None  # [0, ..., n]
         self.armies = None  # [0, ..., n]
         self.defensive_buildings = None  # [0,1]
@@ -89,7 +90,7 @@ def open_replay(replay_name):
         print(event)
 
 
-#open_replay('Clem_v_Ziggy:_Game_2_-_Kairos_Junction_LE.SC2Replay')
+# open_replay('Clem_v_Ziggy:_Game_2_-_Kairos_Junction_LE.SC2Replay')
 
 import sc2reader
 
@@ -110,13 +111,14 @@ def worker_counter(replay, second, player_id):
 
     return len(workers)
 
+
 def army_counter(replay, second, player_id):
     armie = []
     for event in replay.events:
         if event.name == "UnitBornEvent" and event.control_pid == player_id:
             if event.unit.is_army:
                 armie.append(event.unit)
-                #print(event.unit.name)
+                # print(event.unit.name)
 
         if event.name == "UnitDiedEvent":
             if event.unit in armie:
@@ -127,58 +129,41 @@ def army_counter(replay, second, player_id):
 
     return len(armie)
 
+
 def building_counter(replay, second, player_id):
     buildings = []
-    unit_types = set()
     for event in replay.events:
-        if event.name == "PlayerStatsEvent":
-            print(event)
-            continue
-            unit_types.add(event.unit)
-            if event.unit.is_building:
+        if event.name == "UnitDoneEvent" and event.unit.is_building:
+            if event.unit.owner.pid == player_id:
                 buildings.append(event.unit)
-                print(event.unit.name)
-
-        if event.name == "UnitDiedEvent":
-            if event.unit in buildings:
+        elif event.name == "UnitDiedEvent" and event.unit.is_building:
+            if event.unit.owner.pid == player_id:
                 buildings.remove(event.unit)
 
         if event.second > second:
             break
 
-    print("Types of units")
-    for type in unit_types:
-        print(type)
-
-    print("")
-
     return len(buildings)
-
 
 """
 TargetPointCommandEvent - BuildCommandCenter (EXPAND)
 
 """
+
+
 def open_replay2(replay_name):
     # TODO: make this modular to work on all computers, by finding the dir it was started in
+    #path = os.path.join(os.listdir("replays"), replay_name)
     replay = sc2reader.load_replay(
-        '/home/hugo/LIU/tddd92-projekt-2019-storgrupp-2-01/strategy/replays_p3/{filename}'.format(filename=replay_name),
+        'replays_p3/{filename}'.format(filename=replay_name),
         load_map=True, load_level=4)
-    print(replay)
-    print(replay)
-    print(type(replay))
 
-    for event in replay.events:
-        print(event.control_pid) if event.control_pid else print("")
-        print("{} ::: {}".format(event.name, event))
-
-    return
 
     event_names = set([event.name for event in replay.events])
     for elem in event_names:
-        print("{} ::: {}".format(elem, elem.name))
+        print("{} ::: {}".format(elem, elem))
 
-    return
+    """
     events_of_type = {name: [] for name in event_names}
     for event in replay.events:
         events_of_type[event.name].append(event)
@@ -186,10 +171,9 @@ def open_replay2(replay_name):
     for event in events_of_type:
         print(event)
 
-
-    #for elem in replay.events:
+    # for elem in replay.events:
     #    print(elem)
-
+    """
     print("Workers")
     print(worker_counter(replay, 400, 1))
     print(worker_counter(replay, 400, 2))
