@@ -108,3 +108,9 @@ print(maxWeightMatching([[1,2,3,4],[2,4,6,8],[3,6,9,12],[4,8,12,16]]))
 # read from standard input a line with n
 # then n*n lines with u,v,w[u][v]
 
+
+def print_matrix(matrix, msg):
+    np.set_printoptions(formatter={'float': lambda x: 'float: ' + str(x)})
+    np.set_printoptions(precision=2, suppress=True, linewidth=120)
+    pretty_matrix = np.matrix(matrix)
+    print(pretty_matrix)

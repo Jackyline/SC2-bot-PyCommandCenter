@@ -1,11 +1,30 @@
+from munkres import Munkres, print_matrix
+import sys
+import numpy as np
+
 class Hungarian(object):
     """
     Implementation of the Hungarian algorithm for the maximization assignment problem.
     """
-    def __init__(self, matrix, workers, jobs):
+    def __init__(self):
         """
         Initialize instance of the assignment problem with the profit matrix `matrix`
         :param matrix: NxN profit matrix. Profit from X assigned to Y.
+        """
+        self.n = 0
+        self.V = self.X = self.Y = 0
+        self.matrix = None
+        self.x_labels = None
+        self.y_labels = None
+        self.matching = None
+        self.inverse_matching = None
+        self.total_profit = None
+        self.minSlack = None
+
+    def compute_assignments(self, matrix):
+        """
+        Compute maximum matching from X to Y. dict<int, int>
+        :return: maximum matching from X to Y. dict<int, int>
         """
 
         # TODO: create profit matrix with help of utility function, set n to nr of jobs/workers
@@ -14,31 +33,10 @@ class Hungarian(object):
             if len(r) != n:
                 # TODO: create dummy worker or job
                 raise ValueError('Hungarian algorithm accepts an NxN matrix.')
-
-        self.workers = workers
-        self.jobs = jobs
         self.matrix = matrix
         self.n = n
         self.V = self.X = self.Y = set(range(n))  # For convenience and clarity
-        self.x_labels = None
-        self.y_labels = None
-        self.matching = None
-        self.inverse_matching = None
-        self.total_profit = None
-        self.minSlack = None
 
-    def maximize(self):
-        """
-        :return: maximum matching from X to Y. dict<int, int>
-        """
-        return self.compute()
-
-
-    def compute(self):
-        """
-        Compute optimal matching for workers and jobs
-        :return: optimal matching from X to Y. dict<int, int>
-        """
         self.init_labels()
         self.matching = {}  # Let the matching be a dict with node in X as key with matching node in Y as value
         self.inverse_matching = {}
@@ -101,57 +99,26 @@ class Hungarian(object):
                  tuple(int, int, dict<int, int>)
         """
 
-
-        """ Part from skit.py """
-        while True:
-
+        while(True):
             # select edge (x,y) with x in S, y not in T and min slack
             ((val, x), y) = min([(self.minSlack[y], y) for y in self.Y if y not in T])
             assert x in S
             if val > 0:
-                self.improve_labels(TODO)
+                self.improve_labels(val, S, T)
             assert self.slack(x, y) == 0  # by now the found y should be part of equality graph, which means slack = 0
 
             if y in self.inverse_matching:  # y is matched -> Extend the alternating tree
                 z = self.inverse_matching[y]
+                assert not z in S
                 S.add(z)
                 T.add(y)
-                path[z] = s
+                path[z] = x
+                for y in self.Y:
+                    if not y in T and self.minSlack[y][0] > self.slack(z, y):
+                        self.minSlack[y] = [self.slack(z, y), z]
 
             else:  # y is unmatched -> Augmenting path has been found
-                return s, y, path
-            """ end part from skit.py """
-
-
-
-
-            # Expand the alternating tree until augmented path is found
-            for s in S:
-                for y in self.Y:
-                    if not self.is_in_equality_graph(s, y):
-                        continue  # Results in iteration for each neighbouring node to each node in S along edges in
-                        # equality graph.
-
-                    if y in T:
-                        continue  # Node already in the alternating tree
-
-                    # We have found an y so that y is a neighbour of s but not in T
-                    # Now check if y is matched or unmatched
-
-                    if y not in self.inverse_matching:  # y is unmatched -> Augmenting path has been found
-                        return s, y, path
-
-                    # y is matched -> Extend the alternating tree
-                    z = self.inverse_matching[y]
-                    S.add(z)
-                    T.add(y)
-                    path[z] = s
-                    return self.find_augmenting_path(path, S, T)
-
-            # Neighbourhood of S is equal to T, so we cannot increase the alternating path.
-            # Instead improve labelling
-            self.improve_labels(S, T)
-
+                return x, y, path
 
     def augment_matching(self, x, y, path):
         """
@@ -188,7 +155,7 @@ class Hungarian(object):
         """
         return self.matrix[x][y] == self.x_labels[x] + self.y_labels[y]
 
-    def improve_labels(self, val, S):
+    def improve_labels(self, val, S, T):
         """
         Improve the current labelling such that:
             - the current matching remains in the new equality graph
@@ -201,29 +168,79 @@ class Hungarian(object):
         :return: None
         """
 
-        """ TODO DU HÅLLER PÅ HÄÄR OCH SKA LIKNA DENNA FUNKTION TILL DEN I skit.py, ANNARS GJORDE DU PRECIS KLAR 
-        find_augmenting_path """
         for v in self.V:
             if v in S:
-                self.x_labels[v] -= delta
-
+                self.x_labels[v] -= val
             if v in T:
-                self.y_labels[v] += delta
+                self.y_labels[v] += val
+            else:
+                self.minSlack[v][0] -= val
+
+class TestHungarian():
+    """ I have imported a Munkres module provides an implementation of the Munkres algorithm
+        that can be used to test my implementation """
+
+    def __init__(self):
+        self.h = Hungarian()
+        self.m = Munkres()
+        self.matrixes = None
+
+    def max_to_min_problem(self, matrix):
+        """ Convert from maximization to min problem """
+        cost_matrix = []
+        for row in matrix:
+            cost_row = []
+            for col in row:
+                cost_row += [sys.maxsize - col]
+            cost_matrix += [cost_row]
+        return cost_matrix
+
+    def convert_to_dict(self, indexes):
+        assignments = {}
+        for pair in indexes:
+            assignments[pair[0]] = pair[1]
+        return assignments
+
+    def compute_test_assignments(self, matrix):
+        """ Compute assignments using imported munkres """
+        cost_matrix = self.max_to_min_problem(matrix)
+        indexes = self.m.compute(cost_matrix)
+        total = 0
+        return self.convert_to_dict(indexes)
+
+    def run_test(self, matrixes):
+        for index, matrix in enumerate(matrixes, start=1):
+            print("\n----- TEST %d ------ " % (index))
+            print_matrix(matrix, msg='Weights:')
+            print("\nAntons assignments")
+            self.h.compute_assignments(matrix)
+            pretty_print_assignments(self.h.matching, matrix)
+
+            print("\nCorrects assignments")
+            test = TestHungarian()
+            valid_assignments = self.compute_test_assignments(matrix)
+            pretty_print_assignments(valid_assignments, matrix)
+            print("\n")
+
+            assert self.h.matching == valid_assignments
+            
+def pretty_print_assignments(assignments, weights):
+    total = 0
+    for key, value in assignments.items():
+        weight = weights[key][value]
+        total += weight
+        print('(%d, %d) -> %d' % (key, value, weight))
+
+    print('total profit=%d' % total)
 
 def main():
 
     workers = ["anton", "benjamin", "hugo", "viktor", "hankish", "dylan", "fredrik", "mattias", "björn"]
     jobs = ["clean", "wash", "paint", "attack", "mine", "scout", "build", "study", "eat"]
     matrix = [[1,2,3,4],[2,4,6,8],[3,6,9,12],[4,8,12,16]]
-    h = Hungarian(matrix, workers, jobs)
-    print(h.compute())
-    assert 30 == h.total_profit
-    print(h.total_profit)
 
-    matrix = [[25, 3, 3], [3, 2, 3], [3, 3, 2]]
-    h = Hungarian(matrix, workers, jobs)
-    print(h.compute())
-    print(h.total_profit)
+    test = TestHungarian()
+    test.run_test([matrix])
 
 if __name__ == "__main__":
     main()
