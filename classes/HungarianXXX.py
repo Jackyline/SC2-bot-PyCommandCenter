@@ -8,8 +8,7 @@ class Hungarian(object):
     """
     def __init__(self):
         """
-        Initialize instance of the assignment problem with the profit matrix `matrix`
-        :param matrix: NxN profit matrix. Profit from X assigned to Y.
+        Initialize instance of the assignment problem with the profit matrix
         """
         self.n = 0
         self.V = self.X = self.Y = 0
@@ -24,6 +23,7 @@ class Hungarian(object):
     def compute_assignments(self, matrix):
         """
         Compute maximum matching from X to Y. dict<int, int>
+        :param matrix: NxN profit matrix. Profit from X assigned to Y.
         :return: maximum matching from X to Y. dict<int, int>
         """
 
@@ -42,7 +42,6 @@ class Hungarian(object):
         self.inverse_matching = {}
         self.find_augmented_path_and_augment()
         self.total_profit = sum(self.matrix[x][y] for x, y in self.matching.items())
-        # self.pretty_print()
         return self.matching
 
     def pretty_print(self):
@@ -54,7 +53,6 @@ class Hungarian(object):
         """
         Initialize the labelling for each node x to the max weight of all it's edges.
         Initialize the labelling for each node y to 0.
-        :return: None
         """
         self.x_labels = [0 for _ in self.X]
         self.y_labels = [0 for _ in self.Y]
@@ -63,33 +61,37 @@ class Hungarian(object):
                 self.x_labels[x] = max(self.x_labels[x], self.matrix[x][y])
 
     def slack(self, x, y):
+        """ calculate TODO """
         return self.x_labels[x] + self.y_labels[y] - self.matrix[x][y]
 
     def find_augmented_path_and_augment(self):
         """
-        Core of the Hungarian algorithm. Find an augmenting path and augment the current matching.
-         A solution is found when there is a perfect matching.
-        :return: None
+        Core of the algorithm. Find augmenting path and augment the current
+        matching until a perfect matching is found.
         """
-        if len(self.matching) == self.n:
-            # Has found a perfect matching
-            return
+        while True:
 
-        # Find an unmatched node in X and set as root
-        for x in self.X:
-            if x not in self.matching:
-                root = x
-                break
+            if len(self.matching) == self.n:  # Has found a perfect matching
+                return
 
-        self.minSlack = [[self.slack(root, y), root] for y in self.Y]
-        x, y, path = self.find_augmenting_path({root: None}, set([root]), set())
-        self.augment_matching(x, y, path)
-        self.find_augmented_path_and_augment()
+            for x in self.X:  # Find an unmatched node in X and set as root
+                if x not in self.matching:
+                    root = x
+                    break
+
+            self.minSlack = [[self.slack(root, y), root] for y in self.Y]
+
+            path = {root: None}
+            S = set([root])
+            T = set()
+
+            x, y, path = self.find_augmenting_path(path, S, T)
+            self.augment_matching(x, y, path)
 
     def find_augmenting_path(self, path, S, T):
         """
         Find an augmenting path for the current matching. If an augmenting path cannot be found the feasible labelling
-        will be improved in order to expand the equality graph to find an augmenting path.
+        will be improved instead in order to expand the equality graph. This is done using the slack method.
         :param path: Traceable path to the root of the augmenting path.
                      Keys are nodes in X, values are the node in X preceding the key in the path to the root.
                      dict<int, int>
@@ -105,7 +107,7 @@ class Hungarian(object):
             assert x in S
             if val > 0:
                 self.improve_labels(val, S, T)
-            assert self.slack(x, y) == 0  # by now the found y should be part of equality graph, which means slack = 0
+            assert self.slack(x, y) == 0  # now the found y is part of equality graph, which means slack = 0
 
             if y in self.inverse_matching:  # y is matched -> Extend the alternating tree
                 z = self.inverse_matching[y]
@@ -113,23 +115,23 @@ class Hungarian(object):
                 S.add(z)
                 T.add(y)
                 path[z] = x
-                for y in self.Y:
+
+                for y in self.Y: # Update slack
                     if not y in T and self.minSlack[y][0] > self.slack(z, y):
                         self.minSlack[y] = [self.slack(z, y), z]
 
-            else:  # y is unmatched -> Augmenting path has been found
+            else:  # y is unmatched -> Augmenting path found
                 return x, y, path
 
     def augment_matching(self, x, y, path):
         """
         Augments the current matching using the path ending with edge (x, y).
-         (x, y) is not in the current matching. Neither is the root.
+        (x, y) is not in the current matching. Neither is the edge to root.
         :param x: last node in X in the augmenting path to the root. int
         :param y: very end of the augmenting path. int
         :param path: Traceable path to the root of the augmenting path.
                      Keys are nodes in X, values are the nodes in X preceding the key in the path to the root.
                      dict<int, int>
-        :return: None
         """
 
         if path[x] is None:
@@ -148,24 +150,22 @@ class Hungarian(object):
 
     def is_in_equality_graph(self, x, y):
         """
-        Determine if edge (x, y) is in the equality graph.
+        Check if edge (x, y) is in the equality graph.
         :param x: node from X. int
         :param y: node from Y. int
-        :return: True if (x, y) is in the equality graph, False otherwise.
+        :return: True if (x, y) is in the equality graph.
         """
         return self.matrix[x][y] == self.x_labels[x] + self.y_labels[y]
 
     def improve_labels(self, val, S, T):
         """
-        Improve the current labelling such that:
+        Improce the current labelling so that:
             - the current matching remains in the new equality graph
-            - the current alternating tree (path) remains in the new equality graph
+            - the current alternating path remains in the new equality graph
             - there is a free vertex from Y and not in T in the new equality graph
-        An assumption is made that the neighbourhood of S in the equality graph is equal to T.
-
-        :param S: set of vertices from X in the alternating tree. set<int>
-        :param T: set of vertices from Y in the alternating tree. set<int>
-        :return: None
+        When this is run the neighbourhood of S in the equality graph is equal to T.
+        :param S: nodes from X in the alternating tree. set<int>
+        :param T: nodes from Y in the alternating tree. set<int>
         """
 
         for v in self.V:
@@ -231,6 +231,10 @@ class TestHungarian():
             assert self.h.total_profit == valid_profit
 
 def pretty_print_assignments(assignments, weights):
+    """ Pretty prints assignments and it's weight
+    :param assignments: assignments from node in X to node in Y. dict<int, int>
+    :param weights: NxN profit matrix. Profit from X assigned to Y.
+    :return: Total profit of assignments """
     total_profit = 0
     for key, value in assignments.items():
         weight = weights[key][value]
