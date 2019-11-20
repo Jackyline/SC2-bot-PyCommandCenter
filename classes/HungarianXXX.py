@@ -25,6 +25,7 @@ class Hungarian(object):
         self.matching = None
         self.inverse_matching = None
         self.total_profit = None
+        self.minSlack = None
 
     def maximize(self):
         """
@@ -63,6 +64,9 @@ class Hungarian(object):
             for y in self.Y:
                 self.x_labels[x] = max(self.x_labels[x], self.matrix[x][y])
 
+    def slack(self, x, y):
+        return self.x_labels[x] + self.y_labels[y] - self.matrix[x][y]
+
     def find_augmented_path_and_augment(self):
         """
         Core of the Hungarian algorithm. Find an augmenting path and augment the current matching.
@@ -79,6 +83,7 @@ class Hungarian(object):
                 root = x
                 break
 
+        self.minSlack = [[self.slack(root, y), root] for y in self.Y]
         x, y, path = self.find_augmenting_path({root: None}, set([root]), set())
         self.augment_matching(x, y, path)
         self.find_augmented_path_and_augment()
@@ -96,7 +101,30 @@ class Hungarian(object):
                  tuple(int, int, dict<int, int>)
         """
 
-        while(True):
+
+        """ Part from skit.py """
+        while True:
+
+            # select edge (x,y) with x in S, y not in T and min slack
+            ((val, x), y) = min([(self.minSlack[y], y) for y in self.Y if y not in T])
+            assert x in S
+            if val > 0:
+                self.improve_labels(TODO)
+            assert self.slack(x, y) == 0  # by now the found y should be part of equality graph, which means slack = 0
+
+            if y in self.inverse_matching:  # y is matched -> Extend the alternating tree
+                z = self.inverse_matching[y]
+                S.add(z)
+                T.add(y)
+                path[z] = s
+
+            else:  # y is unmatched -> Augmenting path has been found
+                return s, y, path
+            """ end part from skit.py """
+
+
+
+
             # Expand the alternating tree until augmented path is found
             for s in S:
                 for y in self.Y:
@@ -160,7 +188,7 @@ class Hungarian(object):
         """
         return self.matrix[x][y] == self.x_labels[x] + self.y_labels[y]
 
-    def improve_labels(self, S, T):
+    def improve_labels(self, val, S):
         """
         Improve the current labelling such that:
             - the current matching remains in the new equality graph
@@ -172,31 +200,15 @@ class Hungarian(object):
         :param T: set of vertices from Y in the alternating tree. set<int>
         :return: None
         """
-        delta = None
-        for x in S:
-            for y in self.Y.difference(T):
-                slack = self.x_labels[x] + self.y_labels[y] - self.matrix[x][y]
-                if delta is None or slack < delta:
-                    delta = slack
 
+        """ TODO DU HÅLLER PÅ HÄÄR OCH SKA LIKNA DENNA FUNKTION TILL DEN I skit.py, ANNARS GJORDE DU PRECIS KLAR 
+        find_augmenting_path """
         for v in self.V:
             if v in S:
                 self.x_labels[v] -= delta
 
             if v in T:
                 self.y_labels[v] += delta
-
-    def improveLabels(val):
-        """ change the labels, and maintain minSlack.
-        """
-        for u in S:
-            lu[u] -= val
-        for v in V:
-            if v in T:
-                lv[v] += val
-            else:
-                minSlack[v][0] -= val
-
 
 def main():
 
