@@ -177,13 +177,18 @@ class Hungarian(object):
                 self.minSlack[v][0] -= val
 
 class TestHungarian():
-    """ I have imported a Munkres module provides an implementation of the Munkres algorithm
+    """ Imported Munkres module that provides an implementation of the Munkres algorithm
         that can be used to test my implementation """
 
     def __init__(self):
         self.h = Hungarian()
         self.m = Munkres()
-        self.matrixes = None
+        self.matrixes = []
+
+        # Generate random matrixes used for testing
+        for i in range(20):
+            n = i+1
+            self.matrixes.append(np.random.randint(100, size=(n, n)))
 
     def max_to_min_problem(self, matrix):
         """ Convert from maximization to min problem """
@@ -196,6 +201,8 @@ class TestHungarian():
         return cost_matrix
 
     def convert_to_dict(self, indexes):
+        """ This module uses lists to represents assignments whereas my
+        implementation uses dict """
         assignments = {}
         for pair in indexes:
             assignments[pair[0]] = pair[1]
@@ -208,8 +215,8 @@ class TestHungarian():
         total = 0
         return self.convert_to_dict(indexes)
 
-    def run_test(self, matrixes):
-        for index, matrix in enumerate(matrixes, start=1):
+    def run_test(self):
+        for index, matrix in enumerate(self.matrixes, start=1):
             print("\n----- TEST %d ------ " % (index))
             print_matrix(matrix, msg='Weights:')
             print("\nAntons assignments")
@@ -217,21 +224,21 @@ class TestHungarian():
             pretty_print_assignments(self.h.matching, matrix)
 
             print("\nCorrects assignments")
-            test = TestHungarian()
             valid_assignments = self.compute_test_assignments(matrix)
-            pretty_print_assignments(valid_assignments, matrix)
+            valid_profit = pretty_print_assignments(valid_assignments, matrix)
             print("\n")
 
-            assert self.h.matching == valid_assignments
-            
+            assert self.h.total_profit == valid_profit
+
 def pretty_print_assignments(assignments, weights):
-    total = 0
+    total_profit = 0
     for key, value in assignments.items():
         weight = weights[key][value]
-        total += weight
+        total_profit += weight
         print('(%d, %d) -> %d' % (key, value, weight))
 
-    print('total profit=%d' % total)
+    print('total profit=%d' % total_profit)
+    return total_profit
 
 def main():
 
@@ -239,8 +246,9 @@ def main():
     jobs = ["clean", "wash", "paint", "attack", "mine", "scout", "build", "study", "eat"]
     matrix = [[1,2,3,4],[2,4,6,8],[3,6,9,12],[4,8,12,16]]
 
+
     test = TestHungarian()
-    test.run_test([matrix])
+    test.run_test()
 
 if __name__ == "__main__":
     main()
