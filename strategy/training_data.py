@@ -2,6 +2,11 @@ import pickle
 import mpyq
 import os
 
+import sc2reader
+
+from s2protocol import versions
+
+
 ALL_BUILDINGS = [
     "Refinery"
     "SupplyDepotLowered",
@@ -105,9 +110,8 @@ def get_states(filename):
 
 # Extract data from replays
 
-from s2protocol import versions
-
-
+"""
+# With SC2Protocol
 def open_replay(replay_name):
     # Open replay
     archive = mpyq.MPQArchive(
@@ -130,20 +134,16 @@ def open_replay(replay_name):
 
 
 # open_replay('Clem_v_Ziggy:_Game_2_-_Kairos_Junction_LE.SC2Replay')
-
-import sc2reader
+"""
 
 
 def worker_counter(replay, second, player_id):
     workers = []
     for event in replay.events:
-        if event.name == "UnitBornEvent" and event.control_pid == player_id:
-            if event.unit.is_worker:
-                workers.append(event.unit)
-
-        if event.name == "UnitDiedEvent":
-            if event.unit in workers:
-                workers.remove(event.unit)
+        if event.name == "UnitBornEvent" and event.control_pid == player_id and event.unit.is_worker:
+            workers.append(event.unit)
+        elif event.name == "UnitDiedEvent" and event.unit in workers:
+            workers.remove(event.unit)
 
         if event.second > second:
             break
@@ -152,21 +152,17 @@ def worker_counter(replay, second, player_id):
 
 
 def army_counter(replay, second, player_id):
-    armie = []
+    army = []
     for event in replay.events:
-        if event.name == "UnitBornEvent" and event.control_pid == player_id:
-            if event.unit.is_army:
-                armie.append(event.unit)
-                # print(event.unit.name)
-
-        if event.name == "UnitDiedEvent":
-            if event.unit in armie:
-                armie.remove(event.unit)
+        if event.name == "UnitBornEvent" and event.control_pid == player_id and event.unit.is_army:
+            army.append(event.unit)
+        elif event.name == "UnitDiedEvent" and event.unit in army:
+            army.remove(event.unit)
 
         if event.second > second:
             break
 
-    return len(armie)
+    return len(army)
 
 
 def building_counter(replay, second, player_id):
@@ -224,17 +220,7 @@ def open_replay2(replay_name):
     for elem in event_names:
         print("{} ::: {}".format(elem, elem))
     """
-    """
-    events_of_type = {name: [] for name in event_names}
-    for event in replay.events:
-        events_of_type[event.name].append(event)
 
-    for event in events_of_type:
-        print(event)
-
-    # for elem in replay.events:
-    #    print(elem)
-    """
     print("Workers")
     print(worker_counter(replay, 400, 1))
     print(worker_counter(replay, 400, 2))
