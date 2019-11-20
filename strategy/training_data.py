@@ -2,6 +2,45 @@ import pickle
 import mpyq
 import os
 
+ALL_BUILDINGS = [
+    "Refinery"
+    "SupplyDepotLowered",
+    "BarracksReactor",
+    "FactoryFlying",
+    "SupplyDepot",
+    "BarracksTechLab",
+    "OrbitalCommand",
+    "BarracksTechLab",
+    "EngineeringBay",
+    "Bunker",
+    "StarportReactor",
+    "Starport",
+    "StarportTechLab",
+    "FusionCore",
+    "MissileTurret",
+    "Factory",
+    "FactoryReactor",
+    "Armory",
+    "BarracksFlying",
+    "TechLab",
+    "OrbitalCommandFlying",
+    "FactoryTechLab",
+    "SensorTower",
+    "CommandCenterFlying",
+    "CommandCenter",
+    "GhostAcademy",
+    "PlanetaryFortress",
+    "Reactor",
+    "Barracks",
+    "SupplyDepotLowered"
+]
+
+# All possible states of a terran command center
+COMMAND_CENTERS = ["CommandCenterFlying",
+                   "CommandCenter",
+                   "OrbitalCommandFlying",
+                   "OrbitalCommand"]
+
 
 class MatchStates:
     def __init__(self, filename):
@@ -131,19 +170,41 @@ def army_counter(replay, second, player_id):
 
 
 def building_counter(replay, second, player_id):
+    return len(buildings_of_type(replay, second, player_id, ALL_BUILDINGS))
+
+
+def amount_expansions(replay, second, player_id):
+    return len(buildings_of_type(replay, second, player_id, COMMAND_CENTERS))
+
+
+def buildings_of_type(replay, second, player_id, types):
+    '''
+    :param replay: Replay file
+    :param second: Time from start in seconds
+    :param player_id:
+    :param types: unit type-names
+    :return: All buildings for given player that are given types
+
+    :type replay: .SC2REPLAY
+    :type second: int
+    :type player_id: int
+    :type types: list
+    '''
     buildings = []
     for event in replay.events:
-        if event.name == "UnitDoneEvent" and event.unit.is_building:
-            if event.unit.owner.pid == player_id:
-                buildings.append(event.unit)
-        elif event.name == "UnitDiedEvent" and event.unit.is_building:
-            if event.unit.owner.pid == player_id:
-                buildings.remove(event.unit)
+        if event.name == "UnitDoneEvent" and event.unit.is_building and event.unit.owner.pid == player_id \
+                and event.unit.name in types:
+            buildings.append(event.unit)
+        elif event.name == "UnitDiedEvent" and event.unit.is_building and event.unit.owner.pid == player_id \
+                and event.unit in buildings:
+            buildings.remove(event.unit)
 
+        # Only look up to given time
         if event.second > second:
             break
 
-    return len(buildings)
+    return buildings
+
 
 """
 TargetPointCommandEvent - BuildCommandCenter (EXPAND)
@@ -153,16 +214,16 @@ TargetPointCommandEvent - BuildCommandCenter (EXPAND)
 
 def open_replay2(replay_name):
     # TODO: make this modular to work on all computers, by finding the dir it was started in
-    #path = os.path.join(os.listdir("replays"), replay_name)
+    # path = os.path.join(os.listdir("replays"), replay_name)
     replay = sc2reader.load_replay(
         'replays_p3/{filename}'.format(filename=replay_name),
         load_map=True, load_level=4)
 
-
+    """ Print all different types of events
     event_names = set([event.name for event in replay.events])
     for elem in event_names:
         print("{} ::: {}".format(elem, elem))
-
+    """
     """
     events_of_type = {name: [] for name in event_names}
     for event in replay.events:
@@ -183,8 +244,12 @@ def open_replay2(replay_name):
     print(army_counter(replay, 400, 2))
 
     print("Buildings")
-    print(building_counter(replay, 200, 1))
-    print(building_counter(replay, 200, 2))
+    print(building_counter(replay, 600, 1))
+    print(building_counter(replay, 600, 2))
+
+    print("EXPANSIONS")
+    print(amount_expansions(replay, 600, 1))
+    print(amount_expansions(replay, 600, 2))
 
     length_of_game = replay.frames // 24
 
