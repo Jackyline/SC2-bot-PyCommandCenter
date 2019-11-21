@@ -20,7 +20,7 @@ class BuildingStrategy:
         self.observations = []
 
         self.model = Net()
-        self.model.load_state_dict(torch.load('model.pth'))
+        self.model.load_state_dict(torch.load('./buildingstrategy/model.pth'))
         self.model.eval()
 
 
