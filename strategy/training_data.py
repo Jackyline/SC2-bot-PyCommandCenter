@@ -228,7 +228,7 @@ TargetPointCommandEvent - BuildCommandCenter (EXPAND)
 
 """
 
-
+# TODO: go up to given second and update all units positions
 def get_position_of_units(replay, second, player_id, filter_function=None):
     latest_event = None
     for event in replay.events:
