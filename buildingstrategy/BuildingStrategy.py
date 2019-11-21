@@ -1,3 +1,10 @@
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+
+actions = { 76: "SCV" }
+
 class Net(nn.Module):
     def __init__(self, ):
         super(Net, self).__init__()
@@ -12,10 +19,20 @@ class Net(nn.Module):
 class BuildingStrategy:
     def __init__(self):
         self.observations = []
-        
+
+        self.model = Net()
+        self.model.load_state_dict(torch.load('model.pth'))
+        self.model.eval()
+
+
+    def update_obs(self, observations):
+        pass
 
     """
         Returns an action.
     """
-    def get_action():
-        pass
+    def action(self):
+        # Hardcoded input atm
+        input = torch.tensor([1]).float()
+        _, predicted = torch.max(self.model(input), 0)
+        return actions[predicted.item()]
