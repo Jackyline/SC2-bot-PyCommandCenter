@@ -47,12 +47,10 @@ class Hungarian(object):
         :return: maximum matching from X to Y. dict<int, int>
         """
 
-        # TODO: Handle floats
+        # TODO: Handle floats?
         # TODO: Dummy stuff
-        # TODO: Set n below
         # TODO. Work jobs enter where
-        # TODO: Calc matrix from jobs and workds
-        # TODO: create profit matrix with help of utility function, set n to nr of jobs/workers
+        # TODO: Calc matrix from jobs and works
 
         self.matrix = matrix
         self.balance_matrix()
@@ -68,7 +66,13 @@ class Hungarian(object):
 
     def remove_dummy_assignments(self):
         """ Remove any assignments in matching that are involve any dummy row or column """
-        pass
+        if not self.is_balanced:
+            if self.original_matrix_rows > self.original_matrix_cols:
+                self.matching = {k:v for k,v in self.matching.items() if (v < self.original_matrix_cols or self.original_matrix_rows < v)}  # Create copy of matching where all keys with dummy values have been removed
+
+            else:
+                for i in range(self.original_matrix_rows, self.original_matrix_cols):
+                    del self.matching[i] #  Remove dummy keys
 
     def pretty_print(self):
         for n in range(len(self.matching)):
@@ -254,21 +258,30 @@ class TestHungarian():
         balanced_matrix = np.pad(matrix,padding,mode='constant',constant_values=0)
         print_matrix(balanced_matrix, msg=msg)
 
-    def run_test(self):
-        for index, matrix in enumerate(self.matrices + self.rectangular_matrices, start=1):
-            print("\n----- TEST %d ------ " % (index))
+    def run_test(self, balanced = True):
+        """ Runs anton's implementation of the hungarian algorithm and compares the results to the results of the imported munkres module. The munkres module will balance the problem automatically. Anton's implementation has it's own balancing function. Assignments can differ between the two algorithms, but the total the number of assignments and total profit should always be equal. :param balanced: true for balanced matrices, false to force unbalanced matrices. Bool
+        """
+        test_matrices = []
+        if balanced:
+            test_matrices = self.matrices
+        else:
+            test_matrices = self.rectangular_matrices
+
+        for index, matrix in enumerate(test_matrices, start=1):
+            print("\n\n----- TEST %d ------ " % (index))
             print_matrix(matrix, msg='original matrix')
             self.print_balanced_matrix(matrix, msg='\nbalanced matrix:')
+
             print("\nAnton's assignments")
             self.h.compute_assignments(matrix)
             pretty_print_assignments(self.h.matching, self.h.matrix)
 
             print("\nCorrects assignments")
-            valid_assignments = self.compute_test_assignments(matrix) #  Will balance matrices using munkres module
+            valid_assignments = self.compute_test_assignments(matrix) #  will balance matrices using munkres module
             valid_profit = pretty_print_assignments(valid_assignments, matrix)
-            print("\n")
 
-            assert self.h.total_profit == valid_profit
+            assert self.h.total_profit == valid_profit  # make sure total profit is correct
+            assert len(self.h.matching) == len(valid_assignments) # make sure that dummy row/columns have been removed
 
 def pretty_print_assignments(assignments, weights):
     """ Pretty prints assignments and it's weight
@@ -292,7 +305,7 @@ def main():
     matrices = []
 
     test = TestHungarian(max_problem_size = 20)
-    test.run_test()
+    test.run_test(balanced=False)
 
 
 if __name__ == "__main__":
