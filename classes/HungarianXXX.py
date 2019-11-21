@@ -1,6 +1,7 @@
 from munkres import Munkres, print_matrix
 import sys
 import numpy as np
+from random import randint
 
 class Hungarian(object):
     """
@@ -10,6 +11,9 @@ class Hungarian(object):
         """
         Initialize instance of the assignment problem with the profit matrix
         """
+        self.is_balanced = True
+        self.original_matrix_rows = 0
+        self.original_matrix_cols = 0
         self.n = 0
         self.V = self.X = self.Y = 0
         self.matrix = None
@@ -20,6 +24,22 @@ class Hungarian(object):
         self.total_profit = None
         self.minSlack = None
 
+    def balance_matrix(self):
+        """ Pads 0 values to rectangular matrices to make them square """
+
+        (a,b) = self.matrix.shape
+        self.original_matrix_rows = a
+        self.original_matrix_cols = b
+        self.is_balanced = (a == b)
+
+        if not self.is_balanced:
+            (a,b) = self.matrix.shape
+            if a>b:
+                padding=((0,0),(0,a-b))
+            else:
+                padding=((0,b-a),(0,0))
+            self.matrix = np.pad(self.matrix,padding,mode='constant',constant_values=0)
+
     def compute_assignments(self, matrix):
         """
         Compute maximum matching from X to Y. dict<int, int>
@@ -27,22 +47,28 @@ class Hungarian(object):
         :return: maximum matching from X to Y. dict<int, int>
         """
 
+        # TODO: Handle floats
+        # TODO: Dummy stuff
+        # TODO: Set n below
+        # TODO. Work jobs enter where
+        # TODO: Calc matrix from jobs and workds
         # TODO: create profit matrix with help of utility function, set n to nr of jobs/workers
-        n = len(matrix)
-        for r in matrix:
-            if len(r) != n:
-                # TODO: create dummy worker or job
-                raise ValueError('Hungarian algorithm accepts an NxN matrix.')
-        self.matrix = matrix
-        self.n = n
-        self.V = self.X = self.Y = set(range(n))  # For convenience and clarity
 
+        self.matrix = matrix
+        self.balance_matrix()
+        self.n = len(self.matrix)
+        self.V = self.X = self.Y = set(range(self.n))  # using set<int> of interval (0, n) to represent X and Y. V is used when creating for loops on sets other than X or Y but of equal size/representation.
         self.init_labels()
-        self.matching = {}  # Let the matching be a dict with node in X as key with matching node in Y as value
+        self.matching = {}  # The matching is adict with node in X as key with matching node in Y as value
         self.inverse_matching = {}
         self.find_augmented_path_and_augment()
+        self.remove_dummy_assignments()
         self.total_profit = sum(self.matrix[x][y] for x, y in self.matching.items())
         return self.matching
+
+    def remove_dummy_assignments(self):
+        """ Remove any assignments in matching that are involve any dummy row or column """
+        pass
 
     def pretty_print(self):
         for n in range(len(self.matching)):
@@ -178,17 +204,21 @@ class Hungarian(object):
 
 class TestHungarian():
     """ Imported Munkres module that provides an implementation of the Munkres algorithm
-        that can be used to test my implementation """
+        that can be used to test my implementation. Generates 10 balanced matrices and 10
+        unbalanced matrices of maximum size 'max_problem_size that tests are run on '"""
 
-    def __init__(self):
+    def __init__(self, max_problem_size):
         self.h = Hungarian()
         self.m = Munkres()
-        self.matrixes = []
+        self.matrices = []
+        self.rectangular_matrices = []
 
-        # Generate random matrixes used for testing
-        for i in range(20):
-            n = i+1
-            self.matrixes.append(np.random.randint(100, size=(n, n)))
+        # Generate random matrices used for testing
+        for i in range(1, 11):
+            rand_int1 = randint(1, max_problem_size)
+            rand_int2 = randint(1, max_problem_size)
+            self.matrices.append(np.random.randint(100, size=(rand_int1, rand_int1)))  # balanced matrices
+            self.rectangular_matrices.append(np.random.randint(100, size=(rand_int1, rand_int2)))  # unbalanced matrices
 
     def max_to_min_problem(self, matrix):
         """ Convert from maximization to min problem """
@@ -215,16 +245,26 @@ class TestHungarian():
         total = 0
         return self.convert_to_dict(indexes)
 
+    def print_balanced_matrix(self, matrix, msg):
+        (a,b) = matrix.shape
+        if a>b:
+            padding=((0,0),(0,a-b))
+        else:
+            padding=((0,b-a),(0,0))
+        balanced_matrix = np.pad(matrix,padding,mode='constant',constant_values=0)
+        print_matrix(balanced_matrix, msg=msg)
+
     def run_test(self):
-        for index, matrix in enumerate(self.matrixes, start=1):
+        for index, matrix in enumerate(self.matrices + self.rectangular_matrices, start=1):
             print("\n----- TEST %d ------ " % (index))
-            print_matrix(matrix, msg='Weights:')
-            print("\nAntons assignments")
+            print_matrix(matrix, msg='original matrix')
+            self.print_balanced_matrix(matrix, msg='\nbalanced matrix:')
+            print("\nAnton's assignments")
             self.h.compute_assignments(matrix)
-            pretty_print_assignments(self.h.matching, matrix)
+            pretty_print_assignments(self.h.matching, self.h.matrix)
 
             print("\nCorrects assignments")
-            valid_assignments = self.compute_test_assignments(matrix)
+            valid_assignments = self.compute_test_assignments(matrix) #  Will balance matrices using munkres module
             valid_profit = pretty_print_assignments(valid_assignments, matrix)
             print("\n")
 
@@ -249,10 +289,11 @@ def main():
     workers = ["anton", "benjamin", "hugo", "viktor", "hankish", "dylan", "fredrik", "mattias", "björn"]
     jobs = ["clean", "wash", "paint", "attack", "mine", "scout", "build", "study", "eat"]
     matrix = [[1,2,3,4],[2,4,6,8],[3,6,9,12],[4,8,12,16]]
+    matrices = []
 
-
-    test = TestHungarian()
+    test = TestHungarian(max_problem_size = 20)
     test.run_test()
+
 
 if __name__ == "__main__":
     main()
