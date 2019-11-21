@@ -6,7 +6,6 @@ import sc2reader
 
 from s2protocol import versions
 
-
 ALL_BUILDINGS = [
     "Refinery"
     "SupplyDepotLowered",
@@ -138,31 +137,33 @@ def open_replay(replay_name):
 
 
 def worker_counter(replay, second, player_id):
-    workers = []
-    for event in replay.events:
-        if event.name == "UnitBornEvent" and event.control_pid == player_id and event.unit.is_worker:
-            workers.append(event.unit)
-        elif event.name == "UnitDiedEvent" and event.unit in workers:
-            workers.remove(event.unit)
-
-        if event.second > second:
-            break
-
-    return len(workers)
+    return len(get_units(replay, second, player_id, is_worker_unit))
 
 
 def army_counter(replay, second, player_id):
-    army = []
+    return len(get_units(replay, second, player_id, is_army_unit))
+
+
+def is_army_unit(unit):
+    return unit.is_army
+
+
+def is_worker_unit(unit):
+    return unit.is_worker
+
+
+def get_units(replay, second, player_id, type_function):
+    units = []
     for event in replay.events:
-        if event.name == "UnitBornEvent" and event.control_pid == player_id and event.unit.is_army:
-            army.append(event.unit)
-        elif event.name == "UnitDiedEvent" and event.unit in army:
-            army.remove(event.unit)
+        if event.name == "UnitBornEvent" and event.control_pid == player_id and type_function(event.unit):
+            units.append(event.unit)
+        elif event.name == "UnitDiedEvent" and event.unit in units:
+            units.remove(event.unit)
 
         if event.second > second:
             break
 
-    return len(army)
+    return units
 
 
 def building_counter(replay, second, player_id):
@@ -174,18 +175,18 @@ def amount_expansions(replay, second, player_id):
 
 
 def buildings_of_type(replay, second, player_id, types):
-    '''
+    """
     :param replay: Replay file
     :param second: Time from start in seconds
     :param player_id:
     :param types: unit type-names
     :return: All buildings for given player that are given types
 
-    :type replay: .SC2REPLAY
+    :type replay: SC2REPLAY
     :type second: int
     :type player_id: int
     :type types: list
-    '''
+    """
     buildings = []
     for event in replay.events:
         if event.name == "UnitDoneEvent" and event.unit.is_building and event.unit.owner.pid == player_id \
@@ -200,6 +201,26 @@ def buildings_of_type(replay, second, player_id, types):
             break
 
     return buildings
+
+
+def is_offensive():
+    pass
+
+
+def is_expansive():
+    pass
+
+
+def get_current_strategy(events):
+    # Offensive
+    if is_offensive():
+        return
+    # Expansive
+    elif is_expansive():
+        return
+    # Defensive
+    else:
+        return
 
 
 """
@@ -220,6 +241,11 @@ def open_replay2(replay_name):
     for elem in event_names:
         print("{} ::: {}".format(elem, elem))
     """
+
+    for elem in replay.events:
+        print(elem)
+
+    return
 
     print("Workers")
     print(worker_counter(replay, 400, 1))
