@@ -229,21 +229,67 @@ TargetPointCommandEvent - BuildCommandCenter (EXPAND)
 """
 
 
+def get_position_of_units(replay, second, player_id, filter_function=None):
+    latest_event = None
+    for event in replay.events:
+
+        if event.name == "UnitPositionsEvent":
+            # Find the latest position update
+            if event.second > second:
+                break
+            latest_event = event
+
+    return {unit: pos for unit, pos in latest_event.units.items()
+                if unit.owner.pid == player_id and (not filter_function or filter_function(unit))}\
+        if latest_event else []
+
+
+def get_position_of_armies(replay, second, player_id):
+    return get_position_of_units(replay, second, player_id, is_army_unit)
+
+
 def open_replay2(replay_name):
-    # TODO: make this modular to work on all computers, by finding the dir it was started in
-    # path = os.path.join(os.listdir("replays"), replay_name)
     replay = sc2reader.load_replay(
         'replays_p3/{filename}'.format(filename=replay_name),
         load_map=True, load_level=4)
 
-    """ Print all different types of events
+    """ Print all different types of events """
     event_names = set([event.name for event in replay.events])
     for elem in event_names:
-        print("{} ::: {}".format(elem, elem))
-    """
-
-    for elem in replay.events:
         print(elem)
+    counter = 100
+    for i in range(50):
+        print("{} moved out of {}".format(len(get_position_of_armies(replay, counter, 1)), army_counter(replay, counter, 1)))
+        print("{} moved out of {}".format(len(get_position_of_armies(replay, counter, 2)), army_counter(replay, counter, 2)))
+
+
+        counter += 15
+    return
+    for elem in replay.events:
+        if elem.name == "UnitPositionsEvent":
+            print("")
+            print(len(elem.items))
+            print(len(elem.units))
+            print(len(elem.positions))
+            print(army_counter(replay, elem.second, 1) + army_counter(replay, elem.second, 2) +
+                  worker_counter(replay, elem.second, 1) + worker_counter(replay, elem.second, 2))
+            continue
+
+            my_units = {unit: pos for unit, pos in elem.units.items() if unit.owner.pid == 1}
+            their_units = {unit: pos for unit, pos in elem.units.items() if unit.owner.pid == 2}
+            print("STATS")
+            print(len(my_units))
+            print(len(their_units))
+            print(len(elem.units))
+            continue
+            print(elem)
+            for elem2 in elem.positions:
+                print(elem2)
+            for elem2 in elem.units:
+                print(elem2)
+            print(elem.units)
+            print(len(elem.units))
+            print(len(elem.positions))
 
     return
 
@@ -260,8 +306,8 @@ def open_replay2(replay_name):
     print(building_counter(replay, 600, 2))
 
     print("EXPANSIONS")
-    print(amount_expansions(replay, 600, 1))
-    print(amount_expansions(replay, 600, 2))
+    print(amount_expansions(replay, 650, 1))
+    print(amount_expansions(replay, 650, 2))
 
     length_of_game = replay.frames // 24
 
