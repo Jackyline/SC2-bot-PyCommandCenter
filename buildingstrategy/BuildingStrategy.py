@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-
 actions = { 76: "SCV" }
 
 class Net(nn.Module):
