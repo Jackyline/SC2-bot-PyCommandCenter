@@ -32,14 +32,17 @@ class ScoutUnit:
         self.unit.move(goal)
         self.goal = goal
 
-    def check_if_visited(self, goal, current_frame):
-        if goal not in self.visited:
-            self.set_goal(goal, current_frame)
-        if goal in self.visited:
-            index = self.visited.index(goal)
-            time_visited = self.frame_stamps[index]
-            if len(self.visited) == 1 or (current_frame - time_visited) < 200:
-                # GO RANDOM!
-                goal = Point2DI(random.randrange(0, 6), random.randrange(0, 6))
+    def check_if_visited(self, goals, current_frame):
+        for point in goals:
+            goal = Point2DI(point[0], point[1])
+            if goal not in self.visited:
                 self.set_goal(goal, current_frame)
-            self.set_goal(self.visited[0], current_frame)
+                break
+            else:
+                index = self.visited.index(goal)
+                time_visited = self.frame_stamps[index]
+                if goal == self.visited[0] and (current_frame - time_visited) < 200:
+                    goal = Point2DI(random.randrange(0, 6), random.randrange(0, 6))
+                    self.set_goal(goal, current_frame)
+                else:
+                    self.set_goal(goal, current_frame)

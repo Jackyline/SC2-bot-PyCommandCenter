@@ -21,10 +21,10 @@ class HiddenMarkovModel:
         print(self.time_matrix)
 
     def get_most_likely(self):
-        highest_prob = self.trans_matrix.max()
+        highest_prob = np.amax(self.trans_matrix)
         indices = np.where(self.trans_matrix == highest_prob)  # change name
-        position = (indices[1], indices[0])
-        return highest_prob, position
+        goals = list(zip(indices[0], indices[1]))
+        return highest_prob, goals
 
     def create_time_matrix(self):
         time_matrix = []

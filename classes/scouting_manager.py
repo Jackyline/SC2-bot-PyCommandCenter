@@ -71,6 +71,11 @@ class ScoutingManager:
 
         # If nr of scouts is less than 2, ask for more.
         # This will be different in the end, CHANGE THIS LATER!
+
+        enemy_base = self.bot.base_location_manager.get_player_starting_base_location(
+            player_constant=PLAYER_ENEMY)
+
+
         if len(self.scouts) <= 2:
             self.ask_for_scout(available_scouts)
 
@@ -87,11 +92,11 @@ class ScoutingManager:
 
             # Nothing has been spotted
             if self.hmm.get_most_likely()[0] == 0.0:
-                if self.scouts[0].unit.is_idle:
+                if self.scouts[0].unit.position != enemy_base.position:
                     self.send_away_one_scout_to_enemy()
             else:
                 if scout.unit.is_idle:
-                    self.go_to_most_interested(scout.unit)
+                    self.go_to_most_interested(scout)
 
     def send_away_one_scout_to_enemy(self):
         enemy_base = self.bot.base_location_manager.get_player_starting_base_location(
@@ -114,15 +119,10 @@ class ScoutingManager:
 
     def check_for_units(self, all_units):
         time_spotted = self.bot.current_frame
-        print("UNIT LIST IS:   " + str(all_units))
         if time_spotted not in self.log:
             self.log[time_spotted] = {}
         for unit in all_units:
-            print("UNIT :D :D")
-            print("UNIT FOUND:   " + str(unit.unit_type))
             if unit.player == PLAYER_ENEMY and unit.unit_type not in self.neutral_units:
-                print("UNIT FOUND IS:   " + str(unit))
-                print("FOUND UNIT AND TYPE IS:   " + str(unit.unit_type))
                 self.append_unit(unit, time_spotted)
 
     def append_unit(self, unit, time_spotted):
@@ -139,13 +139,7 @@ class ScoutingManager:
     def go_to_most_interested(self, scout):
         most_likely = self.hmm.get_most_likely()
         points = most_likely[1]
-        for point in points:
-            scout.check_if_visited(Point2DI(point[0], point[1]), self.bot.current_frame)
-            # NEED BETTER CHECK (For example if the next has not been visited, go there)!
-        print("X is:   " + str(most_likely[1][0]))
-        print("Y is:   " + str(most_likely[1][1]))
-        position = Point2DI(self.width_ratio * most_likely[1][0], self.height_ratio * most_likely[1][1])
-        scout.set_goal(position)
+        scout.check_if_visited(points, self.bot.current_frame)
 
     def print_debug(self):
         last_captured_frame = '0'
