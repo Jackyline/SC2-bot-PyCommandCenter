@@ -189,6 +189,10 @@ def buildings_of_type(replay, second, player_id, types):
     """
     buildings = []
     for event in replay.events:
+        # Only look up to given time
+        if event.second > second:
+            break
+
         if event.name == "UnitDoneEvent" and event.unit.is_building and event.unit.owner.pid == player_id \
                 and event.unit.name in types:
             buildings.append(event.unit)
@@ -196,9 +200,7 @@ def buildings_of_type(replay, second, player_id, types):
                 and event.unit in buildings:
             buildings.remove(event.unit)
 
-        # Only look up to given time
-        if event.second > second:
-            break
+
 
     return buildings
 
@@ -225,23 +227,98 @@ def get_current_strategy(events):
 
 """
 TargetPointCommandEvent - BuildCommandCenter (EXPAND)
-
+PlayerstatsEvent - minerals_current, vespene_current, stats
+UnitBornEvent - location, x, y, unit_id
 """
 
-# TODO: go up to given second and update all units positions
-def get_position_of_units(replay, second, player_id, filter_function=None):
-    latest_event = None
+def get_current_minerals(replay, second, player_id):
+
+    closest_event = None
     for event in replay.events:
+        if event.name != "PlayerStatsEvent":
+            continue
+        elif event.second > second:
+            break
+        else:
+            closest_event = event
+
+    return closest_event.minerals_current if closest_event else 0
+
+def get_current_vespence(replay, second, player_id):
+    closest_event = None
+    for event in replay.events:
+        if event.name != "PlayerStatsEvent":
+            continue
+        elif event.second > second:
+            break
+        else:
+            closest_event = event
+
+    return closest_event.vespene_current if closest_event else 0
+
+
+# TODO: go up to given second and update all units positions
+# Not working :(
+def get_position_of_units(replay, second, player_id, filter_function=None):
+    unit_positions = {}
+    for event in sorted(replay.events, key=lambda x: x.second):
+
+
 
         if event.name == "UnitPositionsEvent":
-            # Find the latest position update
             if event.second > second:
-                break
-            latest_event = event
+                continue
+            #print(event)
+            #print(event.second)
+            #print(event.units)
+            # Find the latest position update
+            for unit, pos in event.units.items():
+                if unit.owner.pid == player_id and (not filter_function or filter_function(unit)):
+                    unit_positions[unit] = pos
 
+
+        elif event.name == "UnitDiedEvent" and event.unit.is_army and event.unit.owner.pid == player_id \
+                and event.unit in unit_positions:
+            del unit_positions[event.unit]
+
+                #elif event.name == "UnitDiedEvent" and event.unit in unit_positions:
+                #    del unit_positions[event.unit]
+
+    unit_positions2 = {}
+    for event in sorted(replay.events, key=lambda x: x.second):
+
+        if event.name == "UnitPositionsEvent":
+            if event.second > second:
+                continue
+            # Find the latest position update
+            print(event.positions)
+            print(len(event.positions))
+            print(event.units)
+            print(len(event.units))
+            print(event.items)
+            print(len(event.items))
+            print(army_counter(replay, event.second, player_id))
+            continue
+            for index, pos in event.units.items():
+                if unit.owner.pid == player_id and (not filter_function or filter_function(unit)):
+                    unit_positions[unit.pid] = pos
+
+    return unit_positions
+
+    """
+        latest_event = None
+        for event in replay.events:
+
+            if event.name == "UnitPositionsEvent":
+                # Find the latest position update
+                if event.second > second:
+                    break
+                latest_event = event
+        
     return {unit: pos for unit, pos in latest_event.units.items()
                 if unit.owner.pid == player_id and (not filter_function or filter_function(unit))}\
         if latest_event else []
+    """
 
 
 def get_position_of_armies(replay, second, player_id):
@@ -253,17 +330,32 @@ def open_replay2(replay_name):
         'replays_p3/{filename}'.format(filename=replay_name),
         load_map=True, load_level=4)
 
+    print(get_current_minerals(replay, 400, 1))
+    print(get_current_vespence(replay, 400, 1))
+    return
+
     """ Print all different types of events """
     event_names = set([event.name for event in replay.events])
     for elem in event_names:
         print(elem)
-    counter = 100
-    for i in range(50):
-        print("{} moved out of {}".format(len(get_position_of_armies(replay, counter, 1)), army_counter(replay, counter, 1)))
-        print("{} moved out of {}".format(len(get_position_of_armies(replay, counter, 2)), army_counter(replay, counter, 2)))
+
+    counter = 500
+
+    for a,b in get_position_of_armies(replay, 1000, 1).items():
+        print("{} : {}".format(a, b))
+
+    print("Armies")
+    print(len(get_position_of_armies(replay, 500, 1)))
+    #print(army_counter(replay, 500, 1))
 
 
-        counter += 15
+    return
+
+    print("{} moved out of {}".format(len(get_position_of_armies(replay, counter, 1)),
+                                      army_counter(replay, counter, 1)))
+    print("{} moved out of {}".format(len(get_position_of_armies(replay, counter, 2)),
+                                      army_counter(replay, counter, 2)))
+
     return
     for elem in replay.events:
         if elem.name == "UnitPositionsEvent":
