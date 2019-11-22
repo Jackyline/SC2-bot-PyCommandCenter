@@ -10,9 +10,11 @@ class UnitManager:
         self.idabot = idabot
 
         # All military types
-        self.MILITARY_TYPES = [UnitType(UNIT_TYPEID.TERRAN_MARINE, idabot),
+        self.MILITARY_TYPES = [UnitType(UNIT_TYPEID.PROTOSS_STALKER, idabot),
+                               UnitType(UNIT_TYPEID.TERRAN_MARINE, idabot),
                                UnitType(UNIT_TYPEID.TERRAN_MARAUDER, idabot),
-                               UnitType(UNIT_TYPEID.TERRAN_REAPER, idabot), UnitType(UNIT_TYPEID.TERRAN_GHOST, idabot),
+                               UnitType(UNIT_TYPEID.TERRAN_REAPER, idabot),
+                               UnitType(UNIT_TYPEID.TERRAN_GHOST, idabot),
                                UnitType(UNIT_TYPEID.TERRAN_HELLION, idabot),
                                UnitType(UNIT_TYPEID.TERRAN_SIEGETANK, idabot),
                                UnitType(UNIT_TYPEID.TERRAN_CYCLONE, idabot),
@@ -109,27 +111,30 @@ class UnitManager:
         self.visible_enemies = [unit for unit in latest_units_list if unit.player == PLAYER_ENEMY and unit.unit_type.is_combat_unit]
 
         self.update_military_units()
+
         self.q_table.on_step()
 
 
     def update_military_units(self):
         unit : MilitaryUnit
         for unit in self.military_units:
-            e_in_range = []  # enemies
-            a_in_range = []  # allies
+            e_in_sight = []  # enemies
+            a_in_sight = []  # allies
+            e_in_range = []
             for enemy in self.visible_enemies:
-                if self.idabot.map_tools.get_ground_distance(unit.get_unit().position, enemy.position) <= \
-                        unit.get_unit_type().sight_range:
+                distance = self.idabot.map_tools.get_ground_distance(unit.get_unit().position, enemy.position)
+                if distance <= unit.get_unit_type().sight_range:
+                    e_in_sight.append(enemy)
+                if distance <= 6:
                     e_in_range.append(enemy)
-
             for ally in self.military_units:
                 if self.idabot.map_tools.get_ground_distance(unit.get_unit().position, ally.get_unit().position) <= \
                         unit.get_unit_type().sight_range and ally != unit:
-                    a_in_range.append(ally)
+                    a_in_sight.append(ally)
 
 
 
-            unit.on_step(e_in_range, a_in_range)
+            unit.on_step(e_in_sight, a_in_sight, e_in_range)
 
 
     def add_new_units(self, latest_units_list, known_units, unit_type_checker, unit_class):
@@ -139,6 +144,7 @@ class UnitManager:
                 # Check if unit is not already in our list
                 if not any(latest_unit.id == unit.get_id() for unit in known_units):
                     known_units.append(unit_class(latest_unit, self.idabot, self.q_table))
+
 
     def update_dead_units(self, unit_list):
         '''

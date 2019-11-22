@@ -28,11 +28,11 @@ class QAgent(IDABot):
         #self.scout_manager.on_step(self.get_my_units(), self.map_tools.width, self.map_tools.height)
         self.building_manager.on_step(self.get_my_units())
         self.print_debug.on_step()
-
-        if self.first_tick:
-            self.first_tick= False
-            self.middle_of_map = Point2D( self.map_tools.width/2,self.map_tools.height/2)
         """
+        if self.first_tick:
+            self.first_tick = False
+            self.middle_of_map = Point2D(self.map_tools.width/2,self.map_tools.height/2)
+        
         unit : MilitaryUnit
         for unit in self.unit_manager.get_units_of_type(UnitType(UNIT_TYPEID.TERRAN_MARINE, self)):
             if unit.is_in_combat():

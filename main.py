@@ -46,7 +46,7 @@ def main():
     coordinator.set_participants([participant_1, participant_2])
     coordinator.launch_starcraft()
 
-    path = os.path.join(os.getcwd(), "maps", "4vs4_in_range.SC2Map")
+    path = os.path.join(os.getcwd(), "maps", "8-marines-vs-3-stalkers.SC2Map")
     coordinator.start_game(path)
 
     while coordinator.update():

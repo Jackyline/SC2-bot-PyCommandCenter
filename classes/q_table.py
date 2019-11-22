@@ -17,7 +17,8 @@ class QTable:
         try:
             self.q_table = np.load(self.file, allow_pickle=True).item()
         except:
-            pass
+            self.q_table = {}
+
     def save_table(self):
         np.save(self.file, self.q_table)
 
