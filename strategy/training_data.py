@@ -136,6 +136,18 @@ def open_replay(replay_name):
 """
 
 
+def formatReplay(replay):
+    return """
+    {filename}
+    --------------------------------------------
+    SC2 Version {release_string}
+    {category} Game, {start_time}
+    {type} on {map_name}
+    Length: {game_length}
+    
+    """.format(**replay.__dict__)
+
+
 def worker_counter(replay, second, player_id):
     return len(get_units(replay, second, player_id, is_worker_unit))
 
@@ -200,8 +212,6 @@ def buildings_of_type(replay, second, player_id, types):
                 and event.unit in buildings:
             buildings.remove(event.unit)
 
-
-
     return buildings
 
 
@@ -231,11 +241,11 @@ PlayerstatsEvent - minerals_current, vespene_current, stats
 UnitBornEvent - location, x, y, unit_id
 """
 
-def get_current_minerals(replay, second, player_id):
 
+def get_current_minerals(replay, second, player_id):
     closest_event = None
     for event in replay.events:
-        if event.name != "PlayerStatsEvent":
+        if event.name != "PlayerStatsEvent" or event.pid != player_id:
             continue
         elif event.second > second:
             break
@@ -244,10 +254,11 @@ def get_current_minerals(replay, second, player_id):
 
     return closest_event.minerals_current if closest_event else 0
 
+
 def get_current_vespence(replay, second, player_id):
     closest_event = None
     for event in replay.events:
-        if event.name != "PlayerStatsEvent":
+        if event.name != "PlayerStatsEvent" or event.pid != player_id:
             continue
         elif event.second > second:
             break
@@ -263,14 +274,12 @@ def get_position_of_units(replay, second, player_id, filter_function=None):
     unit_positions = {}
     for event in sorted(replay.events, key=lambda x: x.second):
 
-
-
         if event.name == "UnitPositionsEvent":
             if event.second > second:
                 continue
-            #print(event)
-            #print(event.second)
-            #print(event.units)
+            # print(event)
+            # print(event.second)
+            # print(event.units)
             # Find the latest position update
             for unit, pos in event.units.items():
                 if unit.owner.pid == player_id and (not filter_function or filter_function(unit)):
@@ -281,8 +290,8 @@ def get_position_of_units(replay, second, player_id, filter_function=None):
                 and event.unit in unit_positions:
             del unit_positions[event.unit]
 
-                #elif event.name == "UnitDiedEvent" and event.unit in unit_positions:
-                #    del unit_positions[event.unit]
+            # elif event.name == "UnitDiedEvent" and event.unit in unit_positions:
+            #    del unit_positions[event.unit]
 
     unit_positions2 = {}
     for event in sorted(replay.events, key=lambda x: x.second):
@@ -322,32 +331,86 @@ def get_position_of_units(replay, second, player_id, filter_function=None):
 
 
 def get_position_of_armies(replay, second, player_id):
-    return get_position_of_units(replay, second, player_id, is_army_unit)
+    units = get_units(replay, second, player_id, is_army_unit)
+    return {unit.id: unit.location for unit in units}
+
+
+def get_event_types(replay):
+    """ Get all different types of events """
+    return set([event.name for event in replay.events])
 
 
 def open_replay2(replay_name):
+    # Open replay file and make it into an object
+    """
+    for replay in sc2reader.load_replays("replays_p3"):
+        print(formatReplay(replay))
+    """
+
     replay = sc2reader.load_replay(
         'replays_p3/{filename}'.format(filename=replay_name),
         load_map=True, load_level=4)
+    # Print general match info
+    print(formatReplay(replay))
 
-    print(get_current_minerals(replay, 400, 1))
-    print(get_current_vespence(replay, 400, 1))
+    for elem in replay.events:
+        print(elem)
+
+    """ 
+    TODO: Skulle kunna kolla på Ability - Attack för att se när ngn är offensiv, samt
+    när det byggs ny expansion.
+    
+    Kolla på senaste selectionEvent samt efterkommande rightClick.
+    
+    Vad är 'Right Click' för class?
+    """
+    #print(get_event_types(replay))
+
+    #print(replay.players[0].attribute_data)
+    #print(replay.players[0].detail_data)
+    #print(replay.players[0].units)
+
+    secs = 400
+
+    loc1 = get_position_of_armies(replay, secs, 2)
+    loc11 = get_position_of_armies(replay, secs + 30, 2)
+    loc2 = get_position_of_armies(replay, secs, 2)
+
+    for i in range(1000):
+        print(list(get_position_of_armies(replay, secs, 2).items())[0])
+        secs += 15
+
+    #print(loc1)
+    #print(loc11)
+    return
+    print(army_counter(replay, secs, 1))
+    print(loc2)
+    print(army_counter(replay, secs, 2))
+
+    """
+    UnitTypeChangeEvent, 
+    ?? UpdateTargetUnitCommandEvent, 
+    """
+
     return
 
-    """ Print all different types of events """
-    event_names = set([event.name for event in replay.events])
-    for elem in event_names:
-        print(elem)
+    for unit in replay.players[0].units:
+        if unit.name == "Marine":
+            print(unit)
+            print(type(unit))
+            print(unit.location)
+            break
+
+    return
 
     counter = 500
 
-    for a,b in get_position_of_armies(replay, 1000, 1).items():
+    for a, b in get_position_of_armies(replay, 1000, 1).items():
         print("{} : {}".format(a, b))
 
     print("Armies")
     print(len(get_position_of_armies(replay, 500, 1)))
-    #print(army_counter(replay, 500, 1))
-
+    # print(army_counter(replay, 500, 1))
 
     return
 
