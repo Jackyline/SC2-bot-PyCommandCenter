@@ -2,7 +2,7 @@ import numpy as np
 import math
 
 abort_time = 2000  # Can be set to whatever feels right, after certain time remove object.
-average_speed = 20  # The SCV moves in this speed, which is a good average for all units.
+average_speed = 0.2  # The SCV moves in this speed, which is a good average for all units.
 
 
 class HiddenMarkovModel:
@@ -17,13 +17,14 @@ class HiddenMarkovModel:
     def on_step(self, log, time_frame):
         self.add_from_log(log)
         self.update_time_matrix(time_frame, log)
+        print("MATRIX IS:  ")
         print(self.trans_matrix)
-        print(self.time_matrix)
 
     def get_most_likely(self):
         highest_prob = np.amax(self.trans_matrix)
         indices = np.where(self.trans_matrix == highest_prob)  # change name
         goals = list(zip(indices[0], indices[1]))
+        print("Best point is:   " + "[" + str(indices[0]) + "]" + "[" + str(indices[1]) + "]" + "   with prob:  " + str(highest_prob))
         return highest_prob, goals
 
     def create_time_matrix(self):
@@ -35,10 +36,8 @@ class HiddenMarkovModel:
         return time_matrix
 
     def add_from_log(self, log):
-        print(log)
         for frame, positions in log.items():
             for position, units in log[frame].items():
-                print(position)
                 x_position = int(position[0])
                 y_position = int(position[1])
                 list_position = self.time_matrix[x_position][y_position]
@@ -54,8 +53,6 @@ class HiddenMarkovModel:
                     for n_units_frame in map_cell:
                         prob_units = self.calculate_probability_cell(i, j, n_units_frame[1])
                         if current_frame - n_units_frame[0] > abort_time:
-                            print(log)
-                            print(n_units_frame[0])
                             if n_units_frame[0] in log:
                                 del log[n_units_frame[0]]
                             map_cell.remove(n_units_frame)
@@ -79,11 +76,7 @@ class HiddenMarkovModel:
 
     def change_probability_trans_matrix(self, x_cell_pos, y_cell_pos, prob_units, time_spotted, current_time,
                                         change_trans_matrix):
-        print("SIZE OF CELL:  " + str(self.cell_size))
-        print("TIME SPOTTED:  " + str(time_spotted))
-        print("X:   " + str(x_cell_pos) + ",  Y:  " + str(y_cell_pos))
-
-        steps = max(0, (current_time - time_spotted) // math.sqrt(self.cell_size))
+        steps = max(0, (current_time - time_spotted) * average_speed // math.sqrt(self.cell_size))
 
         # Split to possibilities
         for i in range(1, 3):
@@ -92,7 +85,6 @@ class HiddenMarkovModel:
                 y = y_cell_pos + (j - 1)
                 if self.check_in_range(x, y):
                     change_trans_matrix(x, y, prob_units)
-                    print(steps)
                     if steps > 0:
                         new_time = time_spotted * (math.sqrt(self.cell_size) / average_speed)
                         prob_units = self.calculate_probability_cell(x, y, prob_units)

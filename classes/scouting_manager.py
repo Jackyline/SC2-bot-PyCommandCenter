@@ -92,10 +92,10 @@ class ScoutingManager:
 
             # Nothing has been spotted
             if self.hmm.get_most_likely()[0] == 0.0:
-                if self.scouts[0].unit.position != enemy_base.position:
+                if self.scouts[0].is_idle():
                     self.send_away_one_scout_to_enemy()
             else:
-                if scout.unit.is_idle:
+                if scout.is_idle() or scout.reach_goal():
                     self.go_to_most_interested(scout)
 
     def send_away_one_scout_to_enemy(self):
@@ -130,6 +130,8 @@ class ScoutingManager:
         y = unit.tile_position.y
         x_ratio = math.floor(x / self.width_ratio)
         y_ratio = math.floor(y / self.height_ratio)
+
+        print("X AND Y IS: " + str(x) + "  " + str(y) + "   TRANSFORM BACK TO:  " + str(x_ratio*self.width_ratio) + " " + str(y_ratio*self.height_ratio))
         tile_position = str(x_ratio) + str(y_ratio)
 
         if tile_position not in self.log[time_spotted]:
@@ -139,6 +141,9 @@ class ScoutingManager:
     def go_to_most_interested(self, scout):
         most_likely = self.hmm.get_most_likely()
         points = most_likely[1]
+        for i in range(len(points)):
+            print("MOST INTR POINT IS:    " + str(points[i][0] * self.width_ratio) + "  " + str((columns - points[i][1]) * self.height_ratio))
+            points[i] = Point2DI(points[i][0] * self.width_ratio, (columns - points[i][1]) * self.height_ratio)
         scout.check_if_visited(points, self.bot.current_frame)
 
     def print_debug(self):

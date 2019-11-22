@@ -24,6 +24,12 @@ class ScoutUnit:
     def is_alive(self):
         return self.unit.is_alive
 
+    def reach_goal(self):
+        if self.unit.position.x - self.goal.x < 3 and self.unit.position.y - self.goal.y < 3:
+            return True
+        else:
+            return False
+
     def set_goal(self, goal, current_frame):
         if self.goal is not None:
             self.visited.append(self.goal)
@@ -34,15 +40,14 @@ class ScoutUnit:
 
     def check_if_visited(self, goals, current_frame):
         for point in goals:
-            goal = Point2DI(point[0], point[1])
-            if goal not in self.visited:
-                self.set_goal(goal, current_frame)
+            if point not in self.visited:
+                self.set_goal(point, current_frame)
                 break
             else:
-                index = self.visited.index(goal)
+                index = self.visited.index(point)
                 time_visited = self.frame_stamps[index]
-                if goal == self.visited[0] and (current_frame - time_visited) < 200:
+                if point == self.visited[0] and (current_frame - time_visited) < 200:
                     goal = Point2DI(random.randrange(0, 6), random.randrange(0, 6))
                     self.set_goal(goal, current_frame)
                 else:
-                    self.set_goal(goal, current_frame)
+                    self.set_goal(point, current_frame)

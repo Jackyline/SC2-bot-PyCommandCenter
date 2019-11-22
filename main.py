@@ -28,14 +28,12 @@ class MyAgent(IDABot):
         self.scout_manager.on_step(self.unit_manager.get_units_of_type(UnitType(UNIT_TYPEID.TERRAN_SCV, self)))
         self.building_manager.on_step(self.get_my_units())
         self.print_debug.on_step()
-        # self.print_unit_info()
+        self.print_unit_info()
 
     def print_unit_info(self):
 
-        enemy_units = list(set(self.get_all_units()) - set(self.get_my_units()))
-        for unit in enemy_units:
-            if unit.player == PLAYER_ENEMY:
-                self.map_tools.draw_text(position=unit.position, text=str(unit.unit_type))
+        for unit in self.get_my_units():
+            self.map_tools.draw_text(position=unit.position, text=str(unit.position))
 
 
 def main():
