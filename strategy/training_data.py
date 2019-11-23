@@ -243,6 +243,14 @@ UnitBornEvent - location, x, y, unit_id
 
 
 def get_current_minerals(replay, second, player_id):
+    return get_resource_information(replay, second, player_id, lambda x: x.minerals_current)
+
+
+def get_current_vespene(replay, second, player_id):
+    return get_resource_information(replay, second, player_id, lambda x: x.vespence_current)
+
+
+def get_resource_information(replay, second, player_id, filter_function):
     closest_event = None
     for event in replay.events:
         if event.name != "PlayerStatsEvent" or event.pid != player_id:
@@ -252,24 +260,13 @@ def get_current_minerals(replay, second, player_id):
         else:
             closest_event = event
 
-    return closest_event.minerals_current if closest_event else 0
+    return filter_function(closest_event) if closest_event else 0
 
 
-def get_current_vespence(replay, second, player_id):
-    closest_event = None
-    for event in replay.events:
-        if event.name != "PlayerStatsEvent" or event.pid != player_id:
-            continue
-        elif event.second > second:
-            break
-        else:
-            closest_event = event
-
-    return closest_event.vespene_current if closest_event else 0
 
 
 # TODO: go up to given second and update all units positions
-# Not working :(
+# Not working :(, unit locations not being updated as the game goes.
 def get_position_of_units(replay, second, player_id, filter_function=None):
     unit_positions = {}
     for event in sorted(replay.events, key=lambda x: x.second):
@@ -353,6 +350,8 @@ def open_replay2(replay_name):
     # Print general match info
     print(formatReplay(replay))
 
+    return
+
     for elem in replay.events:
         print(elem)
 
@@ -364,11 +363,11 @@ def open_replay2(replay_name):
     
     Vad är 'Right Click' för class?
     """
-    #print(get_event_types(replay))
+    # print(get_event_types(replay))
 
-    #print(replay.players[0].attribute_data)
-    #print(replay.players[0].detail_data)
-    #print(replay.players[0].units)
+    # print(replay.players[0].attribute_data)
+    # print(replay.players[0].detail_data)
+    # print(replay.players[0].units)
 
     secs = 400
 
@@ -376,12 +375,10 @@ def open_replay2(replay_name):
     loc11 = get_position_of_armies(replay, secs + 30, 2)
     loc2 = get_position_of_armies(replay, secs, 2)
 
-    for i in range(1000):
-        print(list(get_position_of_armies(replay, secs, 2).items())[0])
-        secs += 15
+    print(get_position_of_armies(replay, secs, 2))
 
-    #print(loc1)
-    #print(loc11)
+    # print(loc1)
+    # print(loc11)
     return
     print(army_counter(replay, secs, 1))
     print(loc2)
