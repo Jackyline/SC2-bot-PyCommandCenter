@@ -2,6 +2,7 @@ import pickle
 import mpyq
 import os
 import math
+import json
 
 import sc2reader
 
@@ -132,39 +133,7 @@ def get_states(filename):
         return pickle.load(file)
 
 
-# he = MatchStates("hejsan.txt")
-
-
-# Extract data from replays
-
-"""
-# With SC2Protocol
-def open_replay(replay_name):
-    # Open replay
-    archive = mpyq.MPQArchive(
-        '/home/hugo/LIU/tddd92-projekt-2019-storgrupp-2-01/strategy/replays_p3/{filename}'.format(filename=replay_name))
-
-    print(archive.files)
-
-    contents = archive.header['user_data_header']['content']
-    header = versions.latest().decode_replay_header(contents)
-    baseBuild = header['m_version']['m_baseBuild']
-    protocol = versions.build(baseBuild)
-
-    contents = archive.read_file('replay.tracker.events')
-    gameEvents = protocol.decode_replay_tracker_events(contents)
-
-    print(gameEvents)
-
-    for event in gameEvents:
-        print(event)
-
-
-# open_replay('Clem_v_Ziggy:_Game_2_-_Kairos_Junction_LE.SC2Replay')
-"""
-
-
-def formatReplay(replay):
+def format_replay(replay):
     return """
     {filename}
     --------------------------------------------
@@ -245,14 +214,6 @@ def buildings_of_type(replay, second, player_id, types):
     return buildings
 
 
-"""
-Could look on these:
-UnitPositionUpdate (see which units were hardmed in last 15 seconds)
-Ability Attack (See when a player attacks the opponent)
-
-"""
-
-
 def max_distance_between(attack_location, base_locations):
     """
     :param attack_location: (x,y) cordinates
@@ -261,7 +222,6 @@ def max_distance_between(attack_location, base_locations):
     of bases in :param base_locations
     """
     max_distance = 0
-    math.sqrt(math.pow(attack_location[0] - base_locations[0][0], 2))
     for base in base_locations:
         distance = math.sqrt(math.pow(attack_location[0] - base[0], 2) +
                              math.pow(attack_location[1] - base[1], 2))
@@ -272,9 +232,11 @@ def max_distance_between(attack_location, base_locations):
 def is_offensive(replay, second, player, time_offset):
     attack_event = None
 
+    # Get latest attack event
     for event in replay.events:
+
         if event.name == "TargetPointCommandEvent" and event.ability_name == "Attack" \
-                and event.pid == player and event.second < second:
+                and event.player.pid == player and event.second < second:
             attack_event = event
 
     # Not offensive if no attack or attack is too long ago
@@ -283,7 +245,7 @@ def is_offensive(replay, second, player, time_offset):
 
     select_event = None
     for event in replay.events:
-        if event.name == "SelectionEvent" and event.pid == player \
+        if event.name == "SelectionEvent" and event.player.pid == player \
                 and event.second < attack_event.second:
             select_event = event
 
@@ -305,21 +267,21 @@ def is_offensive(replay, second, player, time_offset):
 
     # Only class as attack if outside of command centers
     if max_distance_between(attack_location, base_locations) > 30:
-        print(armies_selected)
         return True
 
     return False
 
 
+# TODO: make it look at when expansion is inited/done as well
 def is_expansive(replay, second, player, time_offset):
     expanding_event = None
 
+    # Get latest expanding event
     for event in replay.events:
-        # Get latest expanding event
         if event.second > second:
             break
         elif event.name == "TargetPointCommandEvent" and event.ability_name == "BuildCommandCenter" \
-                and event.pid == player:
+                and event.player.pid == player:
             expanding_event = event
 
     # If no expanding event or expand is too long ago
@@ -341,19 +303,12 @@ def get_current_strategy(replay, second, player):
         return "Defensive"
 
 
-"""
-TargetPointCommandEvent - BuildCommandCenter (EXPAND)
-PlayerstatsEvent - minerals_current, vespene_current, stats
-UnitBornEvent - location, x, y, unit_id
-"""
-
-
 def get_current_minerals(replay, second, player_id):
     return get_resource_information(replay, second, player_id, lambda x: x.minerals_current)
 
 
 def get_current_vespene(replay, second, player_id):
-    return get_resource_information(replay, second, player_id, lambda x: x.vespence_current)
+    return get_resource_information(replay, second, player_id, lambda x: x.vespene_current)
 
 
 def get_resource_information(replay, second, player_id, filter_function):
@@ -379,188 +334,79 @@ def get_event_types(replay):
     return set([event.name for event in replay.events])
 
 
-def open_replay2(replay_name):
+def process_replay_data(replay_path):
     # Open replay file and make it into an object
-    """
-    for replay in sc2reader.load_replays("replays_p3"):
-        print(formatReplay(replay))
-    """
 
     replay = sc2reader.load_replay(
-        'replays_p3/{filename}'.format(filename=replay_name),
-        load_map=True, load_level=4)
-    # Print general match info
-    print(formatReplay(replay))
+        replay_path,
+        load_map=True,
+        load_level=4)
 
-    for event in get_event_types(replay):
-        print(event)
+    # Game lengths in seconds
+    length_of_game = replay.frames // 16
 
-    #for event in replay.events:
-        #print(event)
+    # Collect data every so often (s)
+    DATA_COLLECTION_RATE = 5
 
-    is_expansive(replay, 500, 1, 10)
+    counter1 = {"Offensive": 0, "Defensive": 0, "Expansive": 0}
+    counter2 = {"Offensive": 0, "Defensive": 0, "Expansive": 0}
 
+    match_states = []
+    for player in [player.pid for player in replay.players]:
+        for time in range(0, length_of_game, DATA_COLLECTION_RATE):
+            current_amount_workers = worker_counter(replay, second=time, player_id=player)
+            current_amount_armies = army_counter(replay, second=time, player_id=player)
+            current_minerals = get_current_minerals(replay, second=time, player_id=player)
+            current_vespene = get_current_vespene(replay, second=time, player_id=player)
+            current_expansions = amount_expansions(replay, second=time, player_id=player)
 
-    #for i in range(1000):
-    #    print("Offensive at {}: {}".format(i, is_offensive(replay, i, 1, 15)))
-    for i in range(1000):
-        print("Expansive at {}: {}".format(i, is_expansive(replay, i, 1, 20)))
+            current_time = time
 
-    return
+            current_strategy = get_current_strategy(replay, second=time, player=player)
 
-    print(is_offensive(replay, 500, 1))
-    print(is_offensive(replay, 500, 1))
-    print(amount_expansions(replay, 500, 1))
+            match_states.append({"state": {"workers": current_amount_workers,
+                                           "armies": current_amount_armies,
+                                           "minerals": current_minerals,
+                                           "vespene": current_vespene,
+                                           "expansions": current_expansions,
+                                           "time": current_time},
+                                 "strategy": current_strategy})
 
-    print(worker_counter(replay, 10, 1))
+            strat1 = get_current_strategy(replay, time, player=1)
+            strat2 = get_current_strategy(replay, time, player=2)
+            counter1[strat1] += 1
+            counter2[strat2] += 1
 
-    for elem in replay.events:
-        print(elem)
-    return
-    """ 
-    TODO: Skulle kunna kolla på Ability - Attack för att se när ngn är offensiv, samt
-    när det byggs ny expansion.
-    
-    Kolla på senaste selectionEvent samt efterkommande rightClick.
-    
-    Vad är 'Right Click' för class?
-    """
-    # print(get_event_types(replay))
+    print("{} states in {}".format(len(match_states), replay_path))
 
-    # print(replay.players[0].attribute_data)
-    # print(replay.players[0].detail_data)
-    # print(replay.players[0].units)
-
-    secs = 400
-
-    loc1 = get_position_of_armies(replay, secs, 2)
-    loc11 = get_position_of_armies(replay, secs + 30, 2)
-    loc2 = get_position_of_armies(replay, secs, 2)
-
-    print(get_position_of_armies(replay, secs, 2))
-
-    # print(loc1)
-    # print(loc11)
-    return
-    print(army_counter(replay, secs, 1))
-    print(loc2)
-    print(army_counter(replay, secs, 2))
-
-    """
-    UnitTypeChangeEvent, 
-    ?? UpdateTargetUnitCommandEvent, 
-    """
-
-    return
-
-    for unit in replay.players[0].units:
-        if unit.name == "Marine":
-            print(unit)
-            print(type(unit))
-            print(unit.location)
-            break
-
-    return
-
-    counter = 500
-
-    for a, b in get_position_of_armies(replay, 1000, 1).items():
-        print("{} : {}".format(a, b))
-
-    print("Armies")
-    print(len(get_position_of_armies(replay, 500, 1)))
-    # print(army_counter(replay, 500, 1))
-
-    return
-
-    print("{} moved out of {}".format(len(get_position_of_armies(replay, counter, 1)),
-                                      army_counter(replay, counter, 1)))
-    print("{} moved out of {}".format(len(get_position_of_armies(replay, counter, 2)),
-                                      army_counter(replay, counter, 2)))
-
-    print("Workers")
-    print(worker_counter(replay, 400, 1))
-    print(worker_counter(replay, 400, 2))
-
-    print("Armies")
-    print(army_counter(replay, 400, 1))
-    print(army_counter(replay, 400, 2))
-
-    print("Buildings")
-    print(building_counter(replay, 600, 1))
-    print(building_counter(replay, 600, 2))
-
-    print("EXPANSIONS")
-    print(amount_expansions(replay, 650, 1))
-    print(amount_expansions(replay, 650, 2))
-
-    length_of_game = replay.frames // 24
-
-    print(length_of_game)
+    return match_states
 
 
-open_replay2('Clem_v_Ziggy:_Game_2_-_Kairos_Junction_LE.SC2Replay')
+def process_all_files(data_save_file):
+    data = []
+    for file in os.listdir("replays_p3/"):
+        if file.endswith(".SC2Replay"):
+            try:
+                path = os.path.abspath("{dir}/{file}".format(dir="replays_p3/", file=file))
+                data += process_replay_data(path)
+                write_to_file(data, data_save_file)
+            except Exception as e:
+                print("ERROR: {}".format(e))
 
-# This is not working as intended, since replays don't contain the information
-# wanted about positions of units.
-"""
-# TODO: go up to given second and update all units positions
-# Not working :(, unit locations not being updated as the game goes.
-def get_position_of_units(replay, second, player_id, filter_function=None):
-    unit_positions = {}
-    for event in sorted(replay.events, key=lambda x: x.second):
-
-        if event.name == "UnitPositionsEvent":
-            if event.second > second:
-                continue
-            # print(event)
-            # print(event.second)
-            # print(event.units)
-            # Find the latest position update
-            for unit, pos in event.units.items():
-                if unit.owner.pid == player_id and (not filter_function or filter_function(unit)):
-                    unit_positions[unit] = pos
+    print(len(data))
 
 
-        elif event.name == "UnitDiedEvent" and event.unit.is_army and event.unit.owner.pid == player_id \
-                and event.unit in unit_positions:
-            del unit_positions[event.unit]
+def write_to_file(data, filename):
+    with open(filename, "w") as file:
+        file.write(json.dumps(data, indent=4))
 
-            # elif event.name == "UnitDiedEvent" and event.unit in unit_positions:
-            #    del unit_positions[event.unit]
 
-    unit_positions2 = {}
-    for event in sorted(replay.events, key=lambda x: x.second):
+def read_from_file(filename):
+    with open(filename, "r") as file:
+        return json.loads(file.read())
 
-        if event.name == "UnitPositionsEvent":
-            if event.second > second:
-                continue
-            # Find the latest position update
-            print(event.positions)
-            print(len(event.positions))
-            print(event.units)
-            print(len(event.units))
-            print(event.items)
-            print(len(event.items))
-            print(army_counter(replay, event.second, player_id))
-            continue
-            for index, pos in event.units.items():
-                if unit.owner.pid == player_id and (not filter_function or filter_function(unit)):
-                    unit_positions[unit.pid] = pos
 
-    return unit_positions
+if __name__ == "__main__":
+    process_all_files("data.txt")
 
-    
-        latest_event = None
-        for event in replay.events:
-
-            if event.name == "UnitPositionsEvent":
-                # Find the latest position update
-                if event.second > second:
-                    break
-                latest_event = event
-
-    return {unit: pos for unit, pos in latest_event.units.items()
-                if unit.owner.pid == player_id and (not filter_function or filter_function(unit))}\
-        if latest_event else []
-    """
+    pass
