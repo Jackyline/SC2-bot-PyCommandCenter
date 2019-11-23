@@ -7,6 +7,33 @@ import sc2reader
 
 from s2protocol import versions
 
+"""
+UpdateTargetUnitCommandEvent
+UpgradeCompleteEvent
+BasicCommandEvent
+CameraEvent
+UnitDoneEvent
+UnitInitEvent
+ChatEvent
+TargetUnitCommandEvent
+UpdateTargetPointCommandEvent
+UnitBornEvent
+PlayerLeaveEvent
+UserOptionsEvent
+UnitPositionsEvent
+UnitDiedEvent
+ControlGroupEvent
+UnitTypeChangeEvent
+TargetPointCommandEvent
+AddToControlGroupEvent
+PlayerSetupEvent
+PlayerStatsEvent
+SetControlGroupEvent
+SelectionEvent
+GetControlGroupEvent
+ProgressEvent
+"""
+
 ALL_BUILDINGS = [
     "Refinery"
     "SupplyDepotLowered",
@@ -284,20 +311,34 @@ def is_offensive(replay, second, player, time_offset):
     return False
 
 
-def is_expansive():
-    pass
+def is_expansive(replay, second, player, time_offset):
+    expanding_event = None
+
+    for event in replay.events:
+        # Get latest expanding event
+        if event.second > second:
+            break
+        elif event.name == "TargetPointCommandEvent" and event.ability_name == "BuildCommandCenter" \
+                and event.pid == player:
+            expanding_event = event
+
+    # If no expanding event or expand is too long ago
+    if not expanding_event or math.fabs(expanding_event.second - second) > time_offset:
+        return False
+
+    return True
 
 
-def get_current_strategy(events):
+def get_current_strategy(replay, second, player):
     # Offensive
-    if is_offensive():
-        return
+    if is_offensive(replay, second, player, time_offset=15):
+        return "Offensive"
     # Expansive
-    elif is_expansive():
-        return
+    elif is_expansive(replay, second, player, time_offset=20):
+        return "Expansive"
     # Defensive
     else:
-        return
+        return "Defensive"
 
 
 """
@@ -354,8 +395,17 @@ def open_replay2(replay_name):
     for event in get_event_types(replay):
         print(event)
 
+    #for event in replay.events:
+        #print(event)
+
+    is_expansive(replay, 500, 1, 10)
+
+
+    #for i in range(1000):
+    #    print("Offensive at {}: {}".format(i, is_offensive(replay, i, 1, 15)))
     for i in range(1000):
-        print("Offensive at {}: {}".format(i, is_offensive(replay, i, 1, 15)))
+        print("Expansive at {}: {}".format(i, is_expansive(replay, i, 1, 20)))
+
     return
 
     print(is_offensive(replay, 500, 1))
