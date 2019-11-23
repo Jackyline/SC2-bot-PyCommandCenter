@@ -242,23 +242,46 @@ def max_distance_between(attack_location, base_locations):
     return max_distance
 
 
-def is_offensive(replay, second, player):
+def is_offensive(replay, second, player, time_offset):
+    attack_event = None
+
     for event in replay.events:
         if event.name == "TargetPointCommandEvent" and event.ability_name == "Attack" \
-                and event.pid == player:
+                and event.pid == player and event.second < second:
+            attack_event = event
 
-            attack_location = event.location
+    # Not offensive if no attack or attack is too long ago
+    if not attack_event or math.fabs(attack_event.second - second) > time_offset:
+        return False
 
-            # Location of players command centers
-            base_locations = [com.location for com in buildings_of_type(replay, second, player, COMMAND_CENTERS)]
+    select_event = None
+    for event in replay.events:
+        if event.name == "SelectionEvent" and event.pid == player \
+                and event.second < attack_event.second:
+            select_event = event
 
-            # Only class as attack if outside of command centers
-            if max_distance_between(attack_location, base_locations) > 30:
-                print(event)
+    # Not offensive if not units were selected to attack with
+    if not select_event:
+        return False
 
+    # Selected units that are also army units
+    armies_selected = list(filter(lambda x: x.is_army, select_event.new_units))
 
+    # Not offensive if no armies were moved
+    if not armies_selected:
+        return False
 
-    pass
+    attack_location = attack_event.location
+
+    # Location of players command centers
+    base_locations = [com.location for com in buildings_of_type(replay, second, player, COMMAND_CENTERS)]
+
+    # Only class as attack if outside of command centers
+    if max_distance_between(attack_location, base_locations) > 30:
+        print(armies_selected)
+        return True
+
+    return False
 
 
 def is_expansive():
@@ -330,11 +353,16 @@ def open_replay2(replay_name):
 
     for event in get_event_types(replay):
         print(event)
+
+    for i in range(1000):
+        print("Offensive at {}: {}".format(i, is_offensive(replay, i, 1, 15)))
+    return
+
+    print(is_offensive(replay, 500, 1))
     print(is_offensive(replay, 500, 1))
     print(amount_expansions(replay, 500, 1))
 
     print(worker_counter(replay, 10, 1))
-
 
     for elem in replay.events:
         print(elem)
