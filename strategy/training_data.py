@@ -1,6 +1,7 @@
 import pickle
 import mpyq
 import os
+import math
 
 import sc2reader
 
@@ -167,7 +168,8 @@ def is_worker_unit(unit):
 def get_units(replay, second, player_id, type_function):
     units = []
     for event in replay.events:
-        if event.name == "UnitBornEvent" and event.control_pid == player_id and type_function(event.unit):
+        if event.name in ["UnitBornEvent", "UnitBornEvent"] and event.control_pid == player_id and type_function(
+                event.unit):
             units.append(event.unit)
         elif event.name == "UnitDiedEvent" and event.unit in units:
             units.remove(event.unit)
@@ -204,8 +206,9 @@ def buildings_of_type(replay, second, player_id, types):
         # Only look up to given time
         if event.second > second:
             break
-
-        if event.name == "UnitDoneEvent" and event.unit.is_building and event.unit.owner.pid == player_id \
+        # UnitBornEvent
+        if event.name in ["UnitDoneEvent",
+                          "UnitBornEvent"] and event.unit.is_building and event.unit.owner.pid == player_id \
                 and event.unit.name in types:
             buildings.append(event.unit)
         elif event.name == "UnitDiedEvent" and event.unit.is_building and event.unit.owner.pid == player_id \
@@ -215,7 +218,46 @@ def buildings_of_type(replay, second, player_id, types):
     return buildings
 
 
-def is_offensive():
+"""
+Could look on these:
+UnitPositionUpdate (see which units were hardmed in last 15 seconds)
+Ability Attack (See when a player attacks the opponent)
+
+"""
+
+
+def max_distance_between(attack_location, base_locations):
+    """
+    :param attack_location: (x,y) cordinates
+    :param base_locations:  [(x,y), ..]
+    :return: Maximum distance from :param attack_location to any
+    of bases in :param base_locations
+    """
+    max_distance = 0
+    math.sqrt(math.pow(attack_location[0] - base_locations[0][0], 2))
+    for base in base_locations:
+        distance = math.sqrt(math.pow(attack_location[0] - base[0], 2) +
+                             math.pow(attack_location[1] - base[1], 2))
+        max_distance = distance if distance > max_distance else max_distance
+    return max_distance
+
+
+def is_offensive(replay, second, player):
+    for event in replay.events:
+        if event.name == "TargetPointCommandEvent" and event.ability_name == "Attack" \
+                and event.pid == player:
+
+            attack_location = event.location
+
+            # Location of players command centers
+            base_locations = [com.location for com in buildings_of_type(replay, second, player, COMMAND_CENTERS)]
+
+            # Only class as attack if outside of command centers
+            if max_distance_between(attack_location, base_locations) > 30:
+                print(event)
+
+
+
     pass
 
 
@@ -263,70 +305,6 @@ def get_resource_information(replay, second, player_id, filter_function):
     return filter_function(closest_event) if closest_event else 0
 
 
-
-
-# TODO: go up to given second and update all units positions
-# Not working :(, unit locations not being updated as the game goes.
-def get_position_of_units(replay, second, player_id, filter_function=None):
-    unit_positions = {}
-    for event in sorted(replay.events, key=lambda x: x.second):
-
-        if event.name == "UnitPositionsEvent":
-            if event.second > second:
-                continue
-            # print(event)
-            # print(event.second)
-            # print(event.units)
-            # Find the latest position update
-            for unit, pos in event.units.items():
-                if unit.owner.pid == player_id and (not filter_function or filter_function(unit)):
-                    unit_positions[unit] = pos
-
-
-        elif event.name == "UnitDiedEvent" and event.unit.is_army and event.unit.owner.pid == player_id \
-                and event.unit in unit_positions:
-            del unit_positions[event.unit]
-
-            # elif event.name == "UnitDiedEvent" and event.unit in unit_positions:
-            #    del unit_positions[event.unit]
-
-    unit_positions2 = {}
-    for event in sorted(replay.events, key=lambda x: x.second):
-
-        if event.name == "UnitPositionsEvent":
-            if event.second > second:
-                continue
-            # Find the latest position update
-            print(event.positions)
-            print(len(event.positions))
-            print(event.units)
-            print(len(event.units))
-            print(event.items)
-            print(len(event.items))
-            print(army_counter(replay, event.second, player_id))
-            continue
-            for index, pos in event.units.items():
-                if unit.owner.pid == player_id and (not filter_function or filter_function(unit)):
-                    unit_positions[unit.pid] = pos
-
-    return unit_positions
-
-    """
-        latest_event = None
-        for event in replay.events:
-
-            if event.name == "UnitPositionsEvent":
-                # Find the latest position update
-                if event.second > second:
-                    break
-                latest_event = event
-        
-    return {unit: pos for unit, pos in latest_event.units.items()
-                if unit.owner.pid == player_id and (not filter_function or filter_function(unit))}\
-        if latest_event else []
-    """
-
-
 def get_position_of_armies(replay, second, player_id):
     units = get_units(replay, second, player_id, is_army_unit)
     return {unit.id: unit.location for unit in units}
@@ -350,11 +328,17 @@ def open_replay2(replay_name):
     # Print general match info
     print(formatReplay(replay))
 
-    return
+    for event in get_event_types(replay):
+        print(event)
+    print(is_offensive(replay, 500, 1))
+    print(amount_expansions(replay, 500, 1))
+
+    print(worker_counter(replay, 10, 1))
+
 
     for elem in replay.events:
         print(elem)
-
+    return
     """ 
     TODO: Skulle kunna kolla på Ability - Attack för att se när ngn är offensiv, samt
     när det byggs ny expansion.
@@ -416,35 +400,6 @@ def open_replay2(replay_name):
     print("{} moved out of {}".format(len(get_position_of_armies(replay, counter, 2)),
                                       army_counter(replay, counter, 2)))
 
-    return
-    for elem in replay.events:
-        if elem.name == "UnitPositionsEvent":
-            print("")
-            print(len(elem.items))
-            print(len(elem.units))
-            print(len(elem.positions))
-            print(army_counter(replay, elem.second, 1) + army_counter(replay, elem.second, 2) +
-                  worker_counter(replay, elem.second, 1) + worker_counter(replay, elem.second, 2))
-            continue
-
-            my_units = {unit: pos for unit, pos in elem.units.items() if unit.owner.pid == 1}
-            their_units = {unit: pos for unit, pos in elem.units.items() if unit.owner.pid == 2}
-            print("STATS")
-            print(len(my_units))
-            print(len(their_units))
-            print(len(elem.units))
-            continue
-            print(elem)
-            for elem2 in elem.positions:
-                print(elem2)
-            for elem2 in elem.units:
-                print(elem2)
-            print(elem.units)
-            print(len(elem.units))
-            print(len(elem.positions))
-
-    return
-
     print("Workers")
     print(worker_counter(replay, 400, 1))
     print(worker_counter(replay, 400, 2))
@@ -467,3 +422,67 @@ def open_replay2(replay_name):
 
 
 open_replay2('Clem_v_Ziggy:_Game_2_-_Kairos_Junction_LE.SC2Replay')
+
+# This is not working as intended, since replays don't contain the information
+# wanted about positions of units.
+"""
+# TODO: go up to given second and update all units positions
+# Not working :(, unit locations not being updated as the game goes.
+def get_position_of_units(replay, second, player_id, filter_function=None):
+    unit_positions = {}
+    for event in sorted(replay.events, key=lambda x: x.second):
+
+        if event.name == "UnitPositionsEvent":
+            if event.second > second:
+                continue
+            # print(event)
+            # print(event.second)
+            # print(event.units)
+            # Find the latest position update
+            for unit, pos in event.units.items():
+                if unit.owner.pid == player_id and (not filter_function or filter_function(unit)):
+                    unit_positions[unit] = pos
+
+
+        elif event.name == "UnitDiedEvent" and event.unit.is_army and event.unit.owner.pid == player_id \
+                and event.unit in unit_positions:
+            del unit_positions[event.unit]
+
+            # elif event.name == "UnitDiedEvent" and event.unit in unit_positions:
+            #    del unit_positions[event.unit]
+
+    unit_positions2 = {}
+    for event in sorted(replay.events, key=lambda x: x.second):
+
+        if event.name == "UnitPositionsEvent":
+            if event.second > second:
+                continue
+            # Find the latest position update
+            print(event.positions)
+            print(len(event.positions))
+            print(event.units)
+            print(len(event.units))
+            print(event.items)
+            print(len(event.items))
+            print(army_counter(replay, event.second, player_id))
+            continue
+            for index, pos in event.units.items():
+                if unit.owner.pid == player_id and (not filter_function or filter_function(unit)):
+                    unit_positions[unit.pid] = pos
+
+    return unit_positions
+
+    
+        latest_event = None
+        for event in replay.events:
+
+            if event.name == "UnitPositionsEvent":
+                # Find the latest position update
+                if event.second > second:
+                    break
+                latest_event = event
+
+    return {unit: pos for unit, pos in latest_event.units.items()
+                if unit.owner.pid == player_id and (not filter_function or filter_function(unit))}\
+        if latest_event else []
+    """
