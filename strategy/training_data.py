@@ -6,8 +6,6 @@ import json
 
 import sc2reader
 
-from s2protocol import versions
-
 """
 UpdateTargetUnitCommandEvent
 UpgradeCompleteEvent
@@ -34,6 +32,12 @@ SelectionEvent
 GetControlGroupEvent
 ProgressEvent
 """
+
+# Output file
+DATA_FILE = "data.txt"
+
+# Collect data every so often (s)
+DATA_COLLECTION_RATE = 5
 
 ALL_BUILDINGS = [
     "Refinery"
@@ -293,10 +297,10 @@ def is_expansive(replay, second, player, time_offset):
 
 def get_current_strategy(replay, second, player):
     # Offensive
-    if is_offensive(replay, second, player, time_offset=15):
+    if is_offensive(replay, second, player, time_offset=10):
         return "Offensive"
     # Expansive
-    elif is_expansive(replay, second, player, time_offset=20):
+    elif is_expansive(replay, second, player, time_offset=15):
         return "Expansive"
     # Defensive
     else:
@@ -345,8 +349,6 @@ def process_replay_data(replay_path):
     # Game lengths in seconds
     length_of_game = replay.frames // 16
 
-    # Collect data every so often (s)
-    DATA_COLLECTION_RATE = 5
 
     counter1 = {"Offensive": 0, "Defensive": 0, "Expansive": 0}
     counter2 = {"Offensive": 0, "Defensive": 0, "Expansive": 0}
@@ -407,6 +409,5 @@ def read_from_file(filename):
 
 
 if __name__ == "__main__":
-    process_all_files("data.txt")
-
+    process_all_files(DATA_FILE)
     pass
