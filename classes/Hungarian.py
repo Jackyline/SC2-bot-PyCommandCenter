@@ -1,61 +1,134 @@
+import numpy as np
+from munkres import Munkres, print_matrix
+
 class Hungarian(object):
     """
     Implementation of the Hungarian algorithm for the maximization assignment problem.
+    Used for assigning tasks to units in StarCraft.
     """
-    def __init__(self, matrix, workers, jobs):
-        """
-        Initialize instance of the assignment problem with the profit matrix `matrix`
-        :param matrix: NxN profit matrix. Profit from X assigned to Y.
-        """
 
-        # TODO: create profit matrix with help of utility function, set n to nr of jobs/workers
-        n = len(matrix)
-        for r in matrix:
-            if len(r) != n:
-                # TODO: create dummy worker or job
-                raise ValueError('Hungarian algorithm accepts an NxN matrix.')
-
-        self.workers = workers
-        self.jobs = jobs
-        self.matrix = matrix
-        self.n = n
-        self.V = self.X = self.Y = set(range(n))  # For convenience and clarity
+    def __init__(self):
+        """
+        Initialize instance of the assignment problem with the profit matrix
+        """
+        self.is_balanced = True
+        self.original_matrix_rows = 0
+        self.original_matrix_cols = 0
+        self.n = 0
+        self.V = self.X = self.Y = 0
+        self.matrix = None
         self.x_labels = None
         self.y_labels = None
         self.matching = None
         self.inverse_matching = None
         self.total_profit = None
+        self.minSlack = None
+        self.tasks = []
+        self.units = []
 
-    def maximize(self):
+    def generate_matrix(self, utility_func):
         """
+        Generates a profit matrix based on a utility function that is used to calculate the profit of assigning each task to each units. Profit matrix is made balanced but nr of dummy row/cols are saved to be removed later
+        :param utility_func: Function that takes parameters :unit and :task and returns a profit (int) of assigning a task to a unit
+        :return: NxN profit matrix. Profit from unit X assigned to task Y.
+        """
+
+        n_units = len(self.units)
+        n_tasks = len(self.tasks)
+        max_n = max(n_units, n_tasks)
+
+        # Save nr dummy row/cols to remove later
+        self.original_matrix_rows = n_units
+        self.original_matrix_cols = n_tasks
+        self.is_balanced = (n_units == n_tasks)
+
+        self.matrix = np.zeros((max_n, max_n)) # This way balanced matrix is balanced right away
+
+        for i in range(len(self.units)):
+            for j in range(len(self.tasks)):
+                self.matrix[i][j] = utility_func(self.units[i], self.tasks[j])
+
+    def balance_matrix(self):
+        """
+        Pads 0 values to rectangular matrices to make them squared,
+        i.e making an unbalanced assignment problem balanced
+        """
+
+        (a,b) = self.matrix.shape
+        self.original_matrix_rows = a
+        self.original_matrix_cols = b
+        self.is_balanced = (a == b)
+
+        if not self.is_balanced:
+            (a,b) = self.matrix.shape
+            if a>b:
+                padding=((0,0),(0,a-b))
+            else:
+                padding=((0,b-a),(0,0))
+            self.matrix = np.pad(self.matrix,padding,mode='constant',constant_values=0)
+
+    def init_test_problem_instance(self, matrix):
+        """
+        Initialize new problem test instance by setting variables and balancing matrix if needed
+        :param matrix: NxN profit matrix. Profit from X assigned to Y.
+        """
+        self.matrix = matrix
+        self.balance_matrix()
+        self.n = len(self.matrix)
+        self.V = self.X = self.Y = set(range(self.n))  # using set<int> of interval (0, n) to represent X and Y. V is used when creating for loops on sets other than X or Y but of equal size/representation.
+        self.init_labels()
+        self.matching = {}  # The matching is adict with node in X as key with matching node in Y as value
+        self.inverse_matching = {}
+
+    def init_problem_instance(self, utility_func, units, tasks):
+        """
+        Initialize new problem instance by resetting variables, and calculating profit a profit matrix
+        :param utility_func: Function that takes parameters :unit and :task and returns a profit (int) of assigning a task to a unit
+        :param units: set of units represented by id. set<int>
+        :param tasks: set of tasks represented as TODO
+        """
+        self.units = units
+        self.tasks = tasks
+        self.generate_matrix(utility_func)
+        self.n = len(self.matrix)
+        self.V = self.X = self.Y = set(range(self.n))  # using set<int> of interval (0, n) to represent X and Y. V is used when creating for loops on sets other than X or Y but of equal size/representation.
+        self.init_labels()
+        self.matching = {}  # The matching is adict with node in X as key with matching node in Y as value
+        self.inverse_matching = {}
+
+    def compute_assignments(self):
+        """
+        Compute maximum matching from X to Y. dict<int, int>
+        :param matrix: NxN profit matrix. Profit from X assigned to Y.
         :return: maximum matching from X to Y. dict<int, int>
         """
-        return self.compute()
 
+        # TODO: Handle floats?
+        # TODO. Work jobs enter where
+        # TODO: Calc matrix from jobs and works
 
-    def compute(self):
-        """
-        Compute optimal matching for workers and jobs
-        :return: optimal matching from X to Y. dict<int, int>
-        """
-        self.init_labels()
-        self.matching = {}  # Let the matching be a dict with node in X as key with matching node in Y as value
-        self.inverse_matching = {}
         self.find_augmented_path_and_augment()
+        self.remove_dummy_assignments()
         self.total_profit = sum(self.matrix[x][y] for x, y in self.matching.items())
-        # self.pretty_print()
         return self.matching
 
-    def pretty_print(self):
-        for n in range(len(self.matching)):
-            self.matching[n] = self.jobs[self.matching[n]]
-            self.matching[self.workers[n]] = self.matching.pop(n)
+    def remove_dummy_assignments(self):
+        """
+        Remove any assignments in matching that are involve any dummy row or column
+        """
+        if not self.is_balanced:
+            if self.original_matrix_rows > self.original_matrix_cols:
+                self.matching = {k:v for k,v in self.matching.items() if (v < self.original_matrix_cols or self.original_matrix_rows < v)}  # Create copy of matching where all keys with dummy values have been removed
+
+            else:
+                for i in range(self.original_matrix_rows, self.original_matrix_cols):
+                    del self.matching[i] #  Remove dummy keys
+
 
     def init_labels(self):
         """
         Initialize the labelling for each node x to the max weight of all it's edges.
         Initialize the labelling for each node y to 0.
-        :return: None
         """
         self.x_labels = [0 for _ in self.X]
         self.y_labels = [0 for _ in self.Y]
@@ -63,30 +136,40 @@ class Hungarian(object):
             for y in self.Y:
                 self.x_labels[x] = max(self.x_labels[x], self.matrix[x][y])
 
+    def slack(self, x, y):
+        """
+        Calculate delta to use when updating slack values
+        """
+        return self.x_labels[x] + self.y_labels[y] - self.matrix[x][y]
+
     def find_augmented_path_and_augment(self):
         """
-        Core of the Hungarian algorithm. Find an augmenting path and augment the current matching.
-         A solution is found when there is a perfect matching.
-        :return: None
+        Core of the algorithm. Find augmenting path and augment the current
+        matching until a perfect matching is found.
         """
-        if len(self.matching) == self.n:
-            # Has found a perfect matching
-            return
+        while True:
 
-        # Find an unmatched node in X and set as root
-        for x in self.X:
-            if x not in self.matching:
-                root = x
-                break
+            if len(self.matching) == self.n:  # Has found a perfect matching
+                return
 
-        x, y, path = self.find_augmenting_path({root: None}, set([root]), set())
-        self.augment_matching(x, y, path)
-        self.find_augmented_path_and_augment()
+            for x in self.X:  # Find an unmatched node in X and set as root
+                if x not in self.matching:
+                    root = x
+                    break
+
+            self.minSlack = [[self.slack(root, y), root] for y in self.Y]
+
+            path = {root: None}
+            S = set([root])
+            T = set()
+
+            x, y, path = self.find_augmenting_path(path, S, T)
+            self.augment_matching(x, y, path)
 
     def find_augmenting_path(self, path, S, T):
         """
         Find an augmenting path for the current matching. If an augmenting path cannot be found the feasible labelling
-        will be improved in order to expand the equality graph to find an augmenting path.
+        will be improved instead in order to expand the equality graph. This is done using the slack method.
         :param path: Traceable path to the root of the augmenting path.
                      Keys are nodes in X, values are the node in X preceding the key in the path to the root.
                      dict<int, int>
@@ -97,44 +180,36 @@ class Hungarian(object):
         """
 
         while(True):
-            # Expand the alternating tree until augmented path is found
-            for s in S:
-                for y in self.Y:
-                    if not self.is_in_equality_graph(s, y):
-                        continue  # Results in iteration for each neighbouring node to each node in S along edges in
-                        # equality graph.
+            # select edge (x,y) with x in S, y not in T and min slack
+            ((val, x), y) = min([(self.minSlack[y], y) for y in self.Y if y not in T])
+            assert x in S
+            if val > 0:
+                self.improve_labels(val, S, T)
+            assert self.slack(x, y) == 0  # now the found y is part of equality graph, which means slack = 0
 
-                    if y in T:
-                        continue  # Node already in the alternating tree
+            if y in self.inverse_matching:  # y is matched -> Extend the alternating tree
+                z = self.inverse_matching[y]
+                assert not z in S
+                S.add(z)
+                T.add(y)
+                path[z] = x
 
-                    # We have found an y so that y is a neighbour of s but not in T
-                    # Now check if y is matched or unmatched
+                for y in self.Y: # Update slack
+                    if not y in T and self.minSlack[y][0] > self.slack(z, y):
+                        self.minSlack[y] = [self.slack(z, y), z]
 
-                    if y not in self.inverse_matching:  # y is unmatched -> Augmenting path has been found
-                        return s, y, path
-
-                    # y is matched -> Extend the alternating tree
-                    z = self.inverse_matching[y]
-                    S.add(z)
-                    T.add(y)
-                    path[z] = s
-                    return self.find_augmenting_path(path, S, T)
-
-            # Neighbourhood of S is equal to T, so we cannot increase the alternating path.
-            # Instead improve labelling
-            self.improve_labels(S, T)
-
+            else:  # y is unmatched -> Augmenting path found
+                return x, y, path
 
     def augment_matching(self, x, y, path):
         """
         Augments the current matching using the path ending with edge (x, y).
-         (x, y) is not in the current matching. Neither is the root.
+        (x, y) is not in the current matching. Neither is the edge to root.
         :param x: last node in X in the augmenting path to the root. int
         :param y: very end of the augmenting path. int
         :param path: Traceable path to the root of the augmenting path.
                      Keys are nodes in X, values are the nodes in X preceding the key in the path to the root.
                      dict<int, int>
-        :return: None
         """
 
         if path[x] is None:
@@ -153,65 +228,86 @@ class Hungarian(object):
 
     def is_in_equality_graph(self, x, y):
         """
-        Determine if edge (x, y) is in the equality graph.
+        Check if edge (x, y) is in the equality graph.
         :param x: node from X. int
         :param y: node from Y. int
-        :return: True if (x, y) is in the equality graph, False otherwise.
+        :return: True if (x, y) is in the equality graph.
         """
         return self.matrix[x][y] == self.x_labels[x] + self.y_labels[y]
 
-    def improve_labels(self, S, T):
+    def improve_labels(self, val, S, T):
         """
-        Improve the current labelling such that:
+        Improce the current labelling so that:
             - the current matching remains in the new equality graph
-            - the current alternating tree (path) remains in the new equality graph
+            - the current alternating path remains in the new equality graph
             - there is a free vertex from Y and not in T in the new equality graph
-        An assumption is made that the neighbourhood of S in the equality graph is equal to T.
-
-        :param S: set of vertices from X in the alternating tree. set<int>
-        :param T: set of vertices from Y in the alternating tree. set<int>
-        :return: None
+        When this is run the neighbourhood of S in the equality graph is equal to T.
+        :param S: nodes from X in the alternating tree. set<int>
+        :param T: nodes from Y in the alternating tree. set<int>
         """
-        delta = None
-        for x in S:
-            for y in self.Y.difference(T):
-                slack = self.x_labels[x] + self.y_labels[y] - self.matrix[x][y]
-                if delta is None or slack < delta:
-                    delta = slack
 
         for v in self.V:
             if v in S:
-                self.x_labels[v] -= delta
-
+                self.x_labels[v] -= val
             if v in T:
-                self.y_labels[v] += delta
-
-    def improveLabels(val):
-        """ change the labels, and maintain minSlack.
-        """
-        for u in S:
-            lu[u] -= val
-        for v in V:
-            if v in T:
-                lv[v] += val
+                self.y_labels[v] += val
             else:
-                minSlack[v][0] -= val
+                self.minSlack[v][0] -= val
 
+    def pretty_print_assignments(self):
+        """
+        Pretty prints assignments and it's profit
+        :param assignments: assignments from node in X to node in Y. dict<int, int>
+        :param matrix: NxN profit matrix. Profit from X assigned to Y.
+        :return: Total profit of assignments
+        """
+
+        print("\nAssignments: ")
+        total_profit = 0
+        for key, value in self.matching.items():
+            profit = self.matrix[key][value]
+            total_profit += profit
+            print('(%d, %d) -> %d' % (key, value, profit))
+
+        print('\nTotal profit: %d\n' % total_profit)
+
+    def convert_matching_to_starcraft(self):
+        """
+        After computing assignments the matching will consist of integer mappings. This function
+        map these integers back to the units and tasks in starcraft
+        """
+        assignments = self.matching
+        for n in range(len(assignments)):
+            assignments[n] = self.tasks[assignments[n]]
+            assignments[self.units[n]] = assignments.pop(n)
+        return assignments
+
+def svc_utility_func(unit, task):
+    return 5
+
+def militry_utility_func(groups, task):
+    return 10
 
 def main():
+    h = Hungarian()
 
-    workers = ["anton", "benjamin", "hugo", "viktor", "hankish", "dylan", "fredrik", "mattias", "björn"]
-    jobs = ["clean", "wash", "paint", "attack", "mine", "scout", "build", "study", "eat"]
-    matrix = [[1,2,3,4],[2,4,6,8],[3,6,9,12],[4,8,12,16]]
-    h = Hungarian(matrix, workers, jobs)
-    print(h.compute())
-    assert 30 == h.total_profit
-    print(h.total_profit)
+    units = ["anton", "benjamin", "hugo", "viktor", "hankish", "dylan", "fredrik", "mattias", "björn"]
+    tasks = ["clean", "wash", "paint", "attack", "mine", "scout", "build"]
+    tasks2 = ["clean", "wash", "paint", "attack", "mine", "scout", "build", "bajsa", "dricka", "dansa", "skriva", "heja"]
 
-    matrix = [[25, 3, 3], [3, 2, 3], [3, 3, 2]]
-    h = Hungarian(matrix, workers, jobs)
-    print(h.compute())
-    print(h.total_profit)
+    h.init_problem_instance(svc_utility_func, units, tasks)
+    print_matrix(h.matrix, msg='\nsvc matrix')
+    h.compute_assignments()
+    h.pretty_print_assignments()
+    assignments = h.convert_matching_to_starcraft()
+    print(assignments)
+
+    h.init_problem_instance(militry_utility_func, units, tasks2)
+    print_matrix(h.matrix, msg='\nsvc matrix')
+    h.compute_assignments()
+    h.pretty_print_assignments()
+    assignments = h.convert_matching_to_starcraft()
+    print(assignments)
 
 if __name__ == "__main__":
     main()
