@@ -14,6 +14,7 @@ EPOCHES = 10
 LEARNING_RATE = 0.0001
 MOMENTUM = 0.9
 DATA_FILE = "data.txt"
+MODAL_NAME = "network"
 
 
 # output_classes = ("Offensive", "Defensive")
@@ -27,7 +28,7 @@ class StrategyNet(nn.Module):
         self.linear3 = nn.Linear(6, 3)
 
     def forward(self, input):
-        output = nn.functional.sigmoid(self.linear1(input))
+        output = torch.sigmoid(self.linear1(input))
         output = self.linear2(output)
         output = self.linear3(output)
 
@@ -36,23 +37,25 @@ class StrategyNet(nn.Module):
 
 class StrategyNetwork():
     def __init__(self):
-        self.net = None
+        self.net = StrategyNet()
 
     def save_network(self, filename):
         if not self.net:
             raise Exception("No network to save")
-        torch.save(self.net, "{}".format(filename))
+
+        torch.save(self.net.state_dict(), "{}".format(filename))
 
     def load_network(self, filename):
-        net = torch.load("{}".format(filename))
-        net.eval()
-        self.net = net
-        return net
+        self.net.load_state_dict(torch.load("{}".format(filename)))
+        self.net.eval()
 
-    def train_network(self, train_data):
+    def calculate(self, inputs):
+        '''
+        :return: The output of the network from given :param inputs
+        '''
+        return self.net(torch.FloatTensor(inputs)).tolist()
 
-        # Create neural network
-        self.net = StrategyNet()
+    def train_network(self, training_data):
 
         criterion = nn.MSELoss()
         optimizer = optim.SGD(self.net.parameters(), lr=LEARNING_RATE, momentum=MOMENTUM)
@@ -93,7 +96,7 @@ class StrategyNetwork():
 
         print('Finished Training')
 
-    def test_network(self, training_data):
+    def test_network(self, testing_data):
         # Test model
         correct = 0
 
@@ -181,17 +184,19 @@ def get_data():
 
 def get_trained_network():
     net = StrategyNetwork()
-    net.load_network("network")
+    net.load_network(MODAL_NAME)
     return net
 
-#training_data, testing_data = get_data()
 
-#net = StrategyNetwork()
-#net.train_network(training_data)
-#net.test_network(testing_data)
+def create_network():
+    training_data, testing_data = get_data()
 
+    net = StrategyNetwork()
+    net.train_network(training_data)
+    net.test_network(testing_data)
 
-#net.save_network("network")
+    net.save_network(MODAL_NAME)
+
 #n = net.load_network("network")
 #net.test_network(testing_data)
 
