@@ -4,6 +4,7 @@ from typing import Optional
 from library import *
 from classes.resource_manager import ResourceManager
 from classes.unit_manager import UnitManager
+from strategy.strategy import Strategy
 
 
 class MyAgent(IDABot):
@@ -11,6 +12,7 @@ class MyAgent(IDABot):
         IDABot.__init__(self)
         self.resource_manager = ResourceManager(self.minerals, self.gas, self.current_supply, self)
         self.unit_manager = UnitManager(self)
+        self.strategy_network = Strategy()
 
     def on_game_start(self):
         IDABot.on_game_start(self)
@@ -19,8 +21,28 @@ class MyAgent(IDABot):
         IDABot.on_step(self)
         self.resource_manager.sync()
         self.unit_manager.on_step(self.get_all_units())
+
+        command_center_types = [UnitType(UNIT_TYPEID.TERRAN_COMMANDCENTER, self),
+                                UnitType(UNIT_TYPEID.TERRAN_COMMANDCENTERFLYING, self)]
+        command_centers = [b for b in self.get_my_units() if b.unit_type in command_center_types]
+
+        # TODO: Is this how you get the actual seconds?
+        curr_seconds = self.current_frame // 24
+        # Minutes + Seconds
+        curr_time = int((curr_seconds) // 60) + (curr_seconds % 60) / 60
+        strategy = self.strategy_network.get_strategy([
+            len(self.unit_manager.worker_units),
+            len(self.unit_manager.military_units),
+            self.resource_manager.resources.minerals,
+            self.resource_manager.resources.gas,
+            len(command_centers),
+            curr_time
+        ])
+        print(strategy)
+
+
 def main():
-    coordinator = Coordinator(r"D:\StarCraft II\Versions\Base69232\SC2_x64.exe")
+    coordinator = Coordinator(r"C:\Users\Ceder\Documents\StarCraft II\Versions\Base69232\SC2_x64.exe")
 
     bot1 = MyAgent()
     # bot2 = MyAgent()

@@ -7,14 +7,14 @@ import torchvision
 
 import random
 
-from training_data import read_from_file
+from strategy.training_data import read_from_file
 
 BATCH_SIZE = 10
 EPOCHES = 10
 LEARNING_RATE = 0.0001
 MOMENTUM = 0.9
 DATA_FILE = "data.txt"
-MODAL_NAME = "network"
+MODAL_NAME = "strategy/network"
 
 
 # output_classes = ("Offensive", "Defensive")

@@ -1,4 +1,4 @@
-import strategy_model
+import strategy.strategy_model as strategy_model
 
 
 class Strategy():
@@ -16,7 +16,7 @@ class Strategy():
         else:
             return "Expansive"
 
-
+"""
 a = Strategy()
 import random
 
@@ -36,3 +36,5 @@ for i in range(50000):
 # result = a.model.calculate([90,29,378,59,2,15])
 
 print(d)
+
+"""
