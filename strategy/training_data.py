@@ -39,6 +39,12 @@ DATA_FILE = "data.txt"
 # Collect data every so often (s)
 DATA_COLLECTION_RATE = 5
 
+# Classify as offensive if offensive this many seconds ago
+OFFENSIVE_TIME_OFFSET = 10
+
+# Classify as expansive if expansive this many seconds ago
+EXPANSIVE_TIME_OFFSET = 20
+
 ALL_BUILDINGS = [
     "Refinery"
     "SupplyDepotLowered",
@@ -297,10 +303,10 @@ def is_expansive(replay, second, player, time_offset):
 
 def get_current_strategy(replay, second, player):
     # Offensive
-    if is_offensive(replay, second, player, time_offset=10):
+    if is_offensive(replay, second, player, time_offset=OFFENSIVE_TIME_OFFSET):
         return "Offensive"
     # Expansive
-    elif is_expansive(replay, second, player, time_offset=15):
+    elif is_expansive(replay, second, player, time_offset=EXPANSIVE_TIME_OFFSET):
         return "Expansive"
     # Defensive
     else:
@@ -349,7 +355,6 @@ def process_replay_data(replay_path):
     # Game lengths in seconds
     length_of_game = replay.frames // 16
 
-
     counter1 = {"Offensive": 0, "Defensive": 0, "Expansive": 0}
     counter2 = {"Offensive": 0, "Defensive": 0, "Expansive": 0}
 
@@ -362,7 +367,7 @@ def process_replay_data(replay_path):
             current_vespene = get_current_vespene(replay, second=time, player_id=player)
             current_expansions = amount_expansions(replay, second=time, player_id=player)
 
-            current_time = time
+            current_time = time // 60 + (time % 60 / 60)
 
             current_strategy = get_current_strategy(replay, second=time, player=player)
 
