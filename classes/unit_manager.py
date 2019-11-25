@@ -29,6 +29,13 @@ class UnitManager:
         # List of our abstracted military units
         self.military_units = []
 
+    def get_all_workers(self):
+        """
+        Gets all the worker units
+        :return list of all worker units. 
+        """
+        return self.worker_units
+
     def get_unit_of_type(self, unit_type):
         """
         Gets all the unit with the unit type.

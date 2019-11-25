@@ -1,7 +1,7 @@
 import numpy as np
-from munkres import Munkres, print_matrix
+from munkres import print_matrix
 
-class Hungarian(object):
+class Hungarian():
     """
     Implementation of the Hungarian algorithm for the maximization assignment problem.
     Used for assigning tasks to units in StarCraft.
@@ -23,8 +23,6 @@ class Hungarian(object):
         self.inverse_matching = None
         self.total_profit = None
         self.minSlack = None
-        self.tasks = []
-        self.units = []
 
     def generate_matrix(self, utility_func):
         """
@@ -43,17 +41,20 @@ class Hungarian(object):
         self.is_balanced = (n_units == n_tasks)
 
         self.matrix = np.zeros((max_n, max_n)) # This way balanced matrix is balanced right away
-
         for i in range(len(self.units)):
             for j in range(len(self.tasks)):
                 self.matrix[i][j] = utility_func(self.units[i], self.tasks[j])
 
+        if self.debug:
+            print_matrix(self.matrix, msg='\nmatrix generated from utility function')
+
     def balance_matrix(self):
         """
         Pads 0 values to rectangular matrices to make them squared,
-        i.e making an unbalanced assignment problem balanced
+        making turning an unbalanced assignment problemn into a balanced problem.
         """
 
+        # Save number of dummy row/cols to be removed from computed assignments
         (a,b) = self.matrix.shape
         self.original_matrix_rows = a
         self.original_matrix_cols = b
@@ -67,11 +68,14 @@ class Hungarian(object):
                 padding=((0,b-a),(0,0))
             self.matrix = np.pad(self.matrix,padding,mode='constant',constant_values=0)
 
-    def init_test_problem_instance(self, matrix):
+    def compute_assignments(self, matrix):
         """
-        Initialize new problem test instance by setting variables and balancing matrix if needed
+        Initialize new problem instance by resetting variables, and creating a profit matrix
+        and then compute maximum matching from X to Y.
         :param matrix: NxN profit matrix. Profit from X assigned to Y.
+        :return: maximum matching from X to Y. dict<int, int>
         """
+
         self.matrix = matrix
         self.balance_matrix()
         self.n = len(self.matrix)
@@ -79,34 +83,6 @@ class Hungarian(object):
         self.init_labels()
         self.matching = {}  # The matching is adict with node in X as key with matching node in Y as value
         self.inverse_matching = {}
-
-    def init_problem_instance(self, utility_func, units, tasks):
-        """
-        Initialize new problem instance by resetting variables, and calculating profit a profit matrix
-        :param utility_func: Function that takes parameters :unit and :task and returns a profit (int) of assigning a task to a unit
-        :param units: set of units represented by id. set<int>
-        :param tasks: set of tasks represented as TODO
-        """
-        self.units = units
-        self.tasks = tasks
-        self.generate_matrix(utility_func)
-        self.n = len(self.matrix)
-        self.V = self.X = self.Y = set(range(self.n))  # using set<int> of interval (0, n) to represent X and Y. V is used when creating for loops on sets other than X or Y but of equal size/representation.
-        self.init_labels()
-        self.matching = {}  # The matching is adict with node in X as key with matching node in Y as value
-        self.inverse_matching = {}
-
-    def compute_assignments(self):
-        """
-        Compute maximum matching from X to Y. dict<int, int>
-        :param matrix: NxN profit matrix. Profit from X assigned to Y.
-        :return: maximum matching from X to Y. dict<int, int>
-        """
-
-        # TODO: Handle floats?
-        # TODO. Work jobs enter where
-        # TODO: Calc matrix from jobs and works
-
         self.find_augmented_path_and_augment()
         self.remove_dummy_assignments()
         self.total_profit = sum(self.matrix[x][y] for x, y in self.matching.items())
@@ -144,7 +120,7 @@ class Hungarian(object):
 
     def find_augmented_path_and_augment(self):
         """
-        Core of the algorithm. Find augmenting path and augment the current
+        Main function of the algorithm. Find augmenting path and augment the current
         matching until a perfect matching is found.
         """
         while True:
@@ -271,42 +247,11 @@ class Hungarian(object):
 
         print('\nTotal profit: %d\n' % total_profit)
 
-    def convert_matching_to_starcraft(self):
-        """
-        After computing assignments the matching will consist of integer mappings. This function
-        map these integers back to the units and tasks in starcraft
-        """
-        assignments = self.matching
-        for n in range(len(assignments)):
-            assignments[n] = self.tasks[assignments[n]]
-            assignments[self.units[n]] = assignments.pop(n)
-        return assignments
-
-def svc_utility_func(unit, task):
-    return 5
-
-def militry_utility_func(groups, task):
-    return 10
-
 def main():
     h = Hungarian()
-
-    units = ["anton", "benjamin", "hugo", "viktor", "hankish", "dylan", "fredrik", "mattias", "björn"]
-    tasks = ["clean", "wash", "paint", "attack", "mine", "scout", "build"]
-    tasks2 = ["clean", "wash", "paint", "attack", "mine", "scout", "build", "bajsa", "dricka", "dansa", "skriva", "heja"]
-
-    h.init_problem_instance(svc_utility_func, units, tasks)
-    print_matrix(h.matrix, msg='\nsvc matrix')
-    h.compute_assignments()
+    matrix = matrix = np.zeros((5, 5))
+    assignments = h.compute_assignments(matrix)
     h.pretty_print_assignments()
-    assignments = h.convert_matching_to_starcraft()
-    print(assignments)
-
-    h.init_problem_instance(militry_utility_func, units, tasks2)
-    print_matrix(h.matrix, msg='\nsvc matrix')
-    h.compute_assignments()
-    h.pretty_print_assignments()
-    assignments = h.convert_matching_to_starcraft()
     print(assignments)
 
 if __name__ == "__main__":

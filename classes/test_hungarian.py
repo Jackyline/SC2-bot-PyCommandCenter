@@ -10,9 +10,9 @@ class TestHungarian():
     that can be used to test my implementation. Generates 10 balanced matrices and 10
     unbalanced matrices of maximum size 'max_problem_size that tests are run on
 
-    Install munkres module:
+    How to install munkres test module:
     try: 'pip install munkres3'
-    If it does not work the module named 'munkres3-1.0.5.5' exists in the same folder as this file.
+    If pip install does not work the module named 'munkres3-1.0.5.5' exists in the same folder as this file.
     When inside folder run: 'python3 setup.py install'
     """
 
@@ -88,8 +88,7 @@ class TestHungarian():
             self.print_balanced_matrix(matrix, msg='\nBalanced matrix:')
 
             print("\nAnton's assignments:")
-            self.h.init_test_problem_instance(matrix)
-            self.h.compute_assignments()
+            self.h.compute_assignments(matrix)
             self.h.pretty_print_assignments()
 
             print("Correct assignments:")
