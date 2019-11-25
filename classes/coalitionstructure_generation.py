@@ -1,8 +1,19 @@
-#from library import *
-from typing import Dict, Any
+from library import *
+from typing import Dict, Any, List
 
 
 class CoalitionstructureGeneration:
+
+    """
+    Att göra (TODO):
+    Kom på sätt att spara v, q, r listor så att det är mycket snabbare, blir fett weird med nestade listor
+    Fixa så att vi kan skapa ett max antal koalitioner
+    Integrera med boten, var ska funktionen kallas? ska csg klassen fördela specifika enheter? etc.
+    Effektivisera all_b delen? Kör all_b på start koalitionen och kolla på delmängder av den när vi kollar på mindre
+        koalitioner?
+    Värderings funktion!!
+    """
+
 
     def __init__(self):
         #self.idabot = idabot
@@ -10,31 +21,31 @@ class CoalitionstructureGeneration:
         self.v_dict = {}
         self.q_dict = {}
         self.r_dict = {}
-        # TODO: byt v_dict mot nested list med max(coalition[i]) rader och en kolumn för varje typ
         self.all_b = []
         # TODO: kan skapa all_b för start koalitionen och sedan bara använda värden som går för mindre koalitioner,
         #  alltså bara värden där alla b < a
         return
 
-#   def create_coalition(self, type_coalition : {UNIT_TYPEID: int}) -> [[(UNIT_TYPEID, int)], [(UNIT_TYPEID, int)]]:
- #       """"
- #       Input should be a dictionary with UNIT_TYPEID as key and nr of units of that type as the value.
- #       Return is structured as [coalition1, coalition2, ...] where each coalition is a list as
- #       [(UNIT_TYPEID, nr of units), (UNIT_TYPEID, nr of units), ...]
-#        """
-#
- #       # Ha en koalition vara en lista med antalet av varje typ av agent, d.v.s [nr av typ 1, nr av typ 2, ...]
-#
- #       # Initialize type coalition with all units
- #       for i, agent_type in enumerate(type_coalition.keys()):
- #           coalition = [i] = type_coalition[agent_type]
-#
- #       self.init_v(coalition)
- #       return None
+#    def create_coalition(self, type_coalition : {UNIT_TYPEID: int}) -> [[(UNIT_TYPEID, int)], [(UNIT_TYPEID, int)]]:
+    def create_coalition(self, type_coalition):
+         """"
+         Input should be a dictionary with UNIT_TYPEID as key and nr of units of that type as the value.
+         Return is structured as [coalition1, coalition2, ...] where each coalition is a list as
+         [(UNIT_TYPEID, nr of units), (UNIT_TYPEID, nr of units), ...]
+         """
+
+         # Ha en koalition vara en lista med antalet av varje typ av agent, d.v.s [nr av typ 1, nr av typ 2, ...]
+
+         # Initialize type coalition with all units
+         for i, agent_type in enumerate(type_coalition.keys()):
+             coalition = [i] = type_coalition[agent_type]
+
+         self.init_v(coalition)
+         return None
 
     def f(self, coalition):
         """
-        OBS self.all_b must be updated before calling.
+        Calculate the optimal value of the input coalition. The coalition structure can be fetched with get_r function
         :param coalition: coalition to genereate optimal coalition structure for
         :return: optimal coalition structure value
         """
@@ -91,15 +102,6 @@ class CoalitionstructureGeneration:
             if self.r_dict[coal_str] == coalition:
                 return coalition
             else:
-                # input coalition's optimal structure is not just the input coalition so we do:
-                # get the optimal structure for the coalition in self.r_dict[coalition] which is the a-b values in definition of f
-                # we combine those lists with the optimal structure for coalition - r_dict[coalition] which is the b values in definition of f
-
-                # For every typ of agent, sum all agents of a type in the coalition structure and save in one list
-                # e.g. structure [ [1, 2, 2], [1, 3, 5]] would become [2, 5, 7]
-                #known_struct = [ sum([temp_coal[agent_type] for temp_coal in self.r_dict[coal_str]]) for agent_type in range(len(coalition))]
-                #optiaml_structure = self.r_dict[coal_str] + \
-                #       self.get_r([original_coal - optimal_coal for original_coal, optimal_coal in zip(coalition, known_struct)])
                 return self.r_dict[coal_str]
         else:
             return None
@@ -113,7 +115,7 @@ class CoalitionstructureGeneration:
         # TODO: Testa v med minsta koalition för olika antal av varje typ t.ex. [5, 3, 3]
         #  bästa borde vara [1, 1, 1], [2, 1, 1], [2, 1, 1]?
         #"""
-        if any([nr_of_agents == 0 for nr_of_agents in coalition]):
+        if len(coalition) - coalition.count(0) != 1:
             return 0
         value = 1 / sum(map(lambda x: 1 + x**2, coalition))
         """
