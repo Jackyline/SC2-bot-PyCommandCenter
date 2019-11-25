@@ -7,6 +7,7 @@ from classes.unit_manager import UnitManager
 from classes.scouting_manager import ScoutingManager
 from classes.print_debug import PrintDebug
 from classes.building_manager import BuildingManager
+from classes.building_strategy import BuildingStrategy
 
 
 class MyAgent(IDABot):
@@ -16,7 +17,9 @@ class MyAgent(IDABot):
         self.unit_manager = UnitManager(self)
         self.scout_manager = ScoutingManager(self)
         self.building_manager = BuildingManager(self)
-        self.print_debug = PrintDebug(self, self.building_manager, self.unit_manager, self.scout_manager, True)
+        self.building_strategy = BuildingStrategy()
+        self.print_debug = PrintDebug(self, self.building_manager, self.unit_manager, self.scout_manager,
+                                      self.building_strategy, True)
 
     def on_game_start(self):
         IDABot.on_game_start(self)
@@ -29,8 +32,9 @@ class MyAgent(IDABot):
         self.building_manager.on_step(self.get_my_units())
         self.print_debug.on_step()
 
+
 def main():
-    coordinator = Coordinator(r"C:\Users\hanne\Desktop\StarCraft II\Versions\Base69232\SC2_x64.exe")
+    coordinator = Coordinator(r"C:\Users\dylan\Desktop\StarCraft II\Versions\Base69232\SC2_x64.exe")
 
     bot1 = MyAgent()
     # bot2 = MyAgent()
