@@ -75,7 +75,8 @@ class Hungarian():
         :param matrix: NxN profit matrix. Profit from X assigned to Y.
         :return: maximum matching from X to Y. dict<int, int>
         """
-
+        assert matrix != []
+        
         self.matrix = matrix
         self.balance_matrix()
         self.n = len(self.matrix)

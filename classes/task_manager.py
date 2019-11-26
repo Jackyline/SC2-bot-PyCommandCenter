@@ -6,6 +6,7 @@ from munkres import print_matrix
 class WorkerAssignments():
     def __init__(self):
         self.assignments = {}
+        self.tasks = []
 
     def utility_func(self, worker, task):
         return 3
@@ -19,9 +20,13 @@ class WorkerAssignments():
     def update(self, new_assignments : dict):
         self.assignments.update(new_assignments)
 
+    def add_task(self, task):
+        self.tasks.append(task)
+
 class MilitaryAssignments():
     def __init__(self):
         self.assignments = {}
+        self.tasks = []
 
     def utility_func(self, group, task):
         return 5
@@ -35,9 +40,13 @@ class MilitaryAssignments():
     def update(self, new_assignments : dict):
         self.assignments.update(new_assignments)
 
+    def add_task(self, task):
+        self.tasks.append(task)
+
 class BuildingAssignments():
     def __init__(self):
         self.assignments = {}
+        self.tasks = []
 
     def utility_func(self, building, task):
         return 10
@@ -47,6 +56,9 @@ class BuildingAssignments():
 
     def toString(self):
         return "building assignments"
+
+    def add_task(self, task):
+            self.tasks.append(task)
 
     def update(self, new_assignments : dict):
         """
@@ -106,42 +118,57 @@ class TaskManager():
     def get_worker_tasks():
         return self.worker_tasks
 
-    def calc_assignments(self, task_type, tasks):
+    def calc_assignments(self, task_type):
         #units = task_type.get_all_units()
         units = ["anton", "benjamin", "hugo", "viktor", "hankish", "dylan", "fredrik", "mattias", "björn"] # instead of get all units
-        matrix = self.generate_matrix(task_type.utility_func, units, tasks)
+        matrix = self.generate_matrix(task_type.utility_func, units, task_type.tasks)
         print_matrix(matrix, msg="Matrix generated for: " + task_type.toString())
         matching = self.hungarian.compute_assignments(matrix)
         self.hungarian.pretty_print_assignments()
-        assignments = self.convert_matching_to_assignments(matching, units, tasks)
+        assignments = self.convert_matching_to_assignments(matching, units, task_type.tasks)
+        task_type.tasks.clear()
         return assignments
 
-        task_type.utility_func
+    def update_assignments(self, task_type):
+        if task_type.tasks:
+            print("\n" + task_type.toString() + " before update", task_type.assignments, "\n")
+            assignments = self.calc_assignments(task_type)
+            task_type.update(assignments)
+            print(task_type.toString() + " after update", task_type.assignments)
 
-    def update_assignments(self, task_type, tasks : list):
-        print("\n" + task_type.toString() + " before update", task_type.assignments, "\n")
-        assignments = self.calc_assignments(task_type, tasks)
-        task_type.update(assignments)
-        print(task_type.toString() + " after update", task_type.assignments)
-
-    def on_step(self, new_tasks):
+    def on_step(self):
         # Update worker assignments
-        self.update_assignments(self.worker_assignments, new_tasks)
+        self.update_assignments(self.worker_assignments)
 
         # Update military assignments
-        self.update_assignments(self.military_assignments, new_tasks)
+        self.update_assignments(self.military_assignments)
 
         # Update building assignments
-        self.update_assignments(self.building_assignments, new_tasks)
+        self.update_assignments(self.building_assignments)
 
         pass
+
+    def add_worker_task(self, task):
+        self.worker_assignments.add_task(task)
+
+    def add_military_task(self, task):
+        self.military_assignments.add_task(task)
+
+    def add_building_task(self, task):
+        self.building_assignments.add_task(task)
 
 def main():
     tasks = ["clean", "wash", "paint", "attack", "mine", "scout", "build"]
     tasks2 = ["clean", "wash", "paint", "attack", "mine", "scout", "build", "bajsa", "dricka", "dansa", "skriva", "heja"]
 
     task_manager = TaskManager()
-    task_manager.on_step(tasks)
+    for task in tasks:
+        task_manager.add_worker_task(task)
+
+    for task in tasks2:
+        task_manager.add_military_task(task)
+
+    task_manager.on_step()
 
 if __name__ == "__main__":
     main()
