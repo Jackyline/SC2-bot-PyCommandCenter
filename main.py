@@ -38,9 +38,9 @@ class MyAgent(IDABot):
 
         # TODO: Is this how you get the actual seconds?
         curr_seconds = self.current_frame // 24
-        # Minutes + Seconds
+        # Minutes, Seconds
         curr_time = int((curr_seconds) // 60) + (curr_seconds % 60) / 60
-        strategy = self.strategy_network.get_strategy([
+        self.strategy = self.strategy_network.get_strategy([
             len(self.unit_manager.worker_units),
             len(self.unit_manager.military_units),
             self.resource_manager.resources.minerals,
@@ -48,7 +48,6 @@ class MyAgent(IDABot):
             len(command_centers),
             curr_time
         ])
-        print(strategy)
 
 
         self.unit_manager.on_step(self.get_my_units())
