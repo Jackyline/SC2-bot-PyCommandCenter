@@ -3,45 +3,58 @@ from typing import Dict, Any, List
 
 
 class CoalitionstructureGeneration:
-
     """
+    Nästan gjorde:
+    Integrera med boten, var ska funktionen kallas? ska csg klassen fördela specifika enheter? etc.
+
     Att göra (TODO):
     Kom på sätt att spara v, q, r listor så att det är mycket snabbare, blir fett weird med nestade listor
     Fixa så att vi kan skapa ett max antal koalitioner
-    Integrera med boten, var ska funktionen kallas? ska csg klassen fördela specifika enheter? etc.
     Effektivisera all_b delen? Kör all_b på start koalitionen och kolla på delmängder av den när vi kollar på mindre
         koalitioner?
     Värderings funktion!!
     """
 
-
     def __init__(self):
-        #self.idabot = idabot
+        # self.idabot = idabot
         self.test_types = ["marine", "tank", "healer"]
         self.v_dict = {}
         self.q_dict = {}
         self.r_dict = {}
         self.all_b = []
-        # TODO: kan skapa all_b för start koalitionen och sedan bara använda värden som går för mindre koalitioner,
-        #  alltså bara värden där alla b < a
         return
 
-#    def create_coalition(self, type_coalition : {UNIT_TYPEID: int}) -> [[(UNIT_TYPEID, int)], [(UNIT_TYPEID, int)]]:
-    def create_coalition(self, type_coalition):
-         """"
-         Input should be a dictionary with UNIT_TYPEID as key and nr of units of that type as the value.
-         Return is structured as [coalition1, coalition2, ...] where each coalition is a list as
-         [(UNIT_TYPEID, nr of units), (UNIT_TYPEID, nr of units), ...]
-         """
+    #    def create_coalition(self, military_units: Dict[UNIT_TYPEID: List[Unit.id]]) -> List[List[Unit.id]]:
+    def create_coalition(self, military_units):
+        """"
+        Input should be a dictionary with UNIT_TYPEID as key and a list of unit ids of all units of that type as the
+        value. Return is structured as [coalition1, coalition2, ...] where each coalition is a list as
+        [[UnitId, unitId]], (UNIT_TYPEID, nr of units), ...]
+        """
 
-         # Ha en koalition vara en lista med antalet av varje typ av agent, d.v.s [nr av typ 1, nr av typ 2, ...]
+        # Ha en koalition vara en lista med antalet av varje typ av agent, d.v.s [nr av typ 1, nr av typ 2, ...]
 
-         # Initialize type coalition with all units
-         for i, agent_type in enumerate(type_coalition.keys()):
-             coalition = [i] = type_coalition[agent_type]
+        # Initialize type coalition with all units
+        coalition = []
+        for agent_count in military_units.values():
+            coalition.append(len(agent_count))
 
-         self.init_v(coalition)
-         return None
+        self.f(coalition)
+        cs = self.get_r(coalition)
+
+        # Create the output coalition structure by designating a unit (by id) for each unit the coalition should have.
+        output_coalition_structure = []
+        agent_types = list(military_units.keys())
+        for coalition in cs:
+            output_coalition = []
+            # For each type of agent in a coalition
+            for current_agent_type in range(len(coalition)):
+                # Insert as many units of type current_agent_type as the coalition has
+                for agent_count in range(coalition[current_agent_type]):
+                    output_coalition.append(military_units[agent_types[current_agent_type]].pop(-1))
+            output_coalition_structure.append(output_coalition)
+
+        return output_coalition_structure
 
     def f(self, coalition):
         """
@@ -49,7 +62,7 @@ class CoalitionstructureGeneration:
         :param coalition: coalition to genereate optimal coalition structure for
         :return: optimal coalition structure value
         """
-        if(sum(coalition) == 0):
+        if (sum(coalition) == 0):
             return 0
 
         # Generate all possible list where every element <= equivalent coalition element
@@ -69,7 +82,8 @@ class CoalitionstructureGeneration:
             value = self.get_q(new_col) + self.get_v(set_of_b)
             if value > max_value:
                 max_value = value
-                max_coal = self.get_r(new_col) + [set_of_b] #this is basically optimal structure for new_col + set of b
+                max_coal = self.get_r(new_col) + [
+                    set_of_b]  # this is basically optimal structure for new_col + set of b
 
         self.set_r(coalition, max_coal)
         return max_value
@@ -106,7 +120,7 @@ class CoalitionstructureGeneration:
         else:
             return None
 
-    def v(self, coalition : []) -> int:
+    def v(self, coalition: []) -> int:
         """
         Utility function, takes in a type coalition and returns a value for that type coalition
         :param coalition: coalition type to be evaluated
@@ -114,17 +128,17 @@ class CoalitionstructureGeneration:
         """
         # TODO: Testa v med minsta koalition för olika antal av varje typ t.ex. [5, 3, 3]
         #  bästa borde vara [1, 1, 1], [2, 1, 1], [2, 1, 1]?
+        # """
+        #if len(coalition) - coalition.count(0) != 1:
+        #    return 0
+        #value = sum(map(lambda x: 1 + x ** 2, coalition))
         #"""
-        if len(coalition) - coalition.count(0) != 1:
-            return 0
-        value = 1 / sum(map(lambda x: 1 + x**2, coalition))
-        """
         value = 0
-        if coalition.count(0) == 2:
-            return sum(map(lambda x: x**2, coalition))
-        else:
+        if coalition.count(0) > 0:
             return 0
-        """
+        else:
+            return 1 / sum(map(lambda x: x ** 2, coalition))
+        #"""
         return value
 
     def get_v(self, coalition):
@@ -135,7 +149,7 @@ class CoalitionstructureGeneration:
             self.v_dict[self.coalition_str(coalition)] = value
             return value
 
-    def init_v(self, coalition, index = 0):
+    def init_v(self, coalition, index=0):
         """
         Calculate value of every possible coalition and save in v_dict.
         :param coalition: coalition type
@@ -160,7 +174,7 @@ class CoalitionstructureGeneration:
         # Remove last , and return
         return a[:-1]
 
-    def generate_all_b(self, coalition, all_b, index = 0):
+    def generate_all_b(self, coalition, all_b, index=0):
         """
         :param coalition: coalition type
         :return: None
@@ -176,9 +190,14 @@ class CoalitionstructureGeneration:
         # Restore the coalition to the same value as it started with
         coalition[index] = start_value
 
+
 csg = CoalitionstructureGeneration()
 list_to_test = [5, 5, 3]
 b = []
+dict_to_test = {"typ 1": [11, 12, 13], "typ 2": [21, 22, 23, 24], "typ 3": [31, 32, 33]}
+cs = csg.create_coalition(dict_to_test)
+print(cs)
+"""
 a = csg.get_q(list_to_test)
 cs = csg.get_r(list_to_test)
 print("optimal structure for {} has a value {} and is splitted as:".format(list_to_test, a))
@@ -186,3 +205,4 @@ output = ""
 for coalition in cs:
     output += "({}, value: {}), ".format(coalition, csg.q_dict[csg.coalition_str(coalition)])
 print(output[:-2])
+"""
