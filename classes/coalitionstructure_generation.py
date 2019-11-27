@@ -1,14 +1,17 @@
 from library import *
 from typing import Dict, Any, List
+from copy import deepcopy
 
 
 class CoalitionstructureGeneration:
     """
+    Gjort:
+    Kom på sätt att spara v, q, r listor så att det är mycket snabbare, blir fett weird med nestade listor
+
     Nästan gjorde:
     Integrera med boten, var ska funktionen kallas? ska csg klassen fördela specifika enheter? etc.
 
     Att göra (TODO):
-    Kom på sätt att spara v, q, r listor så att det är mycket snabbare, blir fett weird med nestade listor
     Fixa så att vi kan skapa ett max antal koalitioner
     Effektivisera all_b delen? Kör all_b på start koalitionen och kolla på delmängder av den när vi kollar på mindre
         koalitioner?
@@ -17,10 +20,9 @@ class CoalitionstructureGeneration:
 
     def __init__(self):
         # self.idabot = idabot
-        self.test_types = ["marine", "tank", "healer"]
-        self.v_dict = {}
-        self.q_dict = {}
-        self.r_dict = {}
+        self.v_list = None
+        self.r_list = None
+        self.q_list = None
         self.all_b = []
         return
 
@@ -39,6 +41,12 @@ class CoalitionstructureGeneration:
         for agent_count in military_units.values():
             coalition.append(len(agent_count))
 
+        # Initialize lists v, q, r to nested lists with None values
+        self.v_list = self.init_list(coalition)
+        self.r_list = deepcopy(self.v_list)
+        self.q_list = deepcopy(self.v_list)
+
+        #Calculate optimal coalition structure with f and get it from r list
         self.f(coalition)
         cs = self.get_r(coalition)
 
@@ -56,6 +64,26 @@ class CoalitionstructureGeneration:
 
         return output_coalition_structure
 
+    def init_list(self, coalition, index = 0):
+        """
+        Create a nested list with structure coalition[0] lists which each contain coalition[1] lists which all contain
+        coalition[2] lists ... to coalition[-1] which fills a list with coalition[-1] None values.
+        :param coalition: The coalition to base list initilization on
+        :param index: index in coalition
+        :return: A nested list
+        """
+        if index == len(coalition):
+            return None
+
+        sublist = self.init_list(coalition, index+1)
+        if sublist == None:
+            return [None for i in range(coalition[index] + 1)]
+        result = []
+        for i in range(coalition[index] + 1):
+            result.append(deepcopy(sublist))
+
+        return result
+
     def f(self, coalition):
         """
         Calculate the optimal value of the input coalition. The coalition structure can be fetched with get_r function
@@ -65,8 +93,8 @@ class CoalitionstructureGeneration:
         if (sum(coalition) == 0):
             return 0
 
-        # Generate all possible list where every element <= equivalent coalition element
-        # Remove last as we dont want [0, 0, ..., 0] list
+        # Generate all possible list where every element <= corresponding coalition element
+        # Remove last as we dont want [0, 0, ..., 0]
         all_b = []
         self.generate_all_b(coalition, all_b)
         all_b = all_b[:-1]
@@ -82,17 +110,10 @@ class CoalitionstructureGeneration:
             value = self.get_q(new_col) + self.get_v(set_of_b)
             if value > max_value:
                 max_value = value
-                max_coal = self.get_r(new_col) + [
-                    set_of_b]  # this is basically optimal structure for new_col + set of b
+                max_coal = self.get_r(new_col) + [set_of_b]  # this is basically optimal structure for new_col + set of b
 
         self.set_r(coalition, max_coal)
         return max_value
-
-    def set_q(self, coalition, value):
-        if self.coalition_str(coalition) in self.q_dict:
-            if value < self.q_dict[self.coalition_str(coalition)]:
-                return
-        self.q_dict[self.coalition_str(coalition)] = value
 
     def get_q(self, coalition):
         """
@@ -100,25 +121,28 @@ class CoalitionstructureGeneration:
         :param coalition: Coalition to get optiamal coalition structure value from
         :return: integer optimal coalition structure value
         """
-        if self.coalition_str(coalition) in self.q_dict:
-            return self.q_dict[self.coalition_str(coalition)]
-        else:
+        temp = self.get_list_element(self.q_list, coalition)
+        if temp is None:
             f_value = self.f(coalition)
-            self.q_dict[self.coalition_str(coalition)] = f_value
+            self.set_list_element(self.q_list, coalition, f_value, "q_list")
             return f_value
+        else:
+            return temp
 
     def set_r(self, coalition, optimal_cs):
-        self.r_dict[self.coalition_str(coalition)] = optimal_cs
+        self.set_list_element(self.r_list, coalition, optimal_cs, "r_list")
 
     def get_r(self, coalition):
-        if self.coalition_str(coalition) in self.r_dict:
-            coal_str = self.coalition_str(coalition)
-            if self.r_dict[coal_str] == coalition:
-                return coalition
-            else:
-                return self.r_dict[coal_str]
+        return self.get_list_element(self.r_list, coalition)
+
+    def get_v(self, coalition):
+        temp = self.get_list_element(self.v_list, coalition)
+        if temp is None:
+            value = self.v(coalition)
+            self.set_list_element(self.v_list, coalition, value, "v_list")
+            return value
         else:
-            return None
+            return temp
 
     def v(self, coalition: []) -> int:
         """
@@ -141,14 +165,7 @@ class CoalitionstructureGeneration:
         #"""
         return value
 
-    def get_v(self, coalition):
-        if self.coalition_str(coalition) in self.v_dict:
-            return self.v_dict[self.coalition_str(coalition)]
-        else:
-            value = self.v(coalition)
-            self.v_dict[self.coalition_str(coalition)] = value
-            return value
-
+    #TODO: kolla om detta är värt att göra?
     def init_v(self, coalition, index=0):
         """
         Calculate value of every possible coalition and save in v_dict.
@@ -156,7 +173,7 @@ class CoalitionstructureGeneration:
         :return: None
         """
         if index >= len(coalition):
-            self.v_dict[self.coalition_str(coalition)] = self.v(coalition)
+            #self.v_dict[self.coalition_str(coalition)] = self.v(coalition)
             return
 
         start_value = coalition[index]
@@ -166,13 +183,15 @@ class CoalitionstructureGeneration:
         # Restore the coalition to the same value as it started with
         coalition[index] = start_value
 
-    def coalition_str(self, coalition):
-        a = ""
-        for x in coalition:
-            a += x.__str__() + ","
+    def get_list_element(self, list, coalition):
+        for elem in coalition:
+            list = list[elem]
+        return list
 
-        # Remove last , and return
-        return a[:-1]
+    def set_list_element(self, list, coalition, value, description = ""):
+        for elem in coalition[:-1]:
+            list = list[elem]
+        list[coalition[-1]] = value
 
     def generate_all_b(self, coalition, all_b, index=0):
         """
@@ -192,17 +211,19 @@ class CoalitionstructureGeneration:
 
 
 csg = CoalitionstructureGeneration()
-list_to_test = [5, 5, 3]
+list_to_test = [3, 4, 3, 8]
 b = []
-dict_to_test = {"typ 1": [11, 12, 13], "typ 2": [21, 22, 23, 24], "typ 3": [31, 32, 33]}
+dict_to_test = {"typ 1": [11, 12, 13], "typ 2": [21, 22, 23, 24], "typ 3": [31, 32, 33],
+                "typ 4": [41, 42, 43, 44, 45, 46, 47, 48]}#, "typ 5": [51, 52, 53, 54], "typ 6": [61, 62, 63, 64]}
 cs = csg.create_coalition(dict_to_test)
 print(cs)
+
 """
 a = csg.get_q(list_to_test)
+"""
 cs = csg.get_r(list_to_test)
-print("optimal structure for {} has a value {} and is splitted as:".format(list_to_test, a))
+print("total value: {}".format(csg.get_q(list_to_test)))
 output = ""
 for coalition in cs:
-    output += "({}, value: {}), ".format(coalition, csg.q_dict[csg.coalition_str(coalition)])
+    output += "({}, value: {}), ".format(coalition, csg.get_q(coalition))
 print(output[:-2])
-"""
