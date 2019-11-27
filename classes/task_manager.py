@@ -1,18 +1,33 @@
-import hungarian
+from classes.hungarian import Hungarian
 import numpy as np
 from munkres import print_matrix
-#import unit_manager
+from library import *
+from classes.unit_manager import UnitManager
+from classes.building_manager import BuildingManager
+from classes.Task import Task
+
+
+bajsTask(Task.NOTHING)
+
+class bajsTask(Enum):
+    def __init__(self, type):
+        self.type = TaskType.NOTHING
+        self.pos = Unit.tile_position
+
+
 
 class WorkerAssignments():
-    def __init__(self):
-        self.assignments = {}
+    def __init__(self, unit_manager: UnitManager):
+        self.unit_manager = unit_manager
+        self.assignments = {} # dict<task, worker_unit>
         self.tasks = []
+
 
     def utility_func(self, worker, task):
         return 3
 
     def get_all_units(self):
-        pass
+        return self.unit_manager.get_all_workers()
 
     def toString(self):
         return "worker assignments"
@@ -24,7 +39,8 @@ class WorkerAssignments():
         self.tasks.append(task)
 
 class MilitaryAssignments():
-    def __init__(self):
+    def __init__(self, unit_manager: UnitManager):
+        self.unit_manager = unit_manager
         self.assignments = {}
         self.tasks = []
 
@@ -44,7 +60,8 @@ class MilitaryAssignments():
         self.tasks.append(task)
 
 class BuildingAssignments():
-    def __init__(self):
+    def __init__(self, building_manager : BuildingManager):
+        self.building_manager = building_manager
         self.assignments = {}
         self.tasks = []
 
@@ -72,14 +89,13 @@ class BuildingAssignments():
 
 class TaskManager():
 
-    #    def __init__(self, IDABot : IDABot):
-            #self.idabot = IDABot
-
-    def __init__(self):
-        self.worker_assignments = WorkerAssignments()
-        self.military_assignments = MilitaryAssignments()
-        self.building_assignments = BuildingAssignments()
-        self.hungarian = hungarian.Hungarian()
+    def __init__(self, unit_manager: UnitManager, building_manager: BuildingManager):
+        self.unit_manager = UnitManager # kanske kan ta bort
+        self.building_manager = BuildingManager # kanske kan ta bort
+        self.worker_assignments = WorkerAssignments(unit_manager)
+        self.military_assignments = MilitaryAssignments(unit_manager)
+        self.building_assignments = BuildingAssignments(building_manager)
+        self.hungarian = Hungarian()
 
     def generate_matrix(self, utility_func, units, tasks):
         """
@@ -115,17 +131,14 @@ class TaskManager():
             assignments[units[n]] = assignments.pop(n)
         return assignments
 
-    def get_worker_tasks():
-        return self.worker_tasks
-
     def calc_assignments(self, task_type):
-        #units = task_type.get_all_units()
+
         units = ["anton", "benjamin", "hugo", "viktor", "hankish", "dylan", "fredrik", "mattias", "björn"] # instead of get all units
-        matrix = self.generate_matrix(task_type.utility_func, units, task_type.tasks)
+        matrix = self.generate_matrix(task_type.utility_func, task_type.get_all_units(), task_type.tasks)
         print_matrix(matrix, msg="Matrix generated for: " + task_type.toString())
         matching = self.hungarian.compute_assignments(matrix)
         self.hungarian.pretty_print_assignments()
-        assignments = self.convert_matching_to_assignments(matching, units, task_type.tasks)
+        assignments = self.convert_matching_to_assignments(matching, task_type.get_all_units(), task_type.tasks)
         task_type.tasks.clear()
         return assignments
 
@@ -138,15 +151,14 @@ class TaskManager():
 
     def on_step(self):
         # Update worker assignments
+        Task()
         self.update_assignments(self.worker_assignments)
 
         # Update military assignments
-        self.update_assignments(self.military_assignments)
+        #self.update_assignments(self.military_assignments)
 
         # Update building assignments
-        self.update_assignments(self.building_assignments)
-
-        pass
+        #self.update_assignments(self.building_assignments)
 
     def add_worker_task(self, task):
         self.worker_assignments.add_task(task)
@@ -156,19 +168,3 @@ class TaskManager():
 
     def add_building_task(self, task):
         self.building_assignments.add_task(task)
-
-def main():
-    tasks = ["clean", "wash", "paint", "attack", "mine", "scout", "build"]
-    tasks2 = ["clean", "wash", "paint", "attack", "mine", "scout", "build", "bajsa", "dricka", "dansa", "skriva", "heja"]
-
-    task_manager = TaskManager()
-    for task in tasks:
-        task_manager.add_worker_task(task)
-
-    for task in tasks2:
-        task_manager.add_military_task(task)
-
-    task_manager.on_step()
-
-if __name__ == "__main__":
-    main()
