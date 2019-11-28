@@ -75,7 +75,7 @@ class Hungarian():
         :param matrix: NxN profit matrix. Profit from X assigned to Y.
         :return: maximum matching from X to Y. dict<int, int>
         """
-        assert matrix != []
+        assert len(matrix) != 0
         
         self.matrix = matrix
         self.balance_matrix()
@@ -247,13 +247,3 @@ class Hungarian():
             print('(%d, %d) -> %d' % (key, value, profit))
 
         print('\nTotal profit: %d\n' % total_profit)
-
-def main():
-    h = Hungarian()
-    matrix = matrix = np.zeros((5, 5))
-    assignments = h.compute_assignments(matrix)
-    h.pretty_print_assignments()
-    print(assignments)
-
-if __name__ == "__main__":
-    main()

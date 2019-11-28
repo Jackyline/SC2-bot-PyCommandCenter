@@ -6,6 +6,7 @@ from classes.resource_manager import ResourceManager
 from classes.unit_manager import UnitManager
 from classes.task_manager import TaskManager
 from classes.building_manager import BuildingManager
+from classes.task_generator import TaskGenerator
 
 
 class MyAgent(IDABot):
@@ -15,6 +16,7 @@ class MyAgent(IDABot):
         self.unit_manager = UnitManager(self)
         self.building_manager = BuildingManager(self)
         self.task_manager = TaskManager(unit_manager=self.unit_manager, building_manager=self.building_manager)
+        self.task_generator = TaskGenerator(self.task_manager)
 
     def on_game_start(self):
         IDABot.on_game_start(self)
@@ -23,14 +25,8 @@ class MyAgent(IDABot):
         IDABot.on_step(self)
         self.resource_manager.sync()
         self.unit_manager.on_step(self.get_my_units())
+        self.task_generator.on_step()
         self.task_manager.on_step()
-
-        tasks = ["clean", "wash", "paint", "attack", "mine", "scout", "build"]
-        tasks2 = ["clean", "wash", "paint", "attack", "mine", "scout", "build", "bajsa", "dricka", "dansa", "skriva",
-                  "heja"]
-
-        for task in tasks:
-            self.task_manager.add_worker_task(task)
 
 def main():
     coordinator = Coordinator(r"D:\StarCraft II\Versions\Base69232\SC2_x64.exe")

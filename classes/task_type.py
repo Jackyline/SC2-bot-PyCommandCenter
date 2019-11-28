@@ -1,6 +1,10 @@
 from enum import Enum
 
 class TaskType(Enum):
+    """
+    TODO
+    """
+
     MINING = 1
     GAS = 2
     BUILD = 3
