@@ -1,8 +1,8 @@
 import numpy as np
 
 class QTable:
-    def __init__(self, idabot):
-        self.file = 'resources/test.npy'
+    def __init__(self, idabot,name):
+        self.file = 'resources/'+ name +'.npy'
         self.idabot = idabot
         self.q_table = {} # {state (str) : [q_value for action 0 (int), q_value for action 1 (int)]}
         self.read_table()
@@ -27,7 +27,7 @@ class QTable:
 
     def get_action(self, key):
         actions = self.q_table.get(key, [0, 0])
-        return 0 if actions[0] > actions[1] else 1
+        return 0 if actions[0] >= actions[1] else 1
 
     def get_value(self, key, action):
         return self.q_table.get(key, [0, 0])[action]

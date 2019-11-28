@@ -13,15 +13,18 @@ class StupidAgent(IDABot):
     def on_step(self):
         IDABot.on_step(self)
         """
+        for unit in self.get_all_units():
+            unit.stop_dance()
+        """
         my = []
         enemy = []
         for unit in self.get_all_units():
-            if unit.player == PLAYER_SELF:
+            if unit.player == PLAYER_SELF and unit.unit_type.is_combat_unit:
                 my.append(unit)
-            else:
+            elif unit.player == PLAYER_ENEMY and unit.unit_type.is_combat_unit:
                 enemy.append(unit)
 
         for unit in my:
-            unit.attack_unit(random.choice(enemy))
-        """
+            if len(enemy) > 0 and not unit.has_target:
+                unit.attack_unit(random.choice(enemy))
 

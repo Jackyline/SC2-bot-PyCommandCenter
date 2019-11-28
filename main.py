@@ -19,25 +19,39 @@ class MyAgent(IDABot):
         self.scout_manager = ScoutingManager(self)
         self.building_manager = BuildingManager(self)
         self.print_debug = PrintDebug(self, self.building_manager, self.unit_manager, self.scout_manager, True)
+
     def on_game_start(self):
         IDABot.on_game_start(self)
 
     def on_step(self):
         IDABot.on_step(self)
+        my = []
+        enemy = []
+        for unit in self.get_all_units():
+            if unit.player == PLAYER_SELF and unit.unit_type.is_combat_unit:
+                my.append(unit)
+            elif unit.player == PLAYER_ENEMY and unit.unit_type.is_combat_unit:
+                enemy.append(unit)
+        if my and enemy:
+            distance = self.map_tools.get_ground_distance(my[0].position, enemy[0].position)
+            attack_range = my[0].unit_type.attack_range
+            sight_range = my[0].unit_type.sight_range
+        """
         self.resource_manager.sync()
         self.unit_manager.on_step(self.get_my_units())
         self.scout_manager.on_step(self.get_my_units(), self.map_tools.width, self.map_tools.height)
         self.building_manager.on_step(self.get_my_units())
         self.print_debug.on_step()
-
+        """
 
 
 def main():
-    coordinator = Coordinator(r"D:\StarCraft II\Versions\Base69232\SC2_x64.exe")
+    coordinator = Coordinator(r"G:\StarCraft II\Versions\Base69232\SC2_x64.exe")
 
     bot1 = QAgent()
     bot2 = StupidAgent()
-
+    #bot1 = StupidAgent()
+    #bot2 = MyAgent()
     participant_1 = create_participants(Race.Terran, bot2)
     participant_2 = create_participants(Race.Terran, bot1)
     #participant_2 = create_computer(Race.Random, Difficulty.Easy)
@@ -46,7 +60,7 @@ def main():
     coordinator.set_participants([participant_1, participant_2])
     coordinator.launch_starcraft()
 
-    path = os.path.join(os.getcwd(), "maps", "8-marines-vs-3-stalkers.SC2Map")
+    path = os.path.join(os.getcwd(), "maps", "marauder-marine-random-spawn-concussive.SC2Map")
     coordinator.start_game(path)
 
     while coordinator.update():
