@@ -1,8 +1,8 @@
 from classes.military_unit import MilitaryUnit
 from classes.worker_unit import WorkerUnit
-
+from classes.q_table import QTable
 from library import *
-
+import math
 
 class UnitManager:
 
@@ -10,9 +10,11 @@ class UnitManager:
         self.idabot = idabot
 
         # All military types
-        self.MILITARY_TYPES = [UnitType(UNIT_TYPEID.TERRAN_MARINE, idabot),
+        self.MILITARY_TYPES = [UnitType(UNIT_TYPEID.PROTOSS_STALKER, idabot),
+                               UnitType(UNIT_TYPEID.TERRAN_MARINE, idabot),
                                UnitType(UNIT_TYPEID.TERRAN_MARAUDER, idabot),
-                               UnitType(UNIT_TYPEID.TERRAN_REAPER, idabot), UnitType(UNIT_TYPEID.TERRAN_GHOST, idabot),
+                               UnitType(UNIT_TYPEID.TERRAN_REAPER, idabot),
+                               UnitType(UNIT_TYPEID.TERRAN_GHOST, idabot),
                                UnitType(UNIT_TYPEID.TERRAN_HELLION, idabot),
                                UnitType(UNIT_TYPEID.TERRAN_SIEGETANK, idabot),
                                UnitType(UNIT_TYPEID.TERRAN_CYCLONE, idabot),
@@ -37,6 +39,9 @@ class UnitManager:
 
         #list of visible military units
         self.visible_enemies = []
+
+        self.marauder_q_table = QTable(self.idabot, "marauder")
+        self.marine_q_table = QTable(self.idabot, "marine")
 
     def get_info(self):
         '''
@@ -106,16 +111,36 @@ class UnitManager:
         #update visible enemies
         self.visible_enemies = [unit for unit in latest_units_list if unit.player == PLAYER_ENEMY and unit.unit_type.is_combat_unit]
 
-        self.update_in_combat()
+        self.update_military_units()
 
-    def update_in_combat(self):
+        self.marauder_q_table.on_step()
+        self.marine_q_table.on_step()
+
+
+    def update_military_units(self):
+        unit : MilitaryUnit
         for unit in self.military_units:
+            e_in_sight = []
+            e_that_can_attack = []  # enemies
+            a_in_sight = []  # allies
+            e_in_range = []
             for enemy in self.visible_enemies:
-                if self.idabot.map_tools.get_ground_distance(unit.get_unit().position, enemy.position) < unit.get_unit().unit_type.sight_range:
-                    unit.update_in_combat(True)
-                    break
-            else:
-                unit.update_in_combat(False)
+                distance = unit.get_distance_to(enemy)
+
+                if math.floor(distance) <= enemy.unit_type.attack_range:
+                    e_that_can_attack.append(enemy)
+                if math.floor(distance) <= unit.sight_range:
+                    e_in_sight.append(enemy)
+                if distance <= unit.attack_range:
+                    e_in_range.append(enemy)
+            for ally in self.military_units:
+                distance = unit.get_distance_to(ally.get_unit())
+                if distance <= unit.sight_range and ally != unit:
+                    a_in_sight.append(ally)
+
+
+
+            unit.on_step(e_in_sight, e_that_can_attack, a_in_sight, e_in_range)
 
 
     def add_new_units(self, latest_units_list, known_units, unit_type_checker, unit_class):
@@ -124,7 +149,11 @@ class UnitManager:
             if latest_unit.player == PLAYER_SELF and unit_type_checker(latest_unit):
                 # Check if unit is not already in our list
                 if not any(latest_unit.id == unit.get_id() for unit in known_units):
-                    known_units.append(unit_class(latest_unit))
+                    if latest_unit.unit_type.unit_typeid == UNIT_TYPEID.TERRAN_MARAUDER:
+                        known_units.append(unit_class(latest_unit, self.idabot, self.marauder_q_table))
+                    elif latest_unit.unit_type.unit_typeid == UNIT_TYPEID.TERRAN_MARINE:
+                        known_units.append(unit_class(latest_unit, self.idabot, self.marine_q_table))
+
 
     def update_dead_units(self, unit_list):
         '''
@@ -134,6 +163,7 @@ class UnitManager:
         for current_unit in unit_list:
             if not current_unit.is_alive():
                 # current_unit.die()
+                print("TOTAL REWARD:",current_unit.total_reward )
                 unit_list.remove(current_unit)
 
     def is_military_type(self, unit):

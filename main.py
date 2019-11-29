@@ -9,6 +9,9 @@ from classes.print_debug import PrintDebug
 from classes.building_manager import BuildingManager
 from classes.building_strategy import BuildingStrategy
 
+from classes.q_agent import QAgent
+from classes.stupid_agent import StupidAgent
+from classes.q_table import QTable
 
 class MyAgent(IDABot):
     def __init__(self):
@@ -32,22 +35,22 @@ class MyAgent(IDABot):
         self.building_manager.on_step(self.get_my_units())
         self.print_debug.on_step()
 
-
 def main():
-    coordinator = Coordinator(r"C:\Users\dylan\Desktop\StarCraft II\Versions\Base69232\SC2_x64.exe")
+    coordinator = Coordinator(r"G:\StarCraft II\Versions\Base69232\SC2_x64.exe")
 
-    bot1 = MyAgent()
-    # bot2 = MyAgent()
-
-    participant_1 = create_participants(Race.Terran, bot1)
-    # participant_2 = create_participants(Race.Terran, bot2)
-    participant_2 = create_computer(Race.Random, Difficulty.Easy)
+    bot1 = QAgent()
+    bot2 = StupidAgent()
+    #bot1 = StupidAgent()
+    #bot2 = MyAgent()
+    participant_1 = create_participants(Race.Terran, bot2)
+    participant_2 = create_participants(Race.Terran, bot1)
+    #participant_2 = create_computer(Race.Random, Difficulty.Easy)
 
     coordinator.set_real_time(False)
     coordinator.set_participants([participant_1, participant_2])
     coordinator.launch_starcraft()
 
-    path = os.path.join(os.getcwd(), "maps", "InterloperTest.SC2Map")
+    path = os.path.join(os.getcwd(), "maps", "marauder-marine-random-spawn-concussive.SC2Map")
     coordinator.start_game(path)
 
     while coordinator.update():
