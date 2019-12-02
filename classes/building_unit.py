@@ -1,6 +1,5 @@
 from library import *
 
-
 class BuildingUnit:
     """
     Is one building.
