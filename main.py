@@ -11,7 +11,9 @@ from strategy.strategy import Strategy
 from classes.scouting_manager import ScoutingManager
 from classes.print_debug import PrintDebug
 from classes.building_manager import BuildingManager
-from classes.building_strategy import BuildingStrategy
+# TODO:
+# Add building strategy back again when torch installation finished
+#from classes.building_strategy import BuildingStrategy
 
 
 class MyAgent(IDABot):
@@ -22,9 +24,10 @@ class MyAgent(IDABot):
         self.strategy_network = Strategy()
         self.scout_manager = ScoutingManager(self)
         self.building_manager = BuildingManager(self)
-        self.building_strategy = BuildingStrategy()
-        self.print_debug = PrintDebug(self, self.building_manager, self.unit_manager, self.scout_manager,
-                                      self.building_strategy, True)
+        # TODO:
+        # Add building strategy back again when torch installation finished
+        #self.building_strategy = BuildingStrategy()
+        self.print_debug = PrintDebug(self, self.building_manager, self.unit_manager, self.scout_manager, True)
         self.building_manager = BuildingManager(self)
         self.task_manager = AssignmentManager(unit_manager=self.unit_manager, building_manager=self.building_manager)
         self.task_generator = TaskManager(self.task_manager)
