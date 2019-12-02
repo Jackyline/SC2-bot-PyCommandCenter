@@ -4,6 +4,9 @@ from typing import Optional
 from library import *
 from classes.resource_manager import ResourceManager
 from classes.unit_manager import UnitManager
+from classes.assignment_manager import AssignmentManager
+from classes.building_manager import BuildingManager
+from classes.task_manager import TaskManager
 from strategy.strategy import Strategy
 from classes.scouting_manager import ScoutingManager
 from classes.print_debug import PrintDebug
@@ -22,6 +25,9 @@ class MyAgent(IDABot):
         self.building_strategy = BuildingStrategy()
         self.print_debug = PrintDebug(self, self.building_manager, self.unit_manager, self.scout_manager,
                                       self.building_strategy, True)
+        self.building_manager = BuildingManager(self)
+        self.task_manager = AssignmentManager(unit_manager=self.unit_manager, building_manager=self.building_manager)
+        self.task_generator = TaskManager(self.task_manager)
 
     def on_game_start(self):
         IDABot.on_game_start(self)
@@ -51,6 +57,8 @@ class MyAgent(IDABot):
 
 
         self.unit_manager.on_step(self.get_my_units())
+        self.task_generator.on_step()
+        self.task_manager.on_step()
         self.scout_manager.on_step(self.get_my_units(), self.map_tools.width, self.map_tools.height)
         self.building_manager.on_step(self.get_my_units())
         self.print_debug.on_step()

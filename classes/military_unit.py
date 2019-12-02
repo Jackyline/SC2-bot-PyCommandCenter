@@ -39,3 +39,9 @@ class MilitaryUnit:
     def set_job(self, location):
         self.target = None
         self.unit.attack_move(location)
+
+    def get_task(self):
+        return self.task
+
+    def set_task(self, task):
+        self.task = task

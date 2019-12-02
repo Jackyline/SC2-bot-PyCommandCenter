@@ -5,6 +5,9 @@ __pycache__/
 *.pyc
 
 venv/*
+venv1/*
+venv2/*
+
 maps/*
 
 # files in .idea/
