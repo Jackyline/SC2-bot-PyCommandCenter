@@ -65,4 +65,4 @@ class PrintDebug:
         geysers = list(base_location.geysers)
         for geyser in geysers:
             self.ida_bot.map_tools.draw_text(geyser.position, " %s id: %d" % (str(geyser.unit_type), geyser.id))
->>>>>>> master
+
