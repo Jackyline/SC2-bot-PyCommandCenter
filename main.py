@@ -28,9 +28,6 @@ class MyAgent(IDABot):
         # Add building strategy back again when torch installation finished
         #self.building_strategy = BuildingStrategy()
         self.print_debug = PrintDebug(self, self.building_manager, self.unit_manager, self.scout_manager, True)
-        self.building_strategy = BuildingStrategy()
-        self.print_debug = PrintDebug(self, self.building_manager, self.unit_manager, self.scout_manager,
-                                      self.building_strategy, True)
         self.building_manager = BuildingManager(self)
         self.task_manager = AssignmentManager(unit_manager=self.unit_manager, building_manager=self.building_manager)
         self.task_generator = TaskManager(self.task_manager)

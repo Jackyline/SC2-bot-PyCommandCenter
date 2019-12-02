@@ -5,7 +5,7 @@ from library import *
 class PrintDebug:
     def __init__(self, ida_bot, building_manager: building_manager.BuildingManager,
                  unit_manager: unit_manager.UnitManager, scout_manager: scouting_manager.ScoutingManager,
-                , on : bool):
+                 on : bool):
         self.ida_bot = ida_bot
         self.building_manager = building_manager
         self.unit_manager = unit_manager
