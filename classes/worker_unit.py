@@ -1,9 +1,10 @@
 class WorkerUnit:
-    def __init__(self, worker_unit, idabot, q_table):
+    def __init__(self, worker_unit, idabot):
         self.unit = worker_unit
         self.current_work_station = None
         self.current_work_position = None
         self.building = False
+        self.task = None
         self.idabot = idabot
 
     def set_idle(self):
@@ -54,3 +55,9 @@ class WorkerUnit:
         self.building = True
 
         self.unit.build(building_type=unit_type_id, position=location)
+
+    def set_task(self, task):
+        self.task = task
+
+    def get_task(self):
+        return self.task

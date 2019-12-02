@@ -90,7 +90,6 @@ class UnitManager:
                [unit for unit in self.military_units if unit.get_unit_type() == unit_type and unit.is_free()]
 
     def on_step(self, latest_units_list):
-
         """
         Updates all units states accordingly with our data-structures.
         In short terms, removing dead units and adding new.
@@ -153,6 +152,8 @@ class UnitManager:
                         known_units.append(unit_class(latest_unit, self.idabot, self.marauder_q_table))
                     elif latest_unit.unit_type.unit_typeid == UNIT_TYPEID.TERRAN_MARINE:
                         known_units.append(unit_class(latest_unit, self.idabot, self.marine_q_table))
+                    elif latest_unit.unit_type.unit_typeid == UNIT_TYPEID.TERRAN_SCV:
+                        known_units.append(unit_class(latest_unit, self.idabot))
 
 
     def update_dead_units(self, unit_list):
@@ -179,3 +180,6 @@ class UnitManager:
         :return:  If given unit is any worker unit type
         '''
         return any(unit.unit_type == unit_type for unit_type in self.WORKER_TYPES)
+
+    def command_unit(self, unit, task):
+        print("Commanding unit: ", unit.get_unit_type_id(), "to do task", task.task_type)

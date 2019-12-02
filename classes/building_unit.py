@@ -5,8 +5,10 @@ class BuildingUnit:
     Is one building.
     Use methods defined here over methods/variables of Unit
     """
-    def __init__(self, unit : Unit):
+
+    def __init__(self, unit: Unit):
         self.unit = unit
+        self.task = None
 
     def get_unit(self):
         return self.unit
@@ -31,3 +33,9 @@ class BuildingUnit:
 
     def get_pos(self):
         return self.unit.position
+
+    def set_task(self, task):
+        self.task = task
+
+    def get_task(self):
+        return self.task
