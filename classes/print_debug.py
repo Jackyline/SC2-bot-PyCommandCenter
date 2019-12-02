@@ -5,12 +5,12 @@ from library import *
 class PrintDebug:
     def __init__(self, ida_bot, building_manager: building_manager.BuildingManager,
                  unit_manager: unit_manager.UnitManager, scout_manager: scouting_manager.ScoutingManager,
-                 building_strategy: building_strategy.BuildingStrategy, on : bool):
+                , on : bool):
         self.ida_bot = ida_bot
         self.building_manager = building_manager
         self.unit_manager = unit_manager
         self.scout_manager = scout_manager
-        self.building_strategy = building_strategy
+        #self.building_strategy = building_strategy
         self.on = on
         self.print_on_unit = False
 
@@ -36,6 +36,9 @@ class PrintDebug:
             building_str, worker_str, military_str, self.scout_manager.print_debug())
         self.ida_bot.map_tools.draw_text_screen(0.01, 0.01, text)
 
+        # TODO:
+        # Add building strategy back again when torch installation finished
+        """ 
         # Building strategy prints:
         build_strat_text = "Building_Strategy: {}".format(self.building_strategy.action())
         self.ida_bot.map_tools.draw_text_screen(0.01, 0.25, build_strat_text)
@@ -43,6 +46,7 @@ class PrintDebug:
         # Game strategy prints:
         game_strat_text = "Building_Strategy: {}".format(self.ida_bot.strategy)
         self.ida_bot.map_tools.draw_text_screen(0.01, 0.50, game_strat_text)
+        """
 
         # Player base location, used to retrieve mineral fields and geysers.
         base_location = self.ida_bot.base_location_manager.get_player_starting_base_location(
