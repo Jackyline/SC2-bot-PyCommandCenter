@@ -5,9 +5,6 @@ import numpy
 import time
 import math
 
-rows = 6
-columns = 6
-
 
 class ScoutingManager:
 
@@ -17,8 +14,10 @@ class ScoutingManager:
         self.log = {}
         self.width_ratio = 0  # Is set in on_step when map is loaded
         self.height_ratio = 0  # Is set in on_step when map is loaded
+        self.columns = 0
+        self.rows = 0
         self.hmm = None  # Need map size, which means it has to be created in the on_step.
-                            
+
         self.neutral_units = [UnitType(UNIT_TYPEID.NEUTRAL_BATTLESTATIONMINERALFIELD, bot),
                               UnitType(UNIT_TYPEID.NEUTRAL_BATTLESTATIONMINERALFIELD750, bot),
                               UnitType(UNIT_TYPEID.NEUTRAL_COLLAPSIBLEROCKTOWERDEBRIS, bot),
@@ -66,23 +65,22 @@ class ScoutingManager:
         enemy_units = list(set(self.bot.get_all_units()) - set(self.bot.get_my_units()))
         map_width = self.bot.map_tools.width
         map_height = self.bot.map_tools.height
-        self.width_ratio = int(math.floor(float(map_width) / rows))
-        self.height_ratio = int(math.floor(float(map_height) / columns))
+        scv_sight_range = UnitType(UNIT_TYPEID.TERRAN_SCV, self.bot).sight_range
+        self.columns = int(math.floor(float(map_width)/scv_sight_range))
+        self.rows = int(math.floor(float(map_height)/scv_sight_range))
+        self.width_ratio = int(math.floor(float(map_width) / self.columns))
+        self.height_ratio = int(math.floor(float(map_height) / self.rows))
 
         # If nr of scouts is less than 2, ask for more.
         # This will be different in the end, CHANGE THIS LATER!
 
-        enemy_base = self.bot.base_location_manager.get_player_starting_base_location(
-            player_constant=PLAYER_ENEMY)
-
-
-        if len(self.scouts) <= 2:
+        if len(self.scouts) != 2:
             self.ask_for_scout(available_scouts)
 
         if self.hmm is None:
-            self.hmm = HiddenMarkovModel(columns, rows, self.bot.current_frame, map_height * map_width)
+            self.hmm = HiddenMarkovModel(self.columns, self.rows, self.bot.current_frame, map_height * map_width)
 
-        if self.bot.current_frame % 400 == 0:
+        if self.bot.current_frame % 600 == 0:
             self.check_for_units(enemy_units)
             self.hmm.on_step(self.log, self.bot.current_frame)
 
@@ -92,16 +90,19 @@ class ScoutingManager:
 
             # Nothing has been spotted
             if self.hmm.get_most_likely()[0] == 0.0:
-                if self.scouts[0].is_idle():
+                if self.scouts[0].goal is None:
                     self.send_away_one_scout_to_enemy()
             else:
-                if scout.is_idle() or scout.reach_goal():
+                if scout.reached_goal(self.bot.current_frame):
                     self.go_to_most_interested(scout)
 
     def send_away_one_scout_to_enemy(self):
+        """
+        In the beginning of the game, send one of the scouts to the enemy camp
+        """
         enemy_base = self.bot.base_location_manager.get_player_starting_base_location(
             player_constant=PLAYER_ENEMY)
-        self.scouts[0].set_goal(enemy_base.position, self.bot.current_frame)
+        self.scouts[0].set_goal(enemy_base.position)
 
     def ask_for_scout(self, available_scouts):
         for i in range(0, 2):
@@ -110,28 +111,36 @@ class ScoutingManager:
     def create_log(self):
         log = []
         # Height
-        for i in range(rows):
+        for i in range(self.rows):
             # Width
             log.append([])
-            for j in range(columns):
+            for j in range(self.columns):
                 log[i].append([])
         return log
 
-    def check_for_units(self, all_units):
+    def check_for_units(self, enemy_units):
+        """
+        Scans the map while the scouts is out exploring
+        :param enemy_units: The units spotted which belong to the enemy
+        """
         time_spotted = self.bot.current_frame
         if time_spotted not in self.log:
             self.log[time_spotted] = {}
-        for unit in all_units:
+        for unit in enemy_units:
             if unit.player == PLAYER_ENEMY and unit.unit_type not in self.neutral_units:
                 self.append_unit(unit, time_spotted)
 
     def append_unit(self, unit, time_spotted):
+        """
+        The map is divided into cells. By looking at the unit position, append it to the correct cell
+        :param unit: A unit which belongs to enemy
+        :param time_spotted: Current frame when the enemy was spotted
+        """
         x = unit.tile_position.x
         y = unit.tile_position.y
         x_ratio = math.floor(x / self.width_ratio)
-        y_ratio = math.floor(y / self.height_ratio)
+        y_ratio = self.rows - math.floor(y / self.height_ratio)
 
-        print("X AND Y IS: " + str(x) + "  " + str(y) + "   TRANSFORM BACK TO:  " + str(x_ratio*self.width_ratio) + " " + str(y_ratio*self.height_ratio))
         tile_position = str(x_ratio) + str(y_ratio)
 
         if tile_position not in self.log[time_spotted]:
@@ -139,12 +148,18 @@ class ScoutingManager:
         self.log[time_spotted][tile_position].append(unit.id)
 
     def go_to_most_interested(self, scout):
+        """
+        The HMM gives the most interesting point (Point with highetst probabilty of finding units).
+        The scout gets the point as a goal to travel to
+        :param scout: Scout unit.
+        """
         most_likely = self.hmm.get_most_likely()
         points = most_likely[1]
+        # Convert most likely cells to coordinates
         for i in range(len(points)):
-            print("MOST INTR POINT IS:    " + str(points[i][0] * self.width_ratio) + "  " + str((columns - points[i][1]) * self.height_ratio))
-            points[i] = Point2DI(points[i][0] * self.width_ratio, (columns - points[i][1]) * self.height_ratio)
-        scout.check_if_visited(points, self.bot.current_frame)
+            points[i] = Point2D((points[i][0]+0.5) * self.width_ratio, (points[i][1]+0.5) * self.height_ratio)
+        # Send to scout, check if been visited before of the scout
+        scout.check_if_visited(points, self.bot.current_frame, self.width_ratio, self.height_ratio, self.columns)
 
     def print_debug(self):
         last_captured_frame = '0'
@@ -158,3 +173,20 @@ class ScoutingManager:
                 output += "[" + position[0] + "]" + "[" + position[1] + "]" + " = " + str(len(units))
                 output += '\n'
         return output
+
+    def print_scout_backpack(self):
+
+        for scout in self.scouts:
+            backpack = ""
+            backpack += "goal: " + str(scout.get_goal()) + "\n"
+            backpack += "Visited: " + str(scout.visited) + "\n"
+            backpack += "Timestamps:  " + str(scout.frame_stamps)
+            self.bot.map_tools.draw_text(position=scout.get_unit().position, text=backpack)
+
+    def print_debug_prob(self):
+        trans_matrix = self.hmm.get_trans_matrix()
+        for i in range(0, self.columns):
+            for j in range(0, self.rows):
+                self.bot.map_tools.draw_text(position=Point2D((i + 0.5) * self.width_ratio, (j + 0.5) *
+                                                              self.height_ratio),
+                                             text="[" + str(i) + "]" + "[" + str(self.rows - j - 1) + "] = " + str(trans_matrix[self.rows - j - 1][i]))

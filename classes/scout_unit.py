@@ -1,5 +1,9 @@
 from library import *
 import random
+import math
+
+Point2D.distance = lambda self, other: math.sqrt((self.x - other.x) ** 2 + (self.y - other.y) ** 2)
+Point2D.equal = lambda self, other: self.x == other.x and self.y == other.y
 
 
 class ScoutUnit:
@@ -24,30 +28,55 @@ class ScoutUnit:
     def is_alive(self):
         return self.unit.is_alive
 
-    def reach_goal(self):
-        if self.unit.position.x - self.goal.x < 3 and self.unit.position.y - self.goal.y < 3:
+    def reached_goal(self, current_frame):
+        if self.goal is None:
             return True
         else:
-            return False
+            if self.unit.position.distance(self.goal) < 5:
+                self.visited.append(self.goal)
+                self.frame_stamps.append(current_frame)
+                return True
+            else:
+                return False
 
-    def set_goal(self, goal, current_frame):
-        if self.goal is not None:
-            self.visited.append(self.goal)
-            self.frame_stamps.append(current_frame)
-
+    def set_goal(self, goal):
         self.unit.move(goal)
         self.goal = goal
 
-    def check_if_visited(self, goals, current_frame):
+    def check_if_visited(self, goals, current_frame, width_ratio, height_ratio, columns):
         for point in goals:
-            if point not in self.visited:
-                self.set_goal(point, current_frame)
-                break
+            if not self.check_in_visited(point):
+                self.set_goal(point)
             else:
-                index = self.visited.index(point)
-                time_visited = self.frame_stamps[index]
-                if point == self.visited[0] and (current_frame - time_visited) < 200:
-                    goal = Point2DI(random.randrange(0, 6), random.randrange(0, 6))
-                    self.set_goal(goal, current_frame)
+                # Check how long time it was since first discovery and go there if it is been more than 2000 frames
+                # since last time
+                first_time_visited = self.frame_stamps[0]
+                if (current_frame - first_time_visited) > 2000:
+                    first_visited = self.visited[0]
+                    self.check_in_visited(point, True)
+                    self.set_goal(first_visited)
                 else:
-                    self.set_goal(point, current_frame)
+                    # If we just spotted our first discover recently, go random.
+                    print("RANDOM")
+                    goal = Point2D((random.randrange(2, 16)+0.5) * width_ratio, (random.randrange(2, 19)+0.5)
+                                   * height_ratio)
+                    self.set_goal(goal)
+                    """
+                    index = self.visited.index(point)
+                    time_visited = self.frame_stamps[index]
+                    print("POINT is:  " + str(point) + "   last time visited:  " + str(time_visited))"""
+
+    def check_in_visited(self, point, *args):
+        for visited in self.visited:
+            print("VISITED:  " + str(visited) + "  GOAL:  " + str(point))
+            if visited.equal(point):
+                # args is used to remove object, called from set_goal
+                if args:
+                    index = self.visited.index(visited)
+                    self.visited.remove(visited)
+                    self.frame_stamps.pop(index)
+                    print("HAS BEEN REMOVED")
+                    print("AFTER REMOVE:  " + str(self.visited))
+                print("HAS BEEN VISITED")
+                return True
+        return False

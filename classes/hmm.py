@@ -1,5 +1,6 @@
 import numpy as np
 import math
+import munkres
 
 abort_time = 2000  # Can be set to whatever feels right, after certain time remove object.
 average_speed = 0.2  # The SCV moves in this speed, which is a good average for all units.
@@ -18,53 +19,90 @@ class HiddenMarkovModel:
         self.add_from_log(log)
         self.update_time_matrix(time_frame, log)
         print("MATRIX IS:  ")
-        print(self.trans_matrix)
+        munkres.print_matrix(self.trans_matrix)
+
+    def get_trans_matrix(self):
+        """
+        Used to print on the screen for probability in scouting manager
+        :return: Transition matrix
+        """
+        return self.trans_matrix
 
     def get_most_likely(self):
+        """
+        Checks in the transition matrix were and what the highest probability is.
+        :return: The highest probability and the points were it's located.
+        """
         highest_prob = np.amax(self.trans_matrix)
         indices = np.where(self.trans_matrix == highest_prob)  # change name
         goals = list(zip(indices[0], indices[1]))
-        print("Best point is:   " + "[" + str(indices[0]) + "]" + "[" + str(indices[1]) + "]" + "   with prob:  " + str(highest_prob))
         return highest_prob, goals
 
     def create_time_matrix(self):
+        """
+        Create the time matrix, used when HMM is init
+        :return: A time matrix model
+        """
         time_matrix = []
-        for i in range(self.rows):
+        for i in range(self.columns):
             time_matrix.append([])
-            for j in range(self.columns):
+            for j in range(self.rows):
                 time_matrix[i].append([])
         return time_matrix
 
     def add_from_log(self, log):
+        """
+        Checks the log and appends new units spotted to the time matrix.
+        :param log: A log which contains were and what units has been spotted
+        """
         for frame, positions in log.items():
             for position, units in log[frame].items():
-                x_position = int(position[0])
-                y_position = int(position[1])
+                x_position = int(position[:len(position)//2])
+                y_position = int(position[len(position)//2:])
                 list_position = self.time_matrix[x_position][y_position]
-                n_units_frame = (frame, len(units))
+                # Added new line.
+                prob_units = self.calculate_probability_cell(x_position, y_position, len(units))
+
+                n_units_frame = (frame, prob_units)
                 if n_units_frame not in list_position:
                     list_position.append(n_units_frame)
 
     def update_time_matrix(self, current_frame, log):
-        for i in range(self.rows):
-            for j in range(self.columns):
+        """
+        Updates the time matrix, adds if new spotted to the transition matrix.
+        If the time since spotted has past is greater than the abort time,
+        then delete it from the log, time- and transition matrix
+        :param current_frame: The current time frame
+        :param log: A log which has all the enemy units spotted
+        """
+        for i in range(self.columns):
+            for j in range(self.rows):
                 map_cell = self.time_matrix[i][j]
                 if len(map_cell) > 0:
                     for n_units_frame in map_cell:
                         prob_units = self.calculate_probability_cell(i, j, n_units_frame[1])
-                        if current_frame - n_units_frame[0] > abort_time:
-                            if n_units_frame[0] in log:
-                                del log[n_units_frame[0]]
-                            map_cell.remove(n_units_frame)
-                            self.change_probability_trans_matrix(i, j, prob_units, n_units_frame[0], current_frame,
-                                                                 self.remove_probability_trans_matrix)
-                            # self.trans_matrix[self.columns - j - 1][i] = self.trans_matrix[self.columns - j - 1][i] - prob_units #CHANGE THIS
-                        else:
-                            self.change_probability_trans_matrix(i, j, prob_units, n_units_frame[0], current_frame,
-                                                                 self.add_probability_trans_matrix)
-                            # self.add_probabilily_trans_matrix(i, j, prob_units, n_units_frame[0], current_frame)
+                        if prob_units > 0.01:
+                            if current_frame - n_units_frame[0] > abort_time:
+                                if n_units_frame[0] in log:
+                                    del log[n_units_frame[0]]
+                                map_cell.remove(n_units_frame)
+                                self.change_probability_trans_matrix(i, j, prob_units, n_units_frame[0], current_frame,
+                                                                     self.remove_probability_trans_matrix)
+                            else:
+                                self.change_probability_trans_matrix(i, j, prob_units, n_units_frame[0], current_frame,
+                                                                     self.add_probability_trans_matrix)
+                                map_cell.remove(n_units_frame)
+
 
     def calculate_probability_cell(self, x_ratio, y_ratio, nr_units):
+        """
+        Calculates the probability by dividing the number of units to the
+        number of cells were the unit could have traveled
+        :param x_ratio: The x-position for the map cell
+        :param y_ratio: The y-position for the map cell
+        :param nr_units: Number of units spotted
+        :return: Probability of units
+        """
         possible_paths = 0
         # Count nr of cells
         for i in range(1, 3):
@@ -76,31 +114,60 @@ class HiddenMarkovModel:
 
     def change_probability_trans_matrix(self, x_cell_pos, y_cell_pos, prob_units, time_spotted, current_time,
                                         change_trans_matrix):
-        steps = max(0, (current_time - time_spotted) * average_speed // math.sqrt(self.cell_size))
+        """
+        Change probability in the given cell and it neighbours depending on the time since it was spotted.
+        :param x_cell_pos: The x-position of the map cell
+        :param y_cell_pos: The y-position of the map cell
+        :param prob_units: Probability of units being there
+        :param time_spotted: Time frame when the units were spotted
+        :param current_time: The current frame
+        :param change_trans_matrix: Function which adds or deletes to the transition matrix
+        """
 
+        print("Time spotted:  " + str(time_spotted) + "and since seen, time_lapsed:  " + str(current_time - time_spotted))
+        print("Cells to travel to:  " + str((current_time - time_spotted) * average_speed // math.sqrt(self.cell_size)))
+        steps = max(0, (current_time - time_spotted) * average_speed // math.sqrt(self.cell_size))
+        n_units_frame = (time_spotted, prob_units)
+        # self.time_matrix[x_cell_pos][y_cell_pos].remove(n_units_frame)
         # Split to possibilities
-        for i in range(1, 3):
-            for j in range(1, 3):
-                x = x_cell_pos + (i - 1)
-                y = y_cell_pos + (j - 1)
-                if self.check_in_range(x, y):
-                    change_trans_matrix(x, y, prob_units)
-                    if steps > 0:
-                        new_time = time_spotted * (math.sqrt(self.cell_size) / average_speed)
+        if steps >= 1:
+            for i in range(1, 4):
+                for j in range(1, 4):
+                    x = x_cell_pos + (i - 1)
+                    y = y_cell_pos + (j - 1)
+                    n_units_frame = (time_spotted, prob_units)
+                    if self.check_in_range(x, y):
+                        if n_units_frame not in self.time_matrix[x_cell_pos][y_cell_pos] \
+                                and change_trans_matrix is self.add_probability_trans_matrix:
+                            self.time_matrix[x_cell_pos][y_cell_pos].append(n_units_frame)
+                        change_trans_matrix(x, y, prob_units)
+                        new_time = time_spotted + (math.sqrt(self.cell_size) / average_speed)
                         prob_units = self.calculate_probability_cell(x, y, prob_units)
-                        self.change_probability_trans_matrix(x, y, prob_units, new_time, current_time,
-                                                             change_trans_matrix)
+                        if prob_units > 0.01:
+                            self.change_probability_trans_matrix(x, y, prob_units, new_time, current_time,
+                                                                 change_trans_matrix)
 
     def add_probability_trans_matrix(self, x, y, prob_units):
-        self.trans_matrix[self.columns - 1 - y][x] = self.trans_matrix[self.columns - 1 - y][x] + prob_units
+        if prob_units > 0.01:
+            self.trans_matrix[y][x] = self.trans_matrix[y][x] + prob_units
 
     def remove_probability_trans_matrix(self, x, y, prob_units):
-        self.trans_matrix[self.columns - 1 - y][x] = self.trans_matrix[self.columns - 1 - y][x] - prob_units
+        cell = self.trans_matrix[y][x]
+
+        cell = cell - prob_units
+        if cell < 0.001:
+            cell = 0
 
     def check_in_range(self, i, j):
-        if not (0 <= i <= self.rows - 1):
+        """
+        Checks if i and j is in valid range (Not out of bounds)
+        :param i: The x-position of the map cell
+        :param j: The y-position of the map cell
+        :return: Boolean if i and j is in valid range
+        """
+        if not (0 <= i <= self.columns - 1):
             return False
-        elif not (0 <= j <= self.columns - 1):
+        elif not (0 <= j <= self.rows - 1):
             return False
         else:
             return True
