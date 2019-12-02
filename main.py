@@ -50,14 +50,14 @@ class MyAgent(IDABot):
         ])
 
 
-        self.unit_manager.on_step(self.get_my_units())
+        self.unit_manager.on_step(self.get_all_units())
         self.scout_manager.on_step(self.get_my_units(), self.map_tools.width, self.map_tools.height)
         self.building_manager.on_step(self.get_my_units())
         self.print_debug.on_step()
 
 
 def main():
-    coordinator = Coordinator(r"C:\Users\dylan\Desktop\StarCraft II\Versions\Base69232\SC2_x64.exe")
+    coordinator = Coordinator(r"D:\StarCraft II\Versions\Base69232\SC2_x64.exe")
 
     bot1 = MyAgent()
     # bot2 = MyAgent()
