@@ -4,9 +4,9 @@ from typing import Optional
 from library import *
 from classes.resource_manager import ResourceManager
 from classes.unit_manager import UnitManager
-from classes.task_manager import TaskManager
+from classes.assignment_manager import AssignmentManager
 from classes.building_manager import BuildingManager
-from classes.task_generator import TaskGenerator
+from classes.task_manager import TaskManager
 
 
 class MyAgent(IDABot):
@@ -15,8 +15,8 @@ class MyAgent(IDABot):
         self.resource_manager = ResourceManager(self.minerals, self.gas, self.current_supply, self)
         self.unit_manager = UnitManager(self)
         self.building_manager = BuildingManager(self)
-        self.task_manager = TaskManager(unit_manager=self.unit_manager, building_manager=self.building_manager)
-        self.task_generator = TaskGenerator(self.task_manager)
+        self.task_manager = AssignmentManager(unit_manager=self.unit_manager, building_manager=self.building_manager)
+        self.task_generator = TaskManager(self.task_manager)
 
     def on_game_start(self):
         IDABot.on_game_start(self)

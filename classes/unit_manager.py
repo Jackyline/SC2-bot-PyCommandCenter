@@ -29,13 +29,6 @@ class UnitManager:
         # List of our abstracted military units
         self.military_units = []
 
-    def get_all_workers(self):
-        """
-        Gets all the worker units
-        :return list of all worker units. 
-        """
-        return self.worker_units
-
     def get_unit_of_type(self, unit_type):
         """
         Gets all the unit with the unit type.
@@ -98,3 +91,6 @@ class UnitManager:
         :return:  If given unit is any worker unit type
         '''
         return any(unit.unit_type == unit_type for unit_type in self.WORKER_TYPES)
+
+    def command_unit(self, unit, task):
+        print("Commanding unit: ", unit.get_unit_type_id(), "to do task", task.task_type)

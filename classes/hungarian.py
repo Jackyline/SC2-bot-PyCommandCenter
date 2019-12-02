@@ -1,6 +1,7 @@
 import numpy as np
 from munkres import print_matrix
 
+
 class Hungarian():
     """
     Implementation of the Hungarian algorithm for the maximization assignment problem.
@@ -40,7 +41,7 @@ class Hungarian():
         self.original_matrix_cols = n_tasks
         self.is_balanced = (n_units == n_tasks)
 
-        self.matrix = np.zeros((max_n, max_n)) # This way balanced matrix is balanced right away
+        self.matrix = np.zeros((max_n, max_n))  # This way balanced matrix is balanced right away
         for i in range(len(self.units)):
             for j in range(len(self.tasks)):
                 self.matrix[i][j] = utility_func(self.units[i], self.tasks[j])
@@ -55,18 +56,18 @@ class Hungarian():
         """
 
         # Save number of dummy row/cols to be removed from computed assignments
-        (a,b) = self.matrix.shape
+        (a, b) = self.matrix.shape
         self.original_matrix_rows = a
         self.original_matrix_cols = b
         self.is_balanced = (a == b)
 
         if not self.is_balanced:
-            (a,b) = self.matrix.shape
-            if a>b:
-                padding=((0,0),(0,a-b))
+            (a, b) = self.matrix.shape
+            if a > b:
+                padding = ((0, 0), (0, a - b))
             else:
-                padding=((0,b-a),(0,0))
-            self.matrix = np.pad(self.matrix,padding,mode='constant',constant_values=0)
+                padding = ((0, b - a), (0, 0))
+            self.matrix = np.pad(self.matrix, padding, mode='constant', constant_values=0)
 
     def compute_assignments(self, matrix):
         """
@@ -76,11 +77,12 @@ class Hungarian():
         :return: maximum matching from X to Y. dict<int, int>
         """
         assert len(matrix) != 0
-        
+
         self.matrix = matrix
         self.balance_matrix()
         self.n = len(self.matrix)
-        self.V = self.X = self.Y = set(range(self.n))  # using set<int> of interval (0, n) to represent X and Y. V is used when creating for loops on sets other than X or Y but of equal size/representation.
+        self.V = self.X = self.Y = set(range(
+            self.n))  # using set<int> of interval (0, n) to represent X and Y. V is used when creating for loops on sets other than X or Y but of equal size/representation.
         self.init_labels()
         self.matching = {}  # The matching is adict with node in X as key with matching node in Y as value
         self.inverse_matching = {}
@@ -95,12 +97,12 @@ class Hungarian():
         """
         if not self.is_balanced:
             if self.original_matrix_rows > self.original_matrix_cols:
-                self.matching = {k:v for k,v in self.matching.items() if (v < self.original_matrix_cols or self.original_matrix_rows < v)}  # Create copy of matching where all keys with dummy values have been removed
+                self.matching = {k: v for k, v in self.matching.items() if (
+                            v < self.original_matrix_cols or self.original_matrix_rows < v)}  # Create copy of matching where all keys with dummy values have been removed
 
             else:
                 for i in range(self.original_matrix_rows, self.original_matrix_cols):
-                    del self.matching[i] #  Remove dummy keys
-
+                    del self.matching[i]  # Remove dummy keys
 
     def init_labels(self):
         """
@@ -156,7 +158,7 @@ class Hungarian():
                  tuple(int, int, dict<int, int>)
         """
 
-        while(True):
+        while (True):
             # select edge (x,y) with x in S, y not in T and min slack
             ((val, x), y) = min([(self.minSlack[y], y) for y in self.Y if y not in T])
             assert x in S
@@ -171,7 +173,7 @@ class Hungarian():
                 T.add(y)
                 path[z] = x
 
-                for y in self.Y: # Update slack
+                for y in self.Y:  # Update slack
                     if not y in T and self.minSlack[y][0] > self.slack(z, y):
                         self.minSlack[y] = [self.slack(z, y), z]
 
@@ -200,8 +202,6 @@ class Hungarian():
         self.matching[x] = y
         self.inverse_matching[y] = x
         self.augment_matching(path[x], matched_y, path)
-
-
 
     def is_in_equality_graph(self, x, y):
         """

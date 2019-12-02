@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class TaskType(Enum):
     """
     TODO
@@ -12,3 +13,4 @@ class TaskType(Enum):
     DEFEND = 5
     TRAIN = 6
     NOTHING = 7
+    SCOUT = 8

@@ -4,6 +4,7 @@ class WorkerUnit:
         self.current_work_station = None
         self.current_work_position = None
         self.building = False
+        self.task = None
 
     def set_idle(self):
         self.current_work_station = None
@@ -53,3 +54,9 @@ class WorkerUnit:
         self.building = True
 
         self.unit.build(building_type=unit_type_id, position=location)
+
+    def set_task(self, task):
+        self.task = task
+
+    def get_task(self):
+        return self.task

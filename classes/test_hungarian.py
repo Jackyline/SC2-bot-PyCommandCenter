@@ -1,8 +1,10 @@
-from munkres import Munkres, print_matrix
-from random import randint
-import numpy as np
 import sys
+from random import randint
+
+import numpy as np
 from hungarian import *
+from munkres import Munkres, print_matrix
+
 
 class TestHungarian():
     """
@@ -27,7 +29,8 @@ class TestHungarian():
             rand_int1 = randint(1, max_problem_size)
             rand_int2 = randint(1, max_problem_size)
             self.matrices.append(np.random.randint(max_problem_size, size=(rand_int1, rand_int1)))  # balanced matrices
-            self.rectangular_matrices.append(np.random.randint(max_problem_size, size=(rand_int1, rand_int2)))  # unbalanced matrices
+            self.rectangular_matrices.append(
+                np.random.randint(max_problem_size, size=(rand_int1, rand_int2)))  # unbalanced matrices
 
     def pretty_print_assignments(self, assignments, matrix):
         """ Pretty prints assignments and it's profit
@@ -69,12 +72,12 @@ class TestHungarian():
         return self.convert_to_dict(indexes)
 
     def print_balanced_matrix(self, matrix, msg):
-        (a,b) = matrix.shape
-        if a>b:
-            padding=((0,0),(0,a-b))
+        (a, b) = matrix.shape
+        if a > b:
+            padding = ((0, 0), (0, a - b))
         else:
-            padding=((0,b-a),(0,0))
-        balanced_matrix = np.pad(matrix,padding,mode='constant',constant_values=0)
+            padding = ((0, b - a), (0, 0))
+        balanced_matrix = np.pad(matrix, padding, mode='constant', constant_values=0)
         print_matrix(balanced_matrix, msg=msg)
 
     def run_test(self):
@@ -92,15 +95,17 @@ class TestHungarian():
             self.h.pretty_print_assignments()
 
             print("Correct assignments:")
-            valid_assignments = self.compute_test_assignments(matrix) #  will balance matrices using munkres module
+            valid_assignments = self.compute_test_assignments(matrix)  # will balance matrices using munkres module
             valid_profit = self.pretty_print_assignments(valid_assignments, matrix)
 
             assert self.h.total_profit == valid_profit  # make sure total profit is correct
-            assert len(self.h.matching) == len(valid_assignments) # make sure that dummy row/columns have been removed
+            assert len(self.h.matching) == len(valid_assignments)  # make sure that dummy row/columns have been removed
+
 
 def main():
-    test = TestHungarian(max_problem_size = 50)
+    test = TestHungarian(max_problem_size=50)
     test.run_test()
+
 
 if __name__ == "__main__":
     main()
