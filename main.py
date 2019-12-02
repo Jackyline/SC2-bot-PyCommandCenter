@@ -4,63 +4,73 @@ from typing import Optional
 from library import *
 from classes.resource_manager import ResourceManager
 from classes.unit_manager import UnitManager
+from strategy.strategy import Strategy
 from classes.scouting_manager import ScoutingManager
 from classes.print_debug import PrintDebug
 from classes.building_manager import BuildingManager
-from classes.q_agent import QAgent
-from classes.stupid_agent import StupidAgent
-from classes.q_table import QTable
+from classes.building_strategy import BuildingStrategy
+
 
 class MyAgent(IDABot):
     def __init__(self):
         IDABot.__init__(self)
         self.resource_manager = ResourceManager(self.minerals, self.gas, self.current_supply, self)
         self.unit_manager = UnitManager(self)
+        self.strategy_network = Strategy()
         self.scout_manager = ScoutingManager(self)
         self.building_manager = BuildingManager(self)
-        self.print_debug = PrintDebug(self, self.building_manager, self.unit_manager, self.scout_manager, True)
+        self.building_strategy = BuildingStrategy()
+        self.print_debug = PrintDebug(self, self.building_manager, self.unit_manager, self.scout_manager,
+                                      self.building_strategy, True)
 
     def on_game_start(self):
         IDABot.on_game_start(self)
 
     def on_step(self):
         IDABot.on_step(self)
-        my = []
-        enemy = []
-        for unit in self.get_all_units():
-            if unit.player == PLAYER_SELF and unit.unit_type.is_combat_unit:
-                my.append(unit)
-            elif unit.player == PLAYER_ENEMY and unit.unit_type.is_combat_unit:
-                enemy.append(unit)
-        if my and enemy:
-            distance = self.map_tools.get_ground_distance(my[0].position, enemy[0].position)
-            attack_range = my[0].unit_type.attack_range
-            sight_range = my[0].unit_type.sight_range
-        """
         self.resource_manager.sync()
+        self.unit_manager.on_step(self.get_all_units())
+
+        # TODO: will be used from building_manager instead
+        command_center_types = [UnitType(UNIT_TYPEID.TERRAN_COMMANDCENTER, self),
+                                UnitType(UNIT_TYPEID.TERRAN_COMMANDCENTERFLYING, self)]
+        command_centers = [b for b in self.get_my_units() if b.unit_type in command_center_types]
+
+        # TODO: Is this how you get the actual seconds?
+        curr_seconds = self.current_frame // 24
+        # Minutes, Seconds
+        curr_time = int((curr_seconds) // 60) + (curr_seconds % 60) / 60
+        self.strategy = self.strategy_network.get_strategy([
+            len(self.unit_manager.worker_units),
+            len(self.unit_manager.military_units),
+            self.resource_manager.resources.minerals,
+            self.resource_manager.resources.gas,
+            len(command_centers),
+            curr_time
+        ])
+
+
         self.unit_manager.on_step(self.get_my_units())
         self.scout_manager.on_step(self.get_my_units(), self.map_tools.width, self.map_tools.height)
         self.building_manager.on_step(self.get_my_units())
         self.print_debug.on_step()
-        """
 
 
 def main():
-    coordinator = Coordinator(r"D:\StarCraft II\Versions\Base69232\SC2_x64.exe")
+    coordinator = Coordinator(r"C:\Users\dylan\Desktop\StarCraft II\Versions\Base69232\SC2_x64.exe")
 
-    bot1 = QAgent()
-    bot2 = StupidAgent()
-    #bot1 = StupidAgent()
-    #bot2 = MyAgent()
-    participant_1 = create_participants(Race.Terran, bot2)
-    participant_2 = create_participants(Race.Terran, bot1)
-    #participant_2 = create_computer(Race.Random, Difficulty.Easy)
+    bot1 = MyAgent()
+    # bot2 = MyAgent()
+
+    participant_1 = create_participants(Race.Terran, bot1)
+    # participant_2 = create_participants(Race.Terran, bot2)
+    participant_2 = create_computer(Race.Random, Difficulty.Easy)
 
     coordinator.set_real_time(False)
     coordinator.set_participants([participant_1, participant_2])
     coordinator.launch_starcraft()
 
-    path = os.path.join(os.getcwd(), "maps", "marauder-marine-random-spawn-concussive.SC2Map")
+    path = os.path.join(os.getcwd(), "maps", "InterloperTest.SC2Map")
     coordinator.start_game(path)
 
     while coordinator.update():
@@ -69,3 +79,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
