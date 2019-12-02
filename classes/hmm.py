@@ -35,7 +35,7 @@ class HiddenMarkovModel:
         """
         highest_prob = np.amax(self.trans_matrix)
         indices = np.where(self.trans_matrix == highest_prob)  # change name
-        goals = list(zip(indices[0], indices[1]))
+        goals = list(zip(indices[1], indices[0]))
         return highest_prob, goals
 
     def create_time_matrix(self):

@@ -93,7 +93,7 @@ class ScoutingManager:
                 if self.scouts[0].goal is None:
                     self.send_away_one_scout_to_enemy()
             else:
-                if scout.reached_goal(self.bot.current_frame):
+                if scout.reached_goal(self.bot.current_frame) or scout.get_unit.is_idle:
                     self.go_to_most_interested(scout)
 
     def send_away_one_scout_to_enemy(self):
@@ -157,7 +157,7 @@ class ScoutingManager:
         points = most_likely[1]
         # Convert most likely cells to coordinates
         for i in range(len(points)):
-            points[i] = Point2D((points[i][0]+0.5) * self.width_ratio, (points[i][1]+0.5) * self.height_ratio)
+            points[i] = Point2D((points[i][0]+0.5) * self.width_ratio, ((self.rows - points[i][1])+0.5) * self.height_ratio)
         # Send to scout, check if been visited before of the scout
         scout.check_if_visited(points, self.bot.current_frame, self.width_ratio, self.height_ratio, self.columns)
 
