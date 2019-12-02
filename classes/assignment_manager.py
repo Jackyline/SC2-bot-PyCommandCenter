@@ -176,8 +176,10 @@ class AssignmentManager:
         as input. Calculated assignments are then saved to the list assignments in the specific assignment_type class
         :param assignment_type: WorkerAssignments, Militaryassignments or BuildingAssignments.
         """
+
         if assignment_type.tasks:  # Make sure there are new tasks and units that can do them
             if len(assignment_type.get_all_units()) > 0:  # TODO byggnader? ska kanske kolla can produce?
+                print("KOKKOKOKOK")
                 assignments = self.calc_assignments(assignment_type)
                 assignment_type.update(assignments)
 

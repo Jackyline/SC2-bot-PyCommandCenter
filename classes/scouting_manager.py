@@ -20,7 +20,7 @@ class ScoutingManager:
         self.width_ratio = int(math.floor(float(width) / rows))
         self.height_ratio = int(math.floor(float(height) / columns))
         if 60.0 - (time.time() - self.start_time) % 60:
-            print("updating")
+            #print("updating")
             self.update_log(all_units)
 
     def update_log(self, all_units):
@@ -47,10 +47,10 @@ class ScoutingManager:
         y = unit.tile_position.y
         x_ratio = math.floor(x / self.width_ratio)
         y_ratio = math.floor(y / self.height_ratio)
-        print("X = " + str(x) +  "  Y  =  "+ str(y))
-        print("CHECKING UNIT:  " + str(unit.id) + "   LIST CONTAINS:  " + str(self.log[x_ratio][y_ratio]))
+        #print("X = " + str(x) +  "  Y  =  "+ str(y))
+        #print("CHECKING UNIT:  " + str(unit.id) + "   LIST CONTAINS:  " + str(self.log[x_ratio][y_ratio]))
         if unit.id not in self.log[x_ratio][y_ratio]:
-            print("ADDING")
+            #print("ADDING")
             self.log[x_ratio][y_ratio].append(unit.id)
 
     def print_debug(self):

@@ -19,6 +19,7 @@ class TaskManager:
         TODO
         """
         if self.first:
+            print("HEJJJJ")
             task1 = Task(TaskType.MINING, Point2DI(7, 7))
             task2 = Task(TaskType.GAS, Point2DI(7, 7))
             self.task_manager.add_task(task1)

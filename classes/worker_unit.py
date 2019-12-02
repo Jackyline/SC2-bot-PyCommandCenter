@@ -1,5 +1,5 @@
 class WorkerUnit:
-    def __init__(self, worker_unit, idabot, q_table):
+    def __init__(self, worker_unit, idabot):
         self.unit = worker_unit
         self.current_work_station = None
         self.current_work_position = None

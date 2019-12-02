@@ -152,6 +152,8 @@ class UnitManager:
                         known_units.append(unit_class(latest_unit, self.idabot, self.marauder_q_table))
                     elif latest_unit.unit_type.unit_typeid == UNIT_TYPEID.TERRAN_MARINE:
                         known_units.append(unit_class(latest_unit, self.idabot, self.marine_q_table))
+                    elif latest_unit.unit_type.unit_typeid == UNIT_TYPEID.TERRAN_SCV:
+                        known_units.append(unit_class(latest_unit, self.idabot))
 
 
     def update_dead_units(self, unit_list):
