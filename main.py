@@ -38,6 +38,8 @@ class MyAgent(IDABot):
     def on_step(self):
         IDABot.on_step(self)
         self.resource_manager.sync()
+        self.unit_manager.on_step(self.get_my_units())
+        self.scout_manager.on_step(self.unit_manager.get_units_of_type(UnitType(UNIT_TYPEID.TERRAN_SCV, self)))
         self.unit_manager.on_step(self.get_all_units())
 
         # TODO: will be used from building_manager instead
@@ -65,8 +67,10 @@ class MyAgent(IDABot):
         self.task_generator.on_step()
         self.task_manager.on_step()
 
-        self.scout_manager.on_step(self.get_my_units(), self.map_tools.width, self.map_tools.height)
+        self.scout_manager.on_step(self.get_my_units())
         self.building_manager.on_step(self.get_my_units())
+        self.scout_manager.print_debug_prob()
+        #self.scout_manager.print_scout_backpack()
         self.print_debug.on_step()
 
 
