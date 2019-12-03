@@ -220,17 +220,35 @@ def get_all_units(replay, second, player_id):
     units = {unit_type: 0 for unit_type in UNIT_TYPES}
 
     for event in replay.events:
-        if event.name in ["UnitBornEvent", "UnitBornEvent"] and event.control_pid == player_id and \
-                event.unit_type_name in UNIT_TYPES:
-            units[event.unit_type_name] += 1
-        elif event.name == "UnitDiedEvent" and event.unit in units and \
-                event.unit_type_name in UNIT_TYPES:
-            units[event.unit_type_name] -= 1
-
+        # Only look up to given time
         if event.second > second:
             break
 
+        if event.name in ["UnitBornEvent", "UnitBornEvent"] and event.control_pid == player_id and \
+                event.unit_type_name in units:
+            units[event.unit_type_name] += 1
+        elif event.name == "UnitDiedEvent" and event.unit in units and \
+                event.unit_type_name in units:
+            units[event.unit_type_name] -= 1
     return units
+
+
+def get_all_buildings(replay, second, player_id):
+    buildings = {building_type: 0 for building_type in ALL_BUILDINGS}
+    for event in replay.events:
+        # Only look up to given time
+        if event.second > second:
+            break
+        # UnitBornEvent
+        if event.name in ["UnitDoneEvent",
+                          "UnitBornEvent"] and event.unit.is_building and event.unit.owner.pid == player_id \
+                and event.unit.name in buildings:
+            buildings[event.unit.name] += 1
+        elif event.name == "UnitDiedEvent" and event.unit.is_building and event.unit.owner.pid == player_id \
+                and event.unit in buildings:
+            buildings[event.unit.name] -= 1
+
+    return buildings
 
 
 def building_counter(replay, second, player_id):
@@ -402,34 +420,31 @@ def process_replay_data(replay_path):
     # Game lengths in seconds
     length_of_game = replay.frames // 16
 
-    counter1 = {"Offensive": 0, "Defensive": 0, "Expansive": 0}
-    counter2 = {"Offensive": 0, "Defensive": 0, "Expansive": 0}
+    #TODO: Can remove this
+    counter = {"Offensive": 0, "Defensive": 0, "Expansive": 0}
 
     match_states = []
     for player in [player.pid for player in replay.players]:
         for time in range(0, length_of_game, DATA_COLLECTION_RATE):
-            current_amount_workers = worker_counter(replay, second=time, player_id=player)
-            current_amount_armies = army_counter(replay, second=time, player_id=player)
+            current_units = get_all_units(replay, second=time, player_id=player)
+            current_buildings = get_all_buildings(replay, second=time, player_id=player)
+
             current_minerals = get_current_minerals(replay, second=time, player_id=player)
             current_vespene = get_current_vespene(replay, second=time, player_id=player)
-            current_expansions = amount_expansions(replay, second=time, player_id=player)
 
             current_time = time // 60 + (time % 60 / 60)
 
             current_strategy = get_current_strategy(replay, second=time, player=player)
 
-            match_states.append({"state": {"workers": current_amount_workers,
-                                           "armies": current_amount_armies,
+            match_states.append({"state": {**current_buildings,
+                                           **current_units,
                                            "minerals": current_minerals,
                                            "vespene": current_vespene,
-                                           "expansions": current_expansions,
-                                           "time": current_time},
+                                           "time": time},
                                  "strategy": current_strategy})
 
-            strat1 = get_current_strategy(replay, time, player=1)
-            strat2 = get_current_strategy(replay, time, player=2)
-            counter1[strat1] += 1
-            counter2[strat2] += 1
+            #TODO: Can remove this
+            counter[current_strategy] += 1
 
     print("{} states in {}".format(len(match_states), replay_path))
 
@@ -462,6 +477,7 @@ def read_from_file(filename):
 
 def test():
     typ = set()
+    typ2 = set()
     for file in os.listdir("replays_p3/"):
         printed = False
         if file.endswith(".SC2Replay"):
@@ -477,19 +493,36 @@ def test():
                         typ.add(event.unit_type_name)
                         if not printed:
                             a = get_all_units(replay, 700, 1)
+                            b = get_all_buildings(replay, 700, 1)
                             print(a)
-                            for elem,v in a.items():
+                            print(b)
+                            for elem, v in a.items():
+                                print(elem, v)
+                            for elem, v in b.items():
                                 print(elem, v)
                             printed = True
 
+                    # UnitBornEvent
+                    if event.name in ["UnitDoneEvent",
+                                      "UnitBornEvent"] and event.unit.is_building and event.unit.owner.pid == 1 \
+                            and event.unit.name in ALL_BUILDINGS:
+                        typ2.add(event.unit.name)
+                break
+
+
+
             except Exception as e:
                 print("ERROR: {}".format(e))
-    print("ALL TYPES:")
+    print("ALL UNIT TYPES:")
     for elem in typ:
+        print(elem)
+
+    print("ALL BUILDING TYPES:")
+    for elem in typ2:
         print(elem)
 
 
 if __name__ == "__main__":
-    test()
-    # process_all_files(DATA_FILE)
+    #test()
+    process_all_files(DATA_FILE)
     pass
