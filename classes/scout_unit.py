@@ -7,11 +7,11 @@ Point2D.equal = lambda self, other: self.x == other.x and self.y == other.y
 
 
 class ScoutUnit:
-    def __init__(self, scout_unit):
+    def __init__(self, scout_unit, visited=[], frame_stamps=[]):
         self.unit = scout_unit
         self.goal = None
-        self.visited = []
-        self.frame_stamps = []
+        self.visited = visited
+        self.frame_stamps = frame_stamps
 
     def get_unit(self):
         return self.unit
@@ -21,6 +21,9 @@ class ScoutUnit:
 
     def get_visited(self):
         return self.visited
+
+    def get_frame_stamps(self):
+        return self.frame_stamps
 
     def is_idle(self):
         return self.unit.is_idle
@@ -57,26 +60,17 @@ class ScoutUnit:
                     self.set_goal(first_visited)
                 else:
                     # If we just spotted our first discover recently, go random.
-                    print("RANDOM")
-                    goal = Point2D((random.randrange(2, 16)+0.5) * width_ratio, (random.randrange(2, 19)+0.5)
+                    goal = Point2D((random.randrange(2, 16) + 0.5) * width_ratio, (random.randrange(2, 19) + 0.5)
                                    * height_ratio)
                     self.set_goal(goal)
-                    """
-                    index = self.visited.index(point)
-                    time_visited = self.frame_stamps[index]
-                    print("POINT is:  " + str(point) + "   last time visited:  " + str(time_visited))"""
 
     def check_in_visited(self, point, *args):
         for visited in self.visited:
-            print("VISITED:  " + str(visited) + "  GOAL:  " + str(point))
             if visited.equal(point):
                 # args is used to remove object, called from set_goal
                 if args:
                     index = self.visited.index(visited)
                     self.visited.remove(visited)
                     self.frame_stamps.pop(index)
-                    print("HAS BEEN REMOVED")
-                    print("AFTER REMOVE:  " + str(self.visited))
-                print("HAS BEEN VISITED")
                 return True
         return False

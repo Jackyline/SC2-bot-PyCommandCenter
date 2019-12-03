@@ -18,8 +18,7 @@ class HiddenMarkovModel:
     def on_step(self, log, time_frame):
         self.add_from_log(log)
         self.update_time_matrix(time_frame, log)
-        print("MATRIX IS:  ")
-        munkres.print_matrix(self.trans_matrix)
+        # munkres.print_matrix(self.trans_matrix)
 
     def get_trans_matrix(self):
         """
@@ -67,6 +66,7 @@ class HiddenMarkovModel:
                 if n_units_frame not in list_position:
                     list_position.append(n_units_frame)
 
+
     def update_time_matrix(self, current_frame, log):
         """
         Updates the time matrix, adds if new spotted to the transition matrix.
@@ -79,19 +79,20 @@ class HiddenMarkovModel:
             for j in range(self.rows):
                 map_cell = self.time_matrix[i][j]
                 if len(map_cell) > 0:
-                    for n_units_frame in map_cell:
+                    for k in range(len(map_cell) - 1, -1, -1):
+                        n_units_frame = map_cell[k]
                         prob_units = self.calculate_probability_cell(i, j, n_units_frame[1])
-                        if prob_units > 0.01:
-                            if current_frame - n_units_frame[0] > abort_time:
-                                if n_units_frame[0] in log:
-                                    del log[n_units_frame[0]]
-                                map_cell.remove(n_units_frame)
-                                self.change_probability_trans_matrix(i, j, prob_units, n_units_frame[0], current_frame,
-                                                                     self.remove_probability_trans_matrix)
-                            else:
-                                self.change_probability_trans_matrix(i, j, prob_units, n_units_frame[0], current_frame,
-                                                                     self.add_probability_trans_matrix)
-                                map_cell.remove(n_units_frame)
+                        if current_frame - n_units_frame[0] > abort_time:
+                            if n_units_frame[0] in log:
+                                del log[n_units_frame[0]]
+                            del map_cell[k]
+                            # self.change_probability_trans_matrix(i, j, prob_units, n_units_frame[0], current_frame,
+                            #                                    self.remove_probability_trans_matrix)
+                            self.remove_probability_trans_matrix(i, j, n_units_frame[1], n_units_frame)
+                        elif prob_units > 0.01:
+                            self.change_probability_trans_matrix(i, j, prob_units, n_units_frame[0], current_frame,
+                                                                 self.add_probability_trans_matrix)
+                            # del map_cell[k]
 
 
     def calculate_probability_cell(self, x_ratio, y_ratio, nr_units):
@@ -109,6 +110,9 @@ class HiddenMarkovModel:
             for j in range(1, 3):
                 if self.check_in_range(x_ratio + (i - 1), y_ratio + (j - 1)):
                     possible_paths += 1
+        # Check this later
+        if possible_paths is 0:
+            possible_paths = 1
         prob_unit = nr_units / possible_paths
         return prob_unit
 
@@ -124,39 +128,35 @@ class HiddenMarkovModel:
         :param change_trans_matrix: Function which adds or deletes to the transition matrix
         """
 
-        print("Time spotted:  " + str(time_spotted) + "and since seen, time_lapsed:  " + str(current_time - time_spotted))
-        print("Cells to travel to:  " + str((current_time - time_spotted) * average_speed // math.sqrt(self.cell_size)))
         steps = max(0, (current_time - time_spotted) * average_speed // math.sqrt(self.cell_size))
-        n_units_frame = (time_spotted, prob_units)
-        # self.time_matrix[x_cell_pos][y_cell_pos].remove(n_units_frame)
         # Split to possibilities
-        if steps >= 1:
-            for i in range(1, 4):
-                for j in range(1, 4):
-                    x = x_cell_pos + (i - 1)
-                    y = y_cell_pos + (j - 1)
-                    n_units_frame = (time_spotted, prob_units)
-                    if self.check_in_range(x, y):
-                        if n_units_frame not in self.time_matrix[x_cell_pos][y_cell_pos] \
-                                and change_trans_matrix is self.add_probability_trans_matrix:
-                            self.time_matrix[x_cell_pos][y_cell_pos].append(n_units_frame)
-                        change_trans_matrix(x, y, prob_units)
+        for i in range(1, 4):
+            for j in range(1, 4):
+                x = x_cell_pos + (i - 1)
+                y = y_cell_pos + (j - 1)
+                n_units_frame = (time_spotted, prob_units)
+                if self.check_in_range(x, y):
+                    change_trans_matrix(x, y, prob_units, n_units_frame)
+                    if steps >= 1:
                         new_time = time_spotted + (math.sqrt(self.cell_size) / average_speed)
                         prob_units = self.calculate_probability_cell(x, y, prob_units)
                         if prob_units > 0.01:
                             self.change_probability_trans_matrix(x, y, prob_units, new_time, current_time,
                                                                  change_trans_matrix)
 
-    def add_probability_trans_matrix(self, x, y, prob_units):
+    def add_probability_trans_matrix(self, x, y, prob_units, n_units_frame):
         if prob_units > 0.01:
-            self.trans_matrix[y][x] = self.trans_matrix[y][x] + prob_units
+            if n_units_frame not in self.time_matrix[x][y]:
+                self.time_matrix[x][y].append(n_units_frame)
+                self.trans_matrix[y][x] = self.trans_matrix[y][x] + prob_units
 
-    def remove_probability_trans_matrix(self, x, y, prob_units):
-        cell = self.trans_matrix[y][x]
-
-        cell = cell - prob_units
-        if cell < 0.001:
-            cell = 0
+    def remove_probability_trans_matrix(self, x, y, prob_units, n_units_frame):
+        # cell = self.trans_matrix[y][x]
+        #if n_units_frame in self.time_matrix[x][y]:
+        #    self.time_matrix[x][y].remove(n_units_frame)
+        self.trans_matrix[y][x] = self.trans_matrix[y][x] - prob_units
+        if self.trans_matrix[y][x] < 0.001:
+            self.trans_matrix[y][x] = 0
 
     def check_in_range(self, i, j):
         """
@@ -165,9 +165,9 @@ class HiddenMarkovModel:
         :param j: The y-position of the map cell
         :return: Boolean if i and j is in valid range
         """
-        if not (0 <= i <= self.columns - 1):
+        if not (2 <= i <= self.columns - 3):
             return False
-        elif not (0 <= j <= self.rows - 1):
+        elif not (3 <= j <= self.rows - 3):
             return False
         else:
             return True

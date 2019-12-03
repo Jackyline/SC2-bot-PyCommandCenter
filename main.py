@@ -28,7 +28,7 @@ class MyAgent(IDABot):
         self.scout_manager.on_step(self.unit_manager.get_units_of_type(UnitType(UNIT_TYPEID.TERRAN_SCV, self)))
         self.building_manager.on_step(self.get_my_units())
         self.scout_manager.print_debug_prob()
-        self.scout_manager.print_scout_backpack()
+        #self.scout_manager.print_scout_backpack()
         self.print_debug.on_step()
         #self.print_unit_info()
 

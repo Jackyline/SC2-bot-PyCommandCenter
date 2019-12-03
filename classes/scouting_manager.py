@@ -85,15 +85,17 @@ class ScoutingManager:
             self.hmm.on_step(self.log, self.bot.current_frame)
 
         for scout in self.scouts:
-            if not scout.is_alive:
+            if not scout.is_alive():
+                print("dead")
                 self.scouts.remove(scout)
+                self.ask_for_scout(available_scouts, scout)
 
             # Nothing has been spotted
             if self.hmm.get_most_likely()[0] == 0.0:
-                if self.scouts[0].goal is None:
+                if self.scouts[0].goal is None or scout.get_unit().is_idle:
                     self.send_away_one_scout_to_enemy()
             else:
-                if scout.reached_goal(self.bot.current_frame) or scout.get_unit.is_idle:
+                if scout.reached_goal(self.bot.current_frame) or scout.get_unit().is_idle:
                     self.go_to_most_interested(scout)
 
     def send_away_one_scout_to_enemy(self):
@@ -104,9 +106,12 @@ class ScoutingManager:
             player_constant=PLAYER_ENEMY)
         self.scouts[0].set_goal(enemy_base.position)
 
-    def ask_for_scout(self, available_scouts):
+    def ask_for_scout(self, available_scouts, scout=None):
         for i in range(0, 2):
-            self.scouts.append(ScoutUnit(available_scouts[i].unit))
+            if scout is None:
+                self.scouts.append(ScoutUnit(available_scouts[i].unit))
+            else:
+                self.scouts.append(ScoutUnit(available_scouts[i].unit, scout.get_visited(), scout.get_frame_stamps()))
 
     def create_log(self):
         log = []
@@ -127,7 +132,8 @@ class ScoutingManager:
         if time_spotted not in self.log:
             self.log[time_spotted] = {}
         for unit in enemy_units:
-            if unit.player == PLAYER_ENEMY and unit.unit_type not in self.neutral_units:
+            if unit.player == PLAYER_ENEMY and unit.unit_type.is_worker and \
+                    unit.unit_type not in self.neutral_units:
                 self.append_unit(unit, time_spotted)
 
     def append_unit(self, unit, time_spotted):
@@ -170,8 +176,12 @@ class ScoutingManager:
 
         if len(self.log.keys()) > 0:
             for position, units in self.log[list(self.log.keys())[-1]].items():
-                output += "[" + position[0] + "]" + "[" + position[1] + "]" + " = " + str(len(units))
+                output += "[" + position[:len(position)//2] + "]" + "[" + position[len(position)//2:] + "]" + " = " + str(len(units))
                 output += '\n'
+        if len(self.log.keys()) > 0:
+            last_captured = self.log[int(last_captured_frame)]
+            self.log.clear()
+            self.log[int(last_captured_frame)] = last_captured
         return output
 
     def print_scout_backpack(self):
