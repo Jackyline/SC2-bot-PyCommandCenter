@@ -7,6 +7,14 @@ import json
 import sc2reader
 
 """
+TODO:
+    * Get more inputs for training data
+    * Take opponent strategy as input
+    * Better classification of when expansive - when actually starting to build building and when done
+    * Make network take inputs backwards
+"""
+
+"""
 UpdateTargetUnitCommandEvent
 UpgradeCompleteEvent
 BasicCommandEvent
@@ -76,6 +84,28 @@ ALL_BUILDINGS = [
     "Reactor",
     "Barracks",
     "SupplyDepotLowered"
+]
+
+UNIT_TYPES = [
+    "AutoTurret",
+    "MULE",
+    "Medivac",
+    "Thor",
+    "Marauder",
+    "Battlecruiser",
+    "Reaper",
+    "WidowMine",
+    "Hellion",
+    "Raven",
+    "Marine",
+    "SiegeTank",
+    "SCV",
+    "VikingFighter",
+    "CommandCenter",
+    "Cyclone",
+    "Liberator",
+    "Banshee",
+    "Ghost",
 ]
 
 # All possible states of a terran command center
@@ -179,6 +209,23 @@ def get_units(replay, second, player_id, type_function):
             units.append(event.unit)
         elif event.name == "UnitDiedEvent" and event.unit in units:
             units.remove(event.unit)
+
+        if event.second > second:
+            break
+
+    return units
+
+
+def get_all_units(replay, second, player_id):
+    units = {unit_type: 0 for unit_type in UNIT_TYPES}
+
+    for event in replay.events:
+        if event.name in ["UnitBornEvent", "UnitBornEvent"] and event.control_pid == player_id and \
+                event.unit_type_name in UNIT_TYPES:
+            units[event.unit_type_name] += 1
+        elif event.name == "UnitDiedEvent" and event.unit in units and \
+                event.unit_type_name in UNIT_TYPES:
+            units[event.unit_type_name] -= 1
 
         if event.second > second:
             break
@@ -413,6 +460,36 @@ def read_from_file(filename):
         return json.loads(file.read())
 
 
+def test():
+    typ = set()
+    for file in os.listdir("replays_p3/"):
+        printed = False
+        if file.endswith(".SC2Replay"):
+            try:
+                path = os.path.abspath("{dir}/{file}".format(dir="replays_p3/", file=file))
+                replay = sc2reader.load_replay(
+                    path,
+                    load_map=True,
+                    load_level=4)
+                for event in replay.events:
+                    if event.name in ["UnitBornEvent",
+                                      "UnitBornEvent"] and event.control_pid == 1 and event.unit.is_army:
+                        typ.add(event.unit_type_name)
+                        if not printed:
+                            a = get_all_units(replay, 700, 1)
+                            print(a)
+                            for elem,v in a.items():
+                                print(elem, v)
+                            printed = True
+
+            except Exception as e:
+                print("ERROR: {}".format(e))
+    print("ALL TYPES:")
+    for elem in typ:
+        print(elem)
+
+
 if __name__ == "__main__":
-    process_all_files(DATA_FILE)
+    test()
+    # process_all_files(DATA_FILE)
     pass
