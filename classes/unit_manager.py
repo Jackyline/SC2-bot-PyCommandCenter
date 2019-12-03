@@ -1,6 +1,7 @@
 from classes.military_unit import MilitaryUnit
 from classes.worker_unit import WorkerUnit
 from classes.q_table import QTable
+from classes.coalitionstructure_generation import CoalitionstructureGenerator
 from library import *
 import math
 
@@ -42,6 +43,10 @@ class UnitManager:
 
         self.marauder_q_table = QTable(self.idabot, "marauder")
         self.marine_q_table = QTable(self.idabot, "marine")
+
+        #Keeps track of current coalition structure, structured as [[id1, id2, ...], [id1, id2...], ...]
+        self.csg = CoalitionstructureGenerator()
+        self.cs = None
 
     def get_info(self):
         '''
@@ -166,6 +171,24 @@ class UnitManager:
                 # current_unit.die()
                 print("TOTAL REWARD:",current_unit.total_reward )
                 unit_list.remove(current_unit)
+
+    def create_coalition(self, nr_coalitions):
+        '''
+        Tell csg to generate new coalitions from scratch.
+        :param nr_coalitions: How many coalitions to divide units into
+        :return: None, update internal state for coalitions (self.cs)
+        '''
+        # TODO: change this to something reasonable
+        info = {}
+        info["militaryUnits"] = {
+            military_type.get_unit_type(): len(self.get_units_of_type(military_type.get_unit_type()))
+            for military_type in self.military_units
+            if "militaryUnits" not in info
+               or military_type.get_unit_type() not in info["militaryUnits"]
+        }
+
+        self.cs = self.csg.create_coalition(info["militaryUnits"], nr_coalitions)
+
 
     def is_military_type(self, unit):
         '''

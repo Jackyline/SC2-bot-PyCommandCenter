@@ -3,7 +3,7 @@ from typing import Dict, Any, List
 from copy import deepcopy
 
 
-class CoalitionstructureGeneration:
+class CoalitionstructureGenerator:
     """
     Gjort:
     Kom på sätt att spara v, q, r listor så att det är mycket snabbare, blir fett weird med nestade listor
@@ -228,7 +228,7 @@ class CoalitionstructureGeneration:
 
 testing = False
 if testing:
-    csg = CoalitionstructureGeneration()
+    csg = CoalitionstructureGenerator()
     b = []
     dict_to_test = {"typ 1": [11, 12, 13], "typ 2": [21, 22, 23, 24], "typ 3": [31, 32, 33],
                     "typ 4": [41, 42, 43, 44, 45, 46, 47, 48]}#, "typ 5": [51, 52, 53, 54]}#, "typ 6": [61, 62, 63, 64]}
