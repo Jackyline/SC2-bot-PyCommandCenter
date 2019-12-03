@@ -1,4 +1,4 @@
-import strategy.strategy_model as strategy_model
+import strategy_model as strategy_model
 
 
 class Strategy():

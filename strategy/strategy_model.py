@@ -7,7 +7,7 @@ import torchvision
 
 import random
 
-from strategy.training_data import read_from_file
+from training_data import read_from_file
 
 BATCH_SIZE = 10
 EPOCHES = 10
@@ -23,13 +23,13 @@ MODAL_NAME = "strategy/network"
 class StrategyNet(nn.Module):
     def __init__(self):
         super(StrategyNet, self).__init__()
-        self.linear1 = nn.Linear(6, 9)
-        self.linear2 = nn.Linear(9, 6)
-        self.linear3 = nn.Linear(6, 3)
+        self.linear1 = nn.Linear(49, 32)
+        self.linear2 = nn.Linear(32, 16)
+        self.linear3 = nn.Linear(16, 3)
 
     def forward(self, input):
         output = torch.sigmoid(self.linear1(input))
-        output = self.linear2(output)
+        output = torch.sigmoid(self.linear2(output))
         output = self.linear3(output)
 
         return output
@@ -66,7 +66,7 @@ class StrategyNetwork():
             running_loss = 0.0
             for i, data in enumerate(training_data, 0):
 
-                state_array = [v for k, v in data["state"].items()]
+                state_array = [v for k, v in sorted(data["state"].items(), key=lambda x: x[0])]
 
                 inputs = torch.FloatTensor(state_array)
 
@@ -102,15 +102,20 @@ class StrategyNetwork():
 
         offensive = 0
         offensive_guessed = 0
+        correct_offensive_guessed = 0
 
         defensive = 0
         defensive_guessed = 0
+        correct_defensive_guessed = 0
 
         expansive = 0
         expansive_guessed = 0
+        correct_expansive_guessed = 0
+
         for i, data in enumerate(testing_data, 0):
 
-            state_array = [v for k, v in data["state"].items()]
+            # state_array = [v for k, v in data["state"].items()]
+            state_array = [v for k, v in sorted(data["state"].items(), key=lambda x: x[0])]
 
             inputs = torch.FloatTensor(state_array)
 
@@ -134,10 +139,18 @@ class StrategyNetwork():
             strat = output_list.index(max(output_list))
             if strat == 0:
                 offensive_guessed += 1
+                if actual_strategy == "Offensive":
+                    correct_offensive_guessed += 1
             if strat == 1:
                 defensive_guessed += 1
+
+                if actual_strategy == "Defensive":
+                    correct_defensive_guessed += 1
             if strat == 2:
                 expansive_guessed += 1
+
+                if actual_strategy == "Expansive":
+                    correct_expansive_guessed += 1
 
             # print(output_list, inputs.tolist(), target.tolist())
 
@@ -146,9 +159,12 @@ class StrategyNetwork():
                 correct += 1
 
         print("Percent correct classifications on test data: {}".format(correct / len(testing_data)))
-        print("offensive: {} out of {}".format(offensive_guessed, offensive))
-        print("expansive: {} out of {}".format(expansive_guessed, expansive))
-        print("defensive: {} out of {}".format(defensive_guessed, defensive))
+        print("offensive: {} out of {}. {} of them were correct.".format(offensive_guessed, offensive,
+                                                                         correct_offensive_guessed))
+        print("expansive: {} out of {}. {} of them were correct.".format(expansive_guessed, expansive,
+                                                                         correct_expansive_guessed))
+        print("defensive: {} out of {}. {} of them were correct.".format(defensive_guessed, defensive,
+                                                                         correct_defensive_guessed))
 
 
 def get_data():
@@ -163,6 +179,7 @@ def get_data():
 
     new_d = []
     for d in data:
+        # To balance amount of all states
         if d["strategy"] == "Defensive":
             if amount_defensive > amount_offensive:
                 continue
@@ -195,10 +212,13 @@ def create_network():
     net.train_network(training_data)
     net.test_network(testing_data)
 
-    net.save_network(MODAL_NAME)
+    # net.save_network(MODAL_NAME)
 
-#n = net.load_network("network")
-#net.test_network(testing_data)
+
+create_network()
+
+# n = net.load_network("network")
+# net.test_network(testing_data)
 
 """ SAVE MODAL
 PATH = './cifar_net.pth'
