@@ -23,6 +23,7 @@ class MyAgent(IDABot):
         self.unit_manager = UnitManager(self)
         self.strategy_network = Strategy()
         self.scout_manager = ScoutingManager(self)
+        self.building_manager = BuildingManager(self)
         # TODO:
         # Add building strategy back again when torch installation finished
         #self.building_strategy = BuildingStrategy()
@@ -43,7 +44,7 @@ class MyAgent(IDABot):
                                 UnitType(UNIT_TYPEID.TERRAN_COMMANDCENTERFLYING, self)]
         command_centers = [b for b in self.get_my_units() if b.unit_type in command_center_types]
 
-        # TODO: Is this how you get the actual seconds?
+        # TODO: Is this how you get the actual seconds?  svar nej
         curr_seconds = self.current_frame // 24
         # Minutes, Seconds
         curr_time = int((curr_seconds) // 60) + (curr_seconds % 60) / 60
