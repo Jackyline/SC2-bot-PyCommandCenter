@@ -11,9 +11,7 @@ from strategy.strategy import Strategy
 from classes.scouting_manager import ScoutingManager
 from classes.print_debug import PrintDebug
 from classes.building_manager import BuildingManager
-# TODO:
-# Add building strategy back again when torch installation finished
-#from classes.building_strategy import BuildingStrategy
+from classes.building_strategy import BuildingStrategy
 
 
 class MyAgent(IDABot):
@@ -29,10 +27,8 @@ class MyAgent(IDABot):
 
         self.scout_manager = ScoutingManager(self)
         self.building_manager = BuildingManager(self)
-        # TODO:
-        # Add building strategy back again when torch installation finished
-        #self.building_strategy = BuildingStrategy()
-        self.print_debug = PrintDebug(self, self.building_manager, self.unit_manager, self.scout_manager, True)
+        self.building_strategy = BuildingStrategy(self.resource_manager)
+        self.print_debug = PrintDebug(self, self.building_manager, self.unit_manager, self.scout_manager, self.building_strategy, True)
 
     def on_game_start(self):
         IDABot.on_game_start(self)
@@ -68,7 +64,7 @@ class MyAgent(IDABot):
 
 
 def main():
-    coordinator = Coordinator(r"C:\Users\hanne\Desktop\StarCraft II\Versions\Base69232\SC2_x64.exe")
+    coordinator = Coordinator(r"C:\Users\Dylan\Desktop\StarCraft II\Versions\Base69232\SC2_x64.exe")
 
     bot1 = MyAgent()
     # bot2 = MyAgent()

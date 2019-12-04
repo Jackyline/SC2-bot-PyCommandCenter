@@ -25,6 +25,9 @@ class ResourceManager():
     def get_supply(self):
         return self.resources.supply - self.reserved.supply
 
+    def get_max_supply(self):
+        return self.bot.max_supply
+
     def reserve(self, id, unit_type: UnitType):
         minerals = unit_type.mineral_price
         gas = unit_type.gas_price
