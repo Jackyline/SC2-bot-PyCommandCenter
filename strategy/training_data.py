@@ -451,23 +451,22 @@ def process_replay_data(replay_path):
 
             # TODO: Can remove this
             counter[current_strategy] += 1
-
-    print("{} states in {}".format(len(match_states), replay_path))
-
     return match_states
 
 
 def process_all_files(data_save_file):
     data = []
-    for file in os.listdir("replays_p3/"):
+    files = os.listdir("replays_p3/")
+    for i, file in enumerate(files):
         if file.endswith(".SC2Replay"):
             try:
                 path = os.path.abspath("{dir}/{file}".format(dir="replays_p3/", file=file))
-                data += process_replay_data(path)
-                write_to_file(data, data_save_file)
+                replay_data = process_replay_data(path)
+                print("{}/{} files processed. {} states in {}".format(i, len(files), len(replay_data), path))
+                data += replay_data
             except Exception as e:
                 print("ERROR: {}".format(e))
-
+    write_to_file(data, data_save_file)
     print(len(data))
 
 

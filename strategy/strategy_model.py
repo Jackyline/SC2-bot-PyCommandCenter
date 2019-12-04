@@ -11,8 +11,8 @@ from training_data import read_from_file
 
 BATCH_SIZE = 10
 EPOCHES = 10
-LEARNING_RATE = 0.0001
-MOMENTUM = 0.9
+LEARNING_RATE = 0.00001
+MOMENTUM = 0.5
 DATA_FILE = "data.txt"
 MODAL_NAME = "strategy/network"
 
@@ -24,13 +24,17 @@ class StrategyNet(nn.Module):
     def __init__(self):
         super(StrategyNet, self).__init__()
         self.linear1 = nn.Linear(49, 32)
-        self.linear2 = nn.Linear(32, 16)
-        self.linear3 = nn.Linear(16, 3)
+        self.linear2 = nn.Linear(32, 24)
+        self.linear3 = nn.Linear(24, 16)
+        self.linear4 = nn.Linear(16, 8)
+        self.linear5 = nn.Linear(8, 2)
 
     def forward(self, input):
-        output = torch.sigmoid(self.linear1(input))
-        output = torch.sigmoid(self.linear2(output))
+        output = torch.relu(self.linear1(input))
+        output = self.linear2(output)
         output = self.linear3(output)
+        output = torch.sigmoid(self.linear4(output))
+        output = self.linear5(output)
 
         return output
 
@@ -72,11 +76,9 @@ class StrategyNetwork():
 
                 actual_strategy = data["strategy"]
                 if actual_strategy == "Offensive":
-                    target = torch.FloatTensor([1, 0, 0])
-                elif actual_strategy == "Defensive":
-                    target = torch.FloatTensor([0, 1, 0])
-                else:  # actual_strategy == "Expansive":
-                    target = torch.FloatTensor([0, 0, 1])
+                    target = torch.FloatTensor([1, 0])
+                else:  # actual_strategy == "Defensive":
+                    target = torch.FloatTensor([0, 1])
 
                 # zero the parameter gradients
                 optimizer.zero_grad()
@@ -108,10 +110,6 @@ class StrategyNetwork():
         defensive_guessed = 0
         correct_defensive_guessed = 0
 
-        expansive = 0
-        expansive_guessed = 0
-        correct_expansive_guessed = 0
-
         for i, data in enumerate(testing_data, 0):
 
             # state_array = [v for k, v in data["state"].items()]
@@ -122,35 +120,28 @@ class StrategyNetwork():
             actual_strategy = data["strategy"]
 
             if actual_strategy == "Offensive":
-                target = torch.FloatTensor([1, 0, 0])
+                target = torch.FloatTensor([1, 0])
                 offensive += 1
-            elif actual_strategy == "Defensive":
-                target = torch.FloatTensor([0, 1, 0])
+            else:  #actual_strategy == "Defensive":
+                target = torch.FloatTensor([0, 1])
                 defensive += 1
-            else:  # actual_strategy == "Expansive":
-                target = torch.FloatTensor([0, 0, 1])
-                expansive += 1
 
             output = self.net(inputs)
 
             output_list = output.tolist()
             target_list = target.tolist()
 
-            strat = output_list.index(max(output_list))
-            if strat == 0:
+            network_guessed_strategy = output_list.index(max(output_list))
+            # Guessed Offensive
+            if network_guessed_strategy == 0:
                 offensive_guessed += 1
                 if actual_strategy == "Offensive":
                     correct_offensive_guessed += 1
-            if strat == 1:
+            # Guessed Defensive
+            elif network_guessed_strategy == 1:
                 defensive_guessed += 1
-
                 if actual_strategy == "Defensive":
                     correct_defensive_guessed += 1
-            if strat == 2:
-                expansive_guessed += 1
-
-                if actual_strategy == "Expansive":
-                    correct_expansive_guessed += 1
 
             # print(output_list, inputs.tolist(), target.tolist())
 
@@ -161,8 +152,6 @@ class StrategyNetwork():
         print("Percent correct classifications on test data: {}".format(correct / len(testing_data)))
         print("offensive: {} out of {}. {} of them were correct.".format(offensive_guessed, offensive,
                                                                          correct_offensive_guessed))
-        print("expansive: {} out of {}. {} of them were correct.".format(expansive_guessed, expansive,
-                                                                         correct_expansive_guessed))
         print("defensive: {} out of {}. {} of them were correct.".format(defensive_guessed, defensive,
                                                                          correct_defensive_guessed))
 
@@ -174,7 +163,8 @@ def get_data():
     # Randomize data order
     random.shuffle(data)
 
-    amount_offensive = 3000
+    # Use same amount of data points for each strategy
+    amount_offensive = 10000
     amount_defensive = 0
 
     new_d = []
@@ -190,7 +180,8 @@ def get_data():
 
     random.shuffle(new_d)
     data = new_d
-    print(len(data))
+
+    print("Amount of data points: {}".format(len(data)))
 
     percent_index = int(len(data) * 0.85)
     training_data = data[:percent_index]
