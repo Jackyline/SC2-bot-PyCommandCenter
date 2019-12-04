@@ -29,8 +29,8 @@ class MyAgent(IDABot):
         #self.building_strategy = BuildingStrategy()
         self.print_debug = PrintDebug(self, self.building_manager, self.unit_manager, self.scout_manager, True)
         self.building_manager = BuildingManager(self)
-        self.task_manager = AssignmentManager(unit_manager=self.unit_manager, building_manager=self.building_manager)
-        self.task_generator = TaskManager(self.task_manager)
+        self.assignment_manager = AssignmentManager(unit_manager=self.unit_manager, building_manager=self.building_manager)
+        self.task_manager = TaskManager(self.assignment_manager)
 
     def on_game_start(self):
         IDABot.on_game_start(self)
@@ -61,6 +61,8 @@ class MyAgent(IDABot):
         self.scout_manager.on_step(self.unit_manager.get_units_of_type(UnitType(UNIT_TYPEID.TERRAN_SCV, self)))
         self.building_manager.on_step(self.get_my_units())
         self.print_debug.on_step()
+        self.assignment_manager.on_step()
+        self.task_manager.on_step()
 
 
 def main():
