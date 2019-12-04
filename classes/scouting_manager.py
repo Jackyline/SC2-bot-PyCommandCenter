@@ -1,6 +1,8 @@
 from classes.hmm import HiddenMarkovModel
 from classes.scout_unit import ScoutUnit
 from library import *
+from classes.task import Task
+from classes.task_type import TaskType
 import math
 
 
@@ -104,11 +106,19 @@ class ScoutingManager:
         self.scouts[0].set_goal(enemy_base.position)
 
     def ask_for_scout(self, available_scouts, scout=None):
-        for i in range(0, 2):
+
+        for i in range(len(self.scouts)):
+            task_scout = Task(TaskType.SCOUT)
+            self.bot.task_manager.add_task(task_scout)
+
+
+        """
+        for i in range(0, len(available_scouts)):
             if scout is None:
                 self.scouts.append(ScoutUnit(available_scouts[i].unit))
-            else:
+            elif available_scouts[i].is_alive:
                 self.scouts.append(ScoutUnit(available_scouts[i].unit, scout.get_visited(), scout.get_frame_stamps()))
+        """
 
     def create_log(self):
         log = []
