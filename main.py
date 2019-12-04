@@ -27,7 +27,7 @@ class MyAgent(IDABot):
 
         self.scout_manager = ScoutingManager(self)
         self.building_manager = BuildingManager(self)
-        self.building_strategy = BuildingStrategy()
+        self.building_strategy = BuildingStrategy(self.resource_manager)
         self.print_debug = PrintDebug(self, self.building_manager, self.unit_manager, self.scout_manager, self.building_strategy, True)
 
     def on_game_start(self):
