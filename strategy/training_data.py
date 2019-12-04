@@ -366,7 +366,7 @@ def is_expansive(replay, second, player, time_offset):
     return True
 
 
-def get_current_strategy(replay, second, player):
+def get_current_strategy2(replay, second, player):
     # Offensive
     if is_offensive(replay, second, player, time_offset=OFFENSIVE_TIME_OFFSET):
         return "Offensive"
@@ -376,6 +376,12 @@ def get_current_strategy(replay, second, player):
     # Defensive
     else:
         return "Defensive"
+
+
+def get_current_strategy(replay, second, player):
+    if is_offensive(replay, second, player, time_offset=OFFENSIVE_TIME_OFFSET):
+        return "Offensive"
+    return "Defensive"
 
 
 def get_current_minerals(replay, second, player_id):
@@ -420,7 +426,7 @@ def process_replay_data(replay_path):
     # Game lengths in seconds
     length_of_game = replay.frames // 16
 
-    #TODO: Can remove this
+    # TODO: Can remove this
     counter = {"Offensive": 0, "Defensive": 0, "Expansive": 0}
 
     match_states = []
@@ -443,7 +449,7 @@ def process_replay_data(replay_path):
                                            "time": time},
                                  "strategy": current_strategy})
 
-            #TODO: Can remove this
+            # TODO: Can remove this
             counter[current_strategy] += 1
 
     print("{} states in {}".format(len(match_states), replay_path))
@@ -495,7 +501,7 @@ def test():
                         typ.add(event.unit.name)
                         if not printed:
                             a = get_all_units(replay, event.second, 1)
-                            #b = get_all_buildings(replay, 700, 1)
+                            # b = get_all_buildings(replay, 700, 1)
                             print(a["Marine"])
 
                             printed = False
@@ -519,6 +525,7 @@ def test():
     for elem in typ2:
         print(elem)
 
+
 def test2():
     for file in os.listdir("replays_p3/"):
         if file.endswith(".SC2Replay"):
@@ -533,15 +540,14 @@ def test2():
                 for i in range(50):
                     units = get_all_units(replay, time, 1)
                     print(units)
-                    time = i*20
+                    time = i * 20
                 break
             except Exception as e:
                 print("ERROR: {}".format(e))
 
 
-
 if __name__ == "__main__":
-    #test()
-    #test2()
+    # test()
+    # test2()
     process_all_files(DATA_FILE)
     pass
