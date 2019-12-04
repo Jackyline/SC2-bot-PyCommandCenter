@@ -17,6 +17,9 @@ class WorkerUnit:
     def get_id(self):
         return self.unit.id
 
+    def get_unit(self):
+        return self.unit
+
     def get_unit_type(self):
         return self.unit.unit_type
 
