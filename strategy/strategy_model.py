@@ -14,7 +14,7 @@ EPOCHES = 10
 LEARNING_RATE = 0.00001
 MOMENTUM = 0.5
 DATA_FILE = "data.txt"
-MODAL_NAME = "strategy/network"
+MODAL_NAME = "network"
 
 
 # output_classes = ("Offensive", "Defensive")
@@ -31,7 +31,7 @@ class StrategyNet(nn.Module):
 
     def forward(self, input):
         output = torch.relu(self.linear1(input))
-        output = self.linear2(output)
+        output = torch.relu(self.linear2(output))
         output = self.linear3(output)
         output = torch.sigmoid(self.linear4(output))
         output = self.linear5(output)
@@ -164,7 +164,7 @@ def get_data():
     random.shuffle(data)
 
     # Use same amount of data points for each strategy
-    amount_offensive = 10000
+    amount_offensive = 11000
     amount_defensive = 0
 
     new_d = []
@@ -203,7 +203,7 @@ def create_network():
     net.train_network(training_data)
     net.test_network(testing_data)
 
-    # net.save_network(MODAL_NAME)
+    net.save_network(MODAL_NAME)
 
 
 create_network()
