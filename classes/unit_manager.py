@@ -49,6 +49,8 @@ class UnitManager:
 
         self.marauder_q_table = QTable(self.idabot, "marauder")
         self.marine_q_table = QTable(self.idabot, "marine")
+        self.helion_q_table = QTable(self.idabot, "helion")
+        self.cyclone_q_table = QTable(self.idabot, "cyclone")
 
         # Keeps track of current coalition structure, structured as [[id1, id2, ...], [id1, id2...], ...]
         self.csg = CoalitionstructureGenerator()
@@ -129,6 +131,8 @@ class UnitManager:
 
         self.marauder_q_table.on_step()
         self.marine_q_table.on_step()
+        self.cyclone_q_table.on_step()
+        self.helion_q_table.on_step()
 
     def update_military_units(self):
         unit: MilitaryUnit
@@ -165,7 +169,10 @@ class UnitManager:
                         known_units.append(unit_class(latest_unit, self.idabot, self.marine_q_table))
                     elif latest_unit.unit_type.unit_typeid == UNIT_TYPEID.TERRAN_SCV:
                         known_units.append(unit_class(latest_unit, self.idabot))
-
+                    elif latest_unit.unit_type.unit_typeid == UNIT_TYPEID.TERRAN_CYCLONE:
+                        known_units.append(unit_class(latest_unit,self.idabot, self.cyclone_q_table))
+                    elif latest_unit.unit_type.unit_typeid == UNIT_TYPEID.TERRAN_HELLION:
+                        known_units.append(unit_class(latest_unit,self.idabot, self.helion_q_table))
     def update_dead_units(self, unit_list):
         '''
         Removes all units of given list that are not alive anymore
