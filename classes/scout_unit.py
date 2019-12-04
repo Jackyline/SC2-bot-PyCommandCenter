@@ -10,7 +10,7 @@ class ScoutUnit:
     def __init__(self, scout_unit, scout_manager):
         self.unit = scout_unit
         self.goal = None
-        self.manager = scout_manager
+        self.manager = scout_manager  # Keep track of frame_stamps and visited
 
     def get_unit(self):
         return self.unit
