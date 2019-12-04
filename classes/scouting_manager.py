@@ -10,12 +10,13 @@ class ScoutingManager:
 
     def __init__(self, bot: IDABot):
         self.bot = bot
-        self.scouts = []
         self.log = {}
         self.width_ratio = 0  # Is set in on_step when map is loaded
         self.height_ratio = 0  # Is set in on_step when map is loaded
         self.columns = 0
         self.rows = 0
+        self.frame_stamps = []
+        self.visited = []
         self.hmm = None  # Need map size, which means it has to be created in the on_step.
 
         self.neutral_units = [UnitType(UNIT_TYPEID.NEUTRAL_BATTLESTATIONMINERALFIELD, bot),
@@ -60,22 +61,21 @@ class ScoutingManager:
                               UnitType(UNIT_TYPEID.NEUTRAL_XELNAGATOWER, bot)
                               ]
 
-    def on_step(self, available_scouts):
+    def on_step(self):
         # Width and height needs to be done in step because of IDABot loads map slowly.
         enemy_units = list(set(self.bot.get_all_units()) - set(self.bot.get_my_units()))
         map_width = self.bot.map_tools.width
         map_height = self.bot.map_tools.height
         scv_sight_range = UnitType(UNIT_TYPEID.TERRAN_SCV, self.bot).sight_range
-        self.columns = int(math.floor(float(map_width)/scv_sight_range))
-        self.rows = int(math.floor(float(map_height)/scv_sight_range))
+        self.columns = int(math.floor(float(map_width) / scv_sight_range))
+        self.rows = int(math.floor(float(map_height) / scv_sight_range))
         self.width_ratio = int(math.floor(float(map_width) / self.columns))
         self.height_ratio = int(math.floor(float(map_height) / self.rows))
 
         # If nr of scouts is less than 2, ask for more.
-        # This will be different in the end, CHANGE THIS LATER!
 
-        if len(self.scouts) != 2:
-            self.ask_for_scout(available_scouts)
+        for i in range(2 - len(self.bot.unit_manager.scout_units)):
+            self.ask_for_scout()
 
         if self.hmm is None:
             self.hmm = HiddenMarkovModel(self.columns, self.rows, self.bot.current_frame, map_height * map_width)
@@ -84,14 +84,11 @@ class ScoutingManager:
             self.check_for_units(enemy_units)
             self.hmm.on_step(self.log, self.bot.current_frame)
 
-        for scout in self.scouts:
-            if not scout.is_alive():
-                self.scouts.remove(scout)
-                self.ask_for_scout(available_scouts, scout)
+        for scout in self.bot.unit_manager.scout_units:
 
             # Nothing has been spotted
             if self.hmm.get_most_likely()[0] == 0.0:
-                if self.scouts[0].goal is None or scout.get_unit().is_idle:
+                if self.bot.unit_manager.scout_units[0].goal is None or scout.get_unit().is_idle:
                     self.send_away_one_scout_to_enemy()
             else:
                 if scout.reached_goal(self.bot.current_frame) or scout.get_unit().is_idle:
@@ -103,22 +100,11 @@ class ScoutingManager:
         """
         enemy_base = self.bot.base_location_manager.get_player_starting_base_location(
             player_constant=PLAYER_ENEMY)
-        self.scouts[0].set_goal(enemy_base.position)
+        self.bot.unit_manager.scout_units[0].set_goal(enemy_base.position)
 
-    def ask_for_scout(self, available_scouts, scout=None):
-
-        for i in range(len(self.scouts)):
-            task_scout = Task(TaskType.SCOUT)
-            self.bot.task_manager.add_task(task_scout)
-
-
-        """
-        for i in range(0, len(available_scouts)):
-            if scout is None:
-                self.scouts.append(ScoutUnit(available_scouts[i].unit))
-            elif available_scouts[i].is_alive:
-                self.scouts.append(ScoutUnit(available_scouts[i].unit, scout.get_visited(), scout.get_frame_stamps()))
-        """
+    def ask_for_scout(self):
+        task_scout = Task(TaskType.SCOUT)
+        self.bot.assignment_manager.add_task(task_scout)
 
     def create_log(self):
         log = []
@@ -170,7 +156,7 @@ class ScoutingManager:
         points = most_likely[1]
         # Convert most likely cells to coordinates
         for i in range(len(points)):
-            points[i] = Point2D((points[i][0]+0.5) * self.width_ratio, ((self.rows - points[i][1])+0.5)
+            points[i] = Point2D((points[i][0] + 0.5) * self.width_ratio, ((self.rows - points[i][1]) + 0.5)
                                 * self.height_ratio)
         # Send to scout, check if been visited before of the scout
         scout.check_if_visited(points, self.bot.current_frame, self.width_ratio, self.height_ratio, self.columns)
@@ -184,7 +170,7 @@ class ScoutingManager:
 
         if len(self.log.keys()) > 0:
             for position, units in self.log[list(self.log.keys())[-1]].items():
-                output += "[" + position[:len(position)//2] + "]" + "[" + position[len(position)//2:] + "]"\
+                output += "[" + position[:len(position) // 2] + "]" + "[" + position[len(position) // 2:] + "]" \
                           + " = " + str(len(units))
                 output += '\n'
         if len(self.log.keys()) > 0:
@@ -199,7 +185,7 @@ class ScoutingManager:
         """
         Prints the backpack on the scout, containing visited point, timestamps and current goal
         """
-        for scout in self.scouts:
+        for scout in self.bot.unit_manager.scout_units:
             backpack = ""
             backpack += "goal: " + str(scout.get_goal()) + "\n"
             backpack += "Visited: " + str(scout.visited) + "\n"
