@@ -169,7 +169,7 @@ class UnitManager:
         for current_unit in unit_list:
             if not current_unit.is_alive():
                 # current_unit.die()
-                if current_unit.get_unit().unit_type.is_combat_unit():
+                if current_unit.get_unit().unit_type.is_combat_unit:
                     print("TOTAL REWARD:",current_unit.total_reward )
                 unit_list.remove(current_unit)
 
