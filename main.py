@@ -19,20 +19,18 @@ from classes.building_manager import BuildingManager
 class MyAgent(IDABot):
     def __init__(self):
         IDABot.__init__(self)
-        self.building_manager = BuildingManager(self)
         self.resource_manager = ResourceManager(self.minerals, self.gas, self.current_supply, self)
         self.unit_manager = UnitManager(self)
         self.strategy_network = Strategy()
-        self.assignment_manager = AssignmentManager(unit_manager=self.unit_manager,
-                                                    building_manager=self.building_manager)
-        self.task_manager = TaskManager(self.assignment_manager)
-
         self.scout_manager = ScoutingManager(self)
         self.building_manager = BuildingManager(self)
         # TODO:
         # Add building strategy back again when torch installation finished
         #self.building_strategy = BuildingStrategy()
         self.print_debug = PrintDebug(self, self.building_manager, self.unit_manager, self.scout_manager, True)
+        self.building_manager = BuildingManager(self)
+        self.task_manager = AssignmentManager(unit_manager=self.unit_manager, building_manager=self.building_manager)
+        self.task_generator = TaskManager(self.task_manager)
 
     def on_game_start(self):
         IDABot.on_game_start(self)
@@ -60,15 +58,13 @@ class MyAgent(IDABot):
         ])
 
         self.unit_manager.on_step(self.get_all_units())
-        self.scout_manager.on_step()
+        self.scout_manager.on_step(self.unit_manager.get_units_of_type(UnitType(UNIT_TYPEID.TERRAN_SCV, self)))
         self.building_manager.on_step(self.get_my_units())
         self.print_debug.on_step()
-        self.assignment_manager.on_step()
-        self.task_manager.on_step()
 
 
 def main():
-    coordinator = Coordinator(r"C:\Users\hanne\Desktop\StarCraft II\Versions\Base69232\SC2_x64.exe")
+    coordinator = Coordinator(r"D:\StarCraft II\Versions\Base69232\SC2_x64.exe")
 
     bot1 = MyAgent()
     # bot2 = MyAgent()

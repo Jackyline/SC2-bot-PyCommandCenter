@@ -179,6 +179,7 @@ class AssignmentManager:
 
         if assignment_type.tasks:  # Make sure there are new tasks and units that can do them
             if len(assignment_type.get_all_units()) > 0:  # TODO byggnader? ska kanske kolla can produce?
+                print("KOKKOKOKOK")
                 assignments = self.calc_assignments(assignment_type)
                 assignment_type.update(assignments)
 

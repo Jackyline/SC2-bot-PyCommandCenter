@@ -4,7 +4,7 @@ import os
 import math
 import json
 
-# import sc2reader
+import sc2reader
 
 """
 UpdateTargetUnitCommandEvent
