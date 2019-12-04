@@ -224,12 +224,12 @@ def get_all_units(replay, second, player_id):
         if event.second > second:
             break
 
-        if event.name in ["UnitBornEvent", "UnitBornEvent"] and event.control_pid == player_id and \
-                event.unit_type_name in units:
-            units[event.unit_type_name] += 1
-        elif event.name == "UnitDiedEvent" and event.unit in units and \
-                event.unit_type_name in units:
-            units[event.unit_type_name] -= 1
+        if event.name == "UnitBornEvent" and event.control_pid == player_id and \
+                event.unit.name in units:
+            units[event.unit.name] += 1
+        elif event.name == "UnitDiedEvent" and event.unit.name in units and \
+                event.unit.owner.pid == player_id:
+            units[event.unit.name] -= 1
     return units
 
 
@@ -245,7 +245,7 @@ def get_all_buildings(replay, second, player_id):
                 and event.unit.name in buildings:
             buildings[event.unit.name] += 1
         elif event.name == "UnitDiedEvent" and event.unit.is_building and event.unit.owner.pid == player_id \
-                and event.unit in buildings:
+                and event.unit.name in buildings:
             buildings[event.unit.name] -= 1
 
     return buildings
@@ -479,7 +479,7 @@ def test():
     typ = set()
     typ2 = set()
     for file in os.listdir("replays_p3/"):
-        printed = False
+        printed = True
         if file.endswith(".SC2Replay"):
             try:
                 path = os.path.abspath("{dir}/{file}".format(dir="replays_p3/", file=file))
@@ -490,17 +490,15 @@ def test():
                 for event in replay.events:
                     if event.name in ["UnitBornEvent",
                                       "UnitBornEvent"] and event.control_pid == 1 and event.unit.is_army:
-                        typ.add(event.unit_type_name)
+                        a = get_all_units(replay, event.second, 1)
+                        print(a)
+                        typ.add(event.unit.name)
                         if not printed:
-                            a = get_all_units(replay, 700, 1)
-                            b = get_all_buildings(replay, 700, 1)
-                            print(a)
-                            print(b)
-                            for elem, v in a.items():
-                                print(elem, v)
-                            for elem, v in b.items():
-                                print(elem, v)
-                            printed = True
+                            a = get_all_units(replay, event.second, 1)
+                            #b = get_all_buildings(replay, 700, 1)
+                            print(a["Marine"])
+
+                            printed = False
 
                     # UnitBornEvent
                     if event.name in ["UnitDoneEvent",
@@ -521,8 +519,29 @@ def test():
     for elem in typ2:
         print(elem)
 
+def test2():
+    for file in os.listdir("replays_p3/"):
+        if file.endswith(".SC2Replay"):
+            try:
+                path = os.path.abspath("{dir}/{file}".format(dir="replays_p3/", file=file))
+                replay = sc2reader.load_replay(
+                    path,
+                    load_map=True,
+                    load_level=4)
+
+                time = 0
+                for i in range(50):
+                    units = get_all_units(replay, time, 1)
+                    print(units)
+                    time = i*20
+                break
+            except Exception as e:
+                print("ERROR: {}".format(e))
+
+
 
 if __name__ == "__main__":
     #test()
+    #test2()
     process_all_files(DATA_FILE)
     pass
