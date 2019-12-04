@@ -8,8 +8,6 @@ class CoalitionstructureGenerator:
     Gjort:
     Kom på sätt att spara v, q, r listor så att det är mycket snabbare, blir fett weird med nestade listor
     Fixa så att vi kan skapa ett max antal koalitioner
-
-    Nästan gjorde:
     Integrera med boten, var ska funktionen kallas? ska csg klassen fördela specifika enheter? etc.
 
     Att göra (TODO):
@@ -25,6 +23,7 @@ class CoalitionstructureGenerator:
         self.q_list = None
         self.all_b = []
         self.nr_coal = 0
+        self.agent_types = []
         return
 
     #    def create_coalition(self, military_units: Dict[UNIT_TYPEID: List[Unit.id]]) -> List[List[Unit.id]]:
@@ -35,7 +34,9 @@ class CoalitionstructureGenerator:
         [[UnitId, unitId]], (UNIT_TYPEID, nr of units), ...]
         """
 
+        # Init stuff
         self.nr_coal = nr_coalitions
+        self.agent_types = military_units.keys()
 
         # Initialize type coalition with all units
         coalition = []
@@ -226,8 +227,7 @@ class CoalitionstructureGenerator:
         coalition[index] = start_value
 
 
-testing = False
-if testing:
+if __name__ == '__main__':
     csg = CoalitionstructureGenerator()
     b = []
     dict_to_test = {"typ 1": [11, 12, 13], "typ 2": [21, 22, 23, 24], "typ 3": [31, 32, 33],
