@@ -218,5 +218,6 @@ class UnitManager:
 
     def command_unit(self, unit, task):
         print("Commanding unit: ", unit.get_unit_type_id(), "to do task", task.task_type)
-        if task.task_type is TaskType.SCOUT and len(self.scout_units) < 2:
+
+        if task.task_type is TaskType.SCOUT:
             self.scout_units.append(ScoutUnit(unit.unit, self.idabot.scout_manager))
