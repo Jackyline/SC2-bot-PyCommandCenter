@@ -38,12 +38,12 @@ class MyAgent(IDABot):
     def on_step(self):
         IDABot.on_step(self)
         self.resource_manager.sync()
-        self.unit_manager.on_step(self.get_all_units())
         self.scout_manager.on_step()
+        self.unit_manager.on_step(self.get_all_units())
         self.building_manager.on_step(self.get_my_units())
         self.print_debug.on_step()
-        self.assignment_manager.on_step()
         self.task_manager.on_step()
+        self.assignment_manager.on_step()
 
 
 def main():

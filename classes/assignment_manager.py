@@ -19,32 +19,47 @@ class WorkerAssignments():
     def utility_func(self, worker, task):
         return 3
 
-    def get_all_units(self):
-        return self.unit_manager.worker_units
+    def get_available_units(self):
+        return [worker for worker in self.unit_manager.worker_units if worker not in self.unit_manager.scout_units]
 
     def toString(self):
         return "worker assignments"
 
     def update(self, new_assignments: dict):
         self.assignments.update(new_assignments)
-        for worker_unit in self.get_all_units():
+        for worker_unit in self.get_available_units():
             for task, assigned_unit in self.assignments.items():
                 if worker_unit == assigned_unit:
                     prev_task = worker_unit.get_task()
                     if prev_task != task:
                         worker_unit.set_task(task)
-                        # TODO utför jobbet också!
                         self.unit_manager.command_unit(worker_unit, task)
+                        print("tasks: ", len(self.assignments))
 
     def add_task(self, task):
         self.tasks.append(task)
 
     def add_already_assigned_tasks(self):
-        for key in self.assignments:
-            self.tasks.append(key)
+        self.remove_finished_tasks()
+        for task in self.assignments:
+            if task.task_type is not TaskType.SCOUT:
+                self.tasks.append(task)
 
+    def remove_finished_tasks(self):
+        to_remove = {}
+        for task, worker in self.assignments.items():
+            if worker.get_unit().is_idle or not worker.get_unit().is_alive:
+                to_remove[task] = worker
+        for task, worker in to_remove.items():
+            worker.set_task(None)
+            self.assignments.pop(task)
 
-class MilitaryAssignments():
+    def get_tasks(self):
+        self.remove_finished_tasks()
+        self.add_already_assigned_tasks()
+        return self.tasks
+
+class MilitaryAssignments:
     """
     TODO
     """
@@ -57,26 +72,25 @@ class MilitaryAssignments():
     def utility_func(self, group, task):
         return 5
 
-    def get_all_units(self):
-        return self.unit_manager.military_units
+    def get_available_units(self):
+        self.unit_manager.create_coalition(5)
+        return self.unit_manager.groups
 
     def toString(self):
         return "military assignments"
 
     def update(self, new_assignments: dict):
-        self.assignments.update(new_assignments)
-        for military_unit in self.get_all_units():
-            for task, assigned_unit in self.assignments:
-                if military_unit == assigned_unit:
-                    military_unit.set_task(task)
+        self.assignments.update(new_assignments) # TODO sätta self.assignments = new_Assignments istället? kommer nya grupper skapas varje gång funktionen kallas? isf behöver inte gamla hållas koll på
+        for group in self.get_available_units(): # TODO skapa group class?
+            for task, assigned_group in self.assignments:
+                if group == assigned_group:
+                    group.set_task(task) # TODO denna metod finns inte än
 
     def add_task(self, task):
         self.tasks.append(task)
 
-    def add_already_assigned_tasks(self):
-        for key in self.assignments:
-            self.tasks.append(key)
-
+    def get_tasks(self):
+        return self.tasks
 
 class BuildingAssignments:
     """
@@ -91,7 +105,7 @@ class BuildingAssignments:
     def utility_func(self, building, task):
         return 10
 
-    def get_all_units(self):
+    def get_available_units(self):
         return self.building_manager.buildings  # TODO kan antalet units förändras under en körning?
 
     def toString(self):
@@ -102,14 +116,15 @@ class BuildingAssignments:
 
     def update(self, new_assignments: dict):
         self.assignments = new_assignments
-        for building_unit in self.get_all_units():
+        for building_unit in self.get_available_units():
             for task, assigned_building in self.assignments:
                 if building_unit == assigned_building:
                     building_unit.set_task(task)
 
-    def add_already_assigned_tasks(self):
-        for key in self.assignments:
-            self.tasks.append(key)
+                    # TODO ta bort task från building när klar? eller behöver vi ens hålla koll på det?
+
+    def get_tasks(self):
+        return self.tasks
 
 
 class AssignmentManager:
@@ -156,17 +171,11 @@ class AssignmentManager:
         return assignments
 
     def calc_assignments(self, task_type):
-        """
-        TODO
-        :param task_type:
-        :return:
-        """
-        task_type.add_already_assigned_tasks()
-        matrix = self.generate_matrix(task_type.utility_func, task_type.get_all_units(), task_type.tasks)
+        matrix = self.generate_matrix(task_type.utility_func, task_type.get_available_units(), task_type.get_tasks())
         print_matrix(matrix, msg="Matrix generated for: " + task_type.toString())
         matching = self.hungarian.compute_assignments(matrix)
         self.hungarian.pretty_print_assignments()
-        assignments = self.convert_matching_to_assignments(matching, task_type.get_all_units(), task_type.tasks)
+        assignments = self.convert_matching_to_assignments(matching, task_type.get_available_units(), task_type.get_tasks())
         task_type.tasks.clear()
         return assignments
 
@@ -178,14 +187,11 @@ class AssignmentManager:
         """
 
         if assignment_type.tasks:  # Make sure there are new tasks and units that can do them
-            if len(assignment_type.get_all_units()) > 0:  # TODO byggnader? ska kanske kolla can produce?
+            if len(assignment_type.get_available_units()) > 0:  # TODO byggnader? ska kanske kolla can produce?
                 assignments = self.calc_assignments(assignment_type)
                 assignment_type.update(assignments)
 
     def on_step(self):
-        """
-        TODO
-        """
         # Update worker assignments
         self.update_assignments(self.worker_assignments)
 
@@ -204,7 +210,7 @@ class AssignmentManager:
             self.worker_assignments.add_task(task)
 
         # Tasks done by military units
-        elif task.task_type is TaskType.ATTACK:
+        elif task.task_type is TaskType.ATTACK or task.task_type is TaskType.DEFEND:
             self.military_assignments.add_task(task)
 
         # Tasks done by buildings
