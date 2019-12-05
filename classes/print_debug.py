@@ -13,7 +13,7 @@ class PrintDebug:
         self.building_strategy = building_strategy
         self.strategy_network = strategy_network
         self.on = on
-        self.print_on_unit = False
+        self.print_on_unit = True
 
     def on_step(self):
         if not self.on:
@@ -54,6 +54,8 @@ class PrintDebug:
         if not self.print_on_unit:
             return
 
+        """ ############# FINNS BUGG HÄR ###########
+    
         # Prints unit debug information on each unit
         units = list(self.ida_bot.get_my_units())
         for unit in units:
@@ -74,4 +76,10 @@ class PrintDebug:
         geysers = list(base_location.geysers)
         for geyser in geysers:
             self.ida_bot.map_tools.draw_text(geyser.position, " %s id: %d" % (str(geyser.unit_type), geyser.id))
-
+    
+        """
+        for worker in self.unit_manager.worker_units:
+            task = worker.get_task()
+            if task is not None:
+                task = task.task_type
+            self.ida_bot.map_tools.draw_text(position=worker.get_unit().position, text=str(task))
