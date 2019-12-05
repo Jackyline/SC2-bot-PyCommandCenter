@@ -28,7 +28,7 @@ class BuildingStrategy:
         self.resource_manager = resource_manager
         self.observations = []
         self.model = Net()
-        self.model.load_state_dict(torch.load('./buildingstrategy/model_3_epochs.pth'))
+        self.model.load_state_dict(torch.load('./buildingstrategy/model_final.pth'))
         self.model.eval()
         #TODO fix this in other file
         self.actions = {}
@@ -66,7 +66,13 @@ class BuildingStrategy:
         # Hardcoded input atm
         predicted = self.model(v)
         predicted_top_three = np.argpartition(predicted.detach().numpy(), -3)[-3:]
-        action = random.choice(predicted_top_three)
+        random_choice = random.randrange(1,100)
+        if random_choice <= 70:
+            action = predicted_top_three[2]
+        elif random_choice <= 90:
+            action = predicted_top_three[1]
+        else:
+            action = predicted_top_three[0]
 
         return action_name[self.actions[str(action)]]
 
