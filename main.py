@@ -32,11 +32,6 @@ class MyAgent(IDABot):
         self.resource_manager.sync()
         self.unit_manager.on_step(self.get_all_units())
 
-        # TODO: will be used from building_manager instead
-        command_center_types = [UnitType(UNIT_TYPEID.TERRAN_COMMANDCENTER, self),
-                                UnitType(UNIT_TYPEID.TERRAN_COMMANDCENTERFLYING, self)]
-        command_centers = [b for b in self.get_my_units() if b.unit_type in command_center_types]
-
         strategy = self.strategy_network.get_strategy()
         print(strategy)
 
