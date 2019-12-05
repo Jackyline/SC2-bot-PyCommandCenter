@@ -159,8 +159,7 @@ class CoalitionstructureGenerator:
         :param coalition: coalition type to be evaluated
         :return: int
         """
-        # TODO: Testa v med minsta koalition för olika antal av varje typ t.ex. [5, 3, 3]
-        #  bästa borde vara [1, 1, 1], [2, 1, 1], [2, 1, 1]?
+
         value = 0
         for nr_type in coalition:
             c = 1

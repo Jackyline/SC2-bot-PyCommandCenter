@@ -4,15 +4,7 @@ import os
 import math
 import json
 
-# import sc2reader
-
-"""
-TODO:
-    * Get more inputs for training data
-    * Take opponent strategy as input
-    * Better classification of when expansive - when actually starting to build building and when done
-    * Make network take inputs backwards
-"""
+#import sc2reader
 
 """
 UpdateTargetUnitCommandEvent
