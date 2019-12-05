@@ -58,7 +58,8 @@ class MilitaryAssignments():
         return 5
 
     def get_all_units(self):
-        return self.unit_manager.military_units
+        self.unit_manager.create_coalition(5)
+        return self.unit_manager.groups
 
     def toString(self):
         return "military assignments"

@@ -60,7 +60,7 @@ class PrintDebug:
         for unit in units:
             # Find what coalition the unit is in (if any) and add that to the print
             coalition = -1
-            for i, coalition in enumerate(self.unit_manager.cs):
+            for i, coalition in enumerate(self.unit_manager.groups):
                 if unit in coalition:
                     coalition = i
                     break

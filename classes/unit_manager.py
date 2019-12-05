@@ -46,7 +46,7 @@ class UnitManager:
 
         #Keeps track of current coalition structure, structured as [[id1, id2, ...], [id1, id2...], ...]
         self.csg = CoalitionstructureGenerator()
-        self.cs = None
+        self.groups = None
 
     def get_info(self):
         '''
@@ -188,7 +188,7 @@ class UnitManager:
                or military_type.get_unit_type() not in info["militaryUnits"]
         }
 
-        self.cs = self.csg.create_coalition(info["militaryUnits"], nr_coalitions)
+        self.groups = self.csg.create_coalition(info["militaryUnits"], nr_coalitions)
 
 
     def is_military_type(self, unit):
