@@ -9,6 +9,7 @@ from classes.scouting_manager import ScoutingManager
 from classes.print_debug import PrintDebug
 from classes.building_manager import BuildingManager
 from classes.building_strategy import BuildingStrategy
+from strategy.training_data import ALL_BUILDINGS, UNIT_TYPES
 
 
 class MyAgent(IDABot):
@@ -16,7 +17,7 @@ class MyAgent(IDABot):
         IDABot.__init__(self)
         self.resource_manager = ResourceManager(self.minerals, self.gas, self.current_supply, self)
         self.unit_manager = UnitManager(self)
-        self.strategy_network = Strategy()
+        self.strategy_network = Strategy(self)
         self.scout_manager = ScoutingManager(self)
         self.building_manager = BuildingManager(self)
         self.building_strategy = BuildingStrategy()
@@ -36,20 +37,8 @@ class MyAgent(IDABot):
                                 UnitType(UNIT_TYPEID.TERRAN_COMMANDCENTERFLYING, self)]
         command_centers = [b for b in self.get_my_units() if b.unit_type in command_center_types]
 
-        # TODO: Is this how you get the actual seconds?
-        curr_seconds = self.current_frame // 24
-        # Minutes + Seconds
-        curr_time = int((curr_seconds) // 60) + (curr_seconds % 60) / 60
-        strategy = self.strategy_network.get_strategy([
-            len(self.unit_manager.worker_units),
-            len(self.unit_manager.military_units),
-            self.resource_manager.resources.minerals,
-            self.resource_manager.resources.gas,
-            len(command_centers),
-            curr_time
-        ])
+        strategy = self.strategy_network.get_strategy()
         print(strategy)
-
 
         self.unit_manager.on_step(self.get_my_units())
         self.scout_manager.on_step(self.get_my_units(), self.map_tools.width, self.map_tools.height)
@@ -58,7 +47,7 @@ class MyAgent(IDABot):
 
 
 def main():
-    coordinator = Coordinator(r"C:\Users\dylan\Desktop\StarCraft II\Versions\Base69232\SC2_x64.exe")
+    coordinator = Coordinator(r"C:\Users\Ceder\Documents\StarCraft II\Versions\Base69232\SC2_x64.exe")
 
     bot1 = MyAgent()
     # bot2 = MyAgent()
