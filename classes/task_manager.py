@@ -18,8 +18,8 @@ class TaskManager:
         """
         TODO
         """
+        """
         if self.first:
-            print("HEJJJJ")
             task1 = Task(TaskType.MINING, Point2DI(7, 7))
             task2 = Task(TaskType.GAS, Point2DI(7, 7))
             self.task_manager.add_task(task1)
@@ -33,7 +33,7 @@ class TaskManager:
             self.done = True
 
         self.second = True
-
+        """
     def remove_finished_assignments(self):
         pass
 

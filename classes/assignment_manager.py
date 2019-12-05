@@ -179,7 +179,6 @@ class AssignmentManager:
 
         if assignment_type.tasks:  # Make sure there are new tasks and units that can do them
             if len(assignment_type.get_all_units()) > 0:  # TODO byggnader? ska kanske kolla can produce?
-                print("KOKKOKOKOK")
                 assignments = self.calc_assignments(assignment_type)
                 assignment_type.update(assignments)
 
@@ -201,7 +200,7 @@ class AssignmentManager:
         Adds a task to the UNIT_assignment, where UNIT can be worker, military or building, based on the task_type of the task
         """
         # Tasks done by workers
-        if task.task_type is TaskType.MINING or task.task_type is TaskType.GAS or task.task_type is TaskType.BUILD:
+        if task.task_type is TaskType.MINING or task.task_type is TaskType.GAS or task.task_type is TaskType.BUILD or task.task_type is TaskType.SCOUT:
             self.worker_assignments.add_task(task)
 
         # Tasks done by military units

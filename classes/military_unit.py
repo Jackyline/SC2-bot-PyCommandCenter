@@ -1,5 +1,6 @@
 from library import *
-from  classes.state_and_reward import get_state, get_reward, get_state_marauder, get_state_marine
+from  classes.state_and_reward import get_state, get_reward, get_state_marauder, get_state_marine, get_state_hellion, \
+    get_state_cyclone
 from classes.q_table import QTable
 import random
 import copy
@@ -23,7 +24,7 @@ class MilitaryUnit:
 
         self.in_combat = False # A unit is in combat if it is within 10 distance of any enemy units
         self.target = None
-        self.attacked = False
+        self.attacked = False # was the last action an attack?
         self.hp = {}  # {unit: hp}  # used to compare hp of units between two ticks
 
         # Q-learning variables
@@ -45,10 +46,14 @@ class MilitaryUnit:
         type_id = self.get_unit_type_id()
         # Specifika variabler för olika enheter
         if type_id == UNIT_TYPEID.TERRAN_MARINE:
-            self.attack_animation_offset = 5
+            self.attack_animation_offset = 1
         elif type_id == UNIT_TYPEID.TERRAN_MARAUDER:
             self.concussive_shells = True  # remove comment when concussive_shells are researched
-            self.attack_animation_offset = 7
+            self.attack_animation_offset = 6
+        elif type_id == UNIT_TYPEID.TERRAN_HELLION:
+            self.attack_animation_offset = 0
+        elif type_id == UNIT_TYPEID.TERRAN_CYCLONE:
+            self.attack_animation_offset = 0
 
 
     def on_step(self, e_in_sight, enemies_that_can_attack, allies_in_sight, enemies_in_range):
@@ -61,12 +66,15 @@ class MilitaryUnit:
         if not self.in_combat:
             if self.idabot.current_frame > self.action_end_frame:
                 self.update_in_sight(e_in_sight, enemies_that_can_attack, allies_in_sight, enemies_in_range)
-        elif self.idabot.current_frame >= self.action_end_frame:
+
+        elif self.attacked and self.get_weapon_cooldown() == 0:
+            self.action_end_frame += 1
+
+        elif self.idabot.current_frame > self.action_end_frame:
             self.in_combat_on_step(e_in_sight, enemies_that_can_attack, allies_in_sight, enemies_in_range)
+
         elif self.attacked and self.get_weapon_cooldown() > 0 and len(e_in_sight) > 0:
             self.retreat_action()
-        elif self.get_weapon_cooldown() == 0:
-            self.action_end_frame += 1
 
     def in_combat_on_step(self, e_in_sight, enemies_that_can_attack, allies_in_sight, enemies_in_range):
         """
@@ -79,10 +87,10 @@ class MilitaryUnit:
         """
         self.attacked = False
         reward = get_reward(self.hp)  # reward must be calculated before self.hp is updated (which happens in update_in_sight())
-        if self.get_weapon_cooldown() == 0:
-            reward -= 5
+        #if self.get_weapon_cooldown() == 0: # This is to give the unit a little more incentive to attack
+            #reward -= 5
 
-        self.total_reward += reward
+        self.total_reward += reward # To keep track of the total reward for debugging putposes
         self.update_in_sight(e_in_sight, enemies_that_can_attack, allies_in_sight, enemies_in_range)
 
         if not self.in_combat: # If unit was in comnbat but no longer is
@@ -102,10 +110,12 @@ class MilitaryUnit:
 
 
         if action_to_take == 0:
+            #print("attack")
             self.attack_action()
             self.attacked = True
             self.action_end_frame = self.idabot.current_frame + self.attack_animation_offset
         elif action_to_take == 1:
+            #print("retreat")
             self.retreat_action()
             self.action_end_frame = self.idabot.current_frame
 
@@ -157,9 +167,11 @@ class MilitaryUnit:
         if self.get_unit_type_id() == UNIT_TYPEID.TERRAN_MARAUDER:
             return get_state_marauder(health, on_cooldown, distance_to_closest_enemy, enemies_that_can_attack, allies, enemies, self.concussive_shells)
         elif self.get_unit_type_id() == UNIT_TYPEID.TERRAN_MARINE:
-            return get_state_marine(health, on_cooldown, distance_to_closest_enemy)
-        else:
-            return get_state(health, on_cooldown, distance_to_closest_enemy, enemies, allies)
+            return get_state_marine(health, on_cooldown, distance_to_closest_enemy, enemies_that_can_attack, allies, enemies)
+        elif self.get_unit_type_id() == UNIT_TYPEID.TERRAN_HELLION:
+             return get_state_hellion(health, on_cooldown, distance_to_closest_enemy, enemies_that_can_attack, allies, enemies)
+        elif self.get_unit_type_id() == UNIT_TYPEID.TERRAN_CYCLONE:
+            return get_state_cyclone(health, on_cooldown, distance_to_closest_enemy, enemies_that_can_attack, allies, enemies)
 
     def attack_action(self):
         """

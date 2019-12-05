@@ -7,11 +7,10 @@ Point2D.equal = lambda self, other: self.x == other.x and self.y == other.y
 
 
 class ScoutUnit:
-    def __init__(self, scout_unit, visited=[], frame_stamps=[]):
+    def __init__(self, scout_unit, scout_manager):
         self.unit = scout_unit
         self.goal = None
-        self.visited = visited
-        self.frame_stamps = frame_stamps
+        self.manager = scout_manager
 
     def get_unit(self):
         return self.unit
@@ -20,10 +19,10 @@ class ScoutUnit:
         return self.goal
 
     def get_visited(self):
-        return self.visited
+        return self.manager.visited
 
     def get_frame_stamps(self):
-        return self.frame_stamps
+        return self.manager.frame_stamps
 
     def is_idle(self):
         return self.unit.is_idle
@@ -36,8 +35,8 @@ class ScoutUnit:
             return True
         else:
             if self.unit.position.distance(self.goal) < 5:
-                self.visited.append(self.goal)
-                self.frame_stamps.append(current_frame)
+                self.manager.visited.append(self.goal)
+                self.manager.frame_stamps.append(current_frame)
                 return True
             else:
                 return False
@@ -53,9 +52,9 @@ class ScoutUnit:
             else:
                 # Check how long time it was since first discovery and go there if it is been more than 2000 frames
                 # since last time
-                first_time_visited = self.frame_stamps[0]
-                if (current_frame - first_time_visited) > 2000:
-                    first_visited = self.visited[0]
+                first_time_visited = self.manager.frame_stamps[0]
+                if (current_frame - first_time_visited) > 4000:
+                    first_visited = self.manager.visited[0]
                     self.check_in_visited(point, True)
                     self.set_goal(first_visited)
                 else:
@@ -65,12 +64,12 @@ class ScoutUnit:
                     self.set_goal(goal)
 
     def check_in_visited(self, point, *args):
-        for visited in self.visited:
+        for visited in self.manager.visited:
             if visited.equal(point):
                 # args is used to remove object, called from set_goal
                 if args:
-                    index = self.visited.index(visited)
-                    self.visited.remove(visited)
-                    self.frame_stamps.pop(index)
+                    index = self.manager.visited.index(visited)
+                    self.manager.visited.remove(visited)
+                    self.manager.frame_stamps.pop(index)
                 return True
         return False

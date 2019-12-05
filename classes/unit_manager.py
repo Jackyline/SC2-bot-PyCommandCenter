@@ -2,8 +2,11 @@ from classes.military_unit import MilitaryUnit
 from classes.worker_unit import WorkerUnit
 from classes.q_table import QTable
 from classes.coalitionstructure_generation import CoalitionstructureGenerator
+from classes.task_type import TaskType
+from classes.scout_unit import ScoutUnit
 from library import *
 import math
+
 
 class UnitManager:
 
@@ -35,16 +38,21 @@ class UnitManager:
         # List of our abstracted worker units
         self.worker_units = []
 
+        # List of out abstracted scout units
+        self.scout_units = []
+
         # List of our abstracted military units
         self.military_units = []
 
-        #list of visible military units
+        # list of visible military units
         self.visible_enemies = []
 
         self.marauder_q_table = QTable(self.idabot, "marauder")
         self.marine_q_table = QTable(self.idabot, "marine")
+        self.helion_q_table = QTable(self.idabot, "helion")
+        self.cyclone_q_table = QTable(self.idabot, "cyclone")
 
-        #Keeps track of current coalition structure, structured as [[id1, id2, ...], [id1, id2...], ...]
+        # Keeps track of current coalition structure, structured as [[id1, id2, ...], [id1, id2...], ...]
         self.csg = CoalitionstructureGenerator()
         self.cs = None
 
@@ -67,8 +75,8 @@ class UnitManager:
             military_type.get_unit_type(): len(self.get_units_of_type(military_type.get_unit_type()))
             for military_type in self.military_units
             if "militaryUnits" not in info
-            or military_type.get_unit_type() not in info["militaryUnits"]
-            }
+               or military_type.get_unit_type() not in info["militaryUnits"]
+        }
 
         return info
 
@@ -103,6 +111,9 @@ class UnitManager:
         # Remove dead worker units
         self.update_dead_units(self.worker_units)
 
+        # Remove dead scout units
+        self.update_dead_units(self.scout_units)
+
         # Remove dead military units
         self.update_dead_units(self.military_units)
 
@@ -112,17 +123,19 @@ class UnitManager:
         # Update our military units
         self.add_new_units(latest_units_list, self.military_units, self.is_military_type, MilitaryUnit)
 
-        #update visible enemies
-        self.visible_enemies = [unit for unit in latest_units_list if unit.player == PLAYER_ENEMY and unit.unit_type.is_combat_unit]
+        # update visible enemies
+        self.visible_enemies = [unit for unit in latest_units_list if
+                                unit.player == PLAYER_ENEMY and unit.unit_type.is_combat_unit]
 
         self.update_military_units()
 
         self.marauder_q_table.on_step()
         self.marine_q_table.on_step()
-
+        self.cyclone_q_table.on_step()
+        self.helion_q_table.on_step()
 
     def update_military_units(self):
-        unit : MilitaryUnit
+        unit: MilitaryUnit
         for unit in self.military_units:
             e_in_sight = []
             e_that_can_attack = []  # enemies
@@ -142,10 +155,7 @@ class UnitManager:
                 if distance <= unit.sight_range and ally != unit:
                     a_in_sight.append(ally)
 
-
-
             unit.on_step(e_in_sight, e_that_can_attack, a_in_sight, e_in_range)
-
 
     def add_new_units(self, latest_units_list, known_units, unit_type_checker, unit_class):
         for latest_unit in latest_units_list:
@@ -159,8 +169,10 @@ class UnitManager:
                         known_units.append(unit_class(latest_unit, self.idabot, self.marine_q_table))
                     elif latest_unit.unit_type.unit_typeid == UNIT_TYPEID.TERRAN_SCV:
                         known_units.append(unit_class(latest_unit, self.idabot))
-
-
+                    elif latest_unit.unit_type.unit_typeid == UNIT_TYPEID.TERRAN_CYCLONE:
+                        known_units.append(unit_class(latest_unit,self.idabot, self.cyclone_q_table))
+                    elif latest_unit.unit_type.unit_typeid == UNIT_TYPEID.TERRAN_HELLION:
+                        known_units.append(unit_class(latest_unit,self.idabot, self.helion_q_table))
     def update_dead_units(self, unit_list):
         '''
         Removes all units of given list that are not alive anymore
@@ -170,7 +182,7 @@ class UnitManager:
             if not current_unit.is_alive():
                 # current_unit.die()
                 if current_unit.get_unit().unit_type.is_combat_unit:
-                    print("TOTAL REWARD:",current_unit.total_reward )
+                    print("TOTAL REWARD:", current_unit.total_reward)
                 unit_list.remove(current_unit)
 
     def create_coalition(self, nr_coalitions):
@@ -190,7 +202,6 @@ class UnitManager:
 
         self.cs = self.csg.create_coalition(info["militaryUnits"], nr_coalitions)
 
-
     def is_military_type(self, unit):
         '''
         :param unit: Game unit type
@@ -207,3 +218,5 @@ class UnitManager:
 
     def command_unit(self, unit, task):
         print("Commanding unit: ", unit.get_unit_type_id(), "to do task", task.task_type)
+        if task.task_type is TaskType.SCOUT and len(self.scout_units) < 2:
+            self.scout_units.append(ScoutUnit(unit.unit, self.idabot.scout_manager))

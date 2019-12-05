@@ -4,7 +4,15 @@ import os
 import math
 import json
 
-import sc2reader
+# import sc2reader
+
+"""
+TODO:
+    * Get more inputs for training data
+    * Take opponent strategy as input
+    * Better classification of when expansive - when actually starting to build building and when done
+    * Make network take inputs backwards
+"""
 
 """
 UpdateTargetUnitCommandEvent
@@ -76,6 +84,28 @@ ALL_BUILDINGS = [
     "Reactor",
     "Barracks",
     "SupplyDepotLowered"
+]
+
+UNIT_TYPES = [
+    "AutoTurret",
+    "MULE",
+    "Medivac",
+    "Thor",
+    "Marauder",
+    "Battlecruiser",
+    "Reaper",
+    "WidowMine",
+    "Hellion",
+    "Raven",
+    "Marine",
+    "SiegeTank",
+    "SCV",
+    "VikingFighter",
+    "CommandCenter",
+    "Cyclone",
+    "Liberator",
+    "Banshee",
+    "Ghost",
 ]
 
 # All possible states of a terran command center
@@ -184,6 +214,41 @@ def get_units(replay, second, player_id, type_function):
             break
 
     return units
+
+
+def get_all_units(replay, second, player_id):
+    units = {unit_type: 0 for unit_type in UNIT_TYPES}
+
+    for event in replay.events:
+        # Only look up to given time
+        if event.second > second:
+            break
+
+        if event.name == "UnitBornEvent" and event.control_pid == player_id and \
+                event.unit.name in units:
+            units[event.unit.name] += 1
+        elif event.name == "UnitDiedEvent" and event.unit.name in units and \
+                event.unit.owner.pid == player_id:
+            units[event.unit.name] -= 1
+    return units
+
+
+def get_all_buildings(replay, second, player_id):
+    buildings = {building_type: 0 for building_type in ALL_BUILDINGS}
+    for event in replay.events:
+        # Only look up to given time
+        if event.second > second:
+            break
+        # UnitBornEvent
+        if event.name in ["UnitDoneEvent",
+                          "UnitBornEvent"] and event.unit.is_building and event.unit.owner.pid == player_id \
+                and event.unit.name in buildings:
+            buildings[event.unit.name] += 1
+        elif event.name == "UnitDiedEvent" and event.unit.is_building and event.unit.owner.pid == player_id \
+                and event.unit.name in buildings:
+            buildings[event.unit.name] -= 1
+
+    return buildings
 
 
 def building_counter(replay, second, player_id):
@@ -301,7 +366,7 @@ def is_expansive(replay, second, player, time_offset):
     return True
 
 
-def get_current_strategy(replay, second, player):
+def get_current_strategy2(replay, second, player):
     # Offensive
     if is_offensive(replay, second, player, time_offset=OFFENSIVE_TIME_OFFSET):
         return "Offensive"
@@ -311,6 +376,12 @@ def get_current_strategy(replay, second, player):
     # Defensive
     else:
         return "Defensive"
+
+
+def get_current_strategy(replay, second, player):
+    if is_offensive(replay, second, player, time_offset=OFFENSIVE_TIME_OFFSET):
+        return "Offensive"
+    return "Defensive"
 
 
 def get_current_minerals(replay, second, player_id):
@@ -355,51 +426,47 @@ def process_replay_data(replay_path):
     # Game lengths in seconds
     length_of_game = replay.frames // 16
 
-    counter1 = {"Offensive": 0, "Defensive": 0, "Expansive": 0}
-    counter2 = {"Offensive": 0, "Defensive": 0, "Expansive": 0}
+    # TODO: Can remove this
+    counter = {"Offensive": 0, "Defensive": 0, "Expansive": 0}
 
     match_states = []
     for player in [player.pid for player in replay.players]:
         for time in range(0, length_of_game, DATA_COLLECTION_RATE):
-            current_amount_workers = worker_counter(replay, second=time, player_id=player)
-            current_amount_armies = army_counter(replay, second=time, player_id=player)
+            current_units = get_all_units(replay, second=time, player_id=player)
+            current_buildings = get_all_buildings(replay, second=time, player_id=player)
+
             current_minerals = get_current_minerals(replay, second=time, player_id=player)
             current_vespene = get_current_vespene(replay, second=time, player_id=player)
-            current_expansions = amount_expansions(replay, second=time, player_id=player)
 
             current_time = time // 60 + (time % 60 / 60)
 
             current_strategy = get_current_strategy(replay, second=time, player=player)
 
-            match_states.append({"state": {"workers": current_amount_workers,
-                                           "armies": current_amount_armies,
+            match_states.append({"state": {**current_buildings,
+                                           **current_units,
                                            "minerals": current_minerals,
                                            "vespene": current_vespene,
-                                           "expansions": current_expansions,
-                                           "time": current_time},
+                                           "time": time},
                                  "strategy": current_strategy})
 
-            strat1 = get_current_strategy(replay, time, player=1)
-            strat2 = get_current_strategy(replay, time, player=2)
-            counter1[strat1] += 1
-            counter2[strat2] += 1
-
-    print("{} states in {}".format(len(match_states), replay_path))
-
+            # TODO: Can remove this
+            counter[current_strategy] += 1
     return match_states
 
 
 def process_all_files(data_save_file):
     data = []
-    for file in os.listdir("replays_p3/"):
+    files = os.listdir("replays_p3/")
+    for i, file in enumerate(files):
         if file.endswith(".SC2Replay"):
             try:
                 path = os.path.abspath("{dir}/{file}".format(dir="replays_p3/", file=file))
-                data += process_replay_data(path)
-                write_to_file(data, data_save_file)
+                replay_data = process_replay_data(path)
+                print("{}/{} files processed. {} states in {}".format(i, len(files), len(replay_data), path))
+                data += replay_data
             except Exception as e:
                 print("ERROR: {}".format(e))
-
+    write_to_file(data, data_save_file)
     print(len(data))
 
 
@@ -413,6 +480,73 @@ def read_from_file(filename):
         return json.loads(file.read())
 
 
+def test():
+    typ = set()
+    typ2 = set()
+    for file in os.listdir("replays_p3/"):
+        printed = True
+        if file.endswith(".SC2Replay"):
+            try:
+                path = os.path.abspath("{dir}/{file}".format(dir="replays_p3/", file=file))
+                replay = sc2reader.load_replay(
+                    path,
+                    load_map=True,
+                    load_level=4)
+                for event in replay.events:
+                    if event.name in ["UnitBornEvent",
+                                      "UnitBornEvent"] and event.control_pid == 1 and event.unit.is_army:
+                        a = get_all_units(replay, event.second, 1)
+                        print(a)
+                        typ.add(event.unit.name)
+                        if not printed:
+                            a = get_all_units(replay, event.second, 1)
+                            # b = get_all_buildings(replay, 700, 1)
+                            print(a["Marine"])
+
+                            printed = False
+
+                    # UnitBornEvent
+                    if event.name in ["UnitDoneEvent",
+                                      "UnitBornEvent"] and event.unit.is_building and event.unit.owner.pid == 1 \
+                            and event.unit.name in ALL_BUILDINGS:
+                        typ2.add(event.unit.name)
+                break
+
+
+
+            except Exception as e:
+                print("ERROR: {}".format(e))
+    print("ALL UNIT TYPES:")
+    for elem in typ:
+        print(elem)
+
+    print("ALL BUILDING TYPES:")
+    for elem in typ2:
+        print(elem)
+
+
+def test2():
+    for file in os.listdir("replays_p3/"):
+        if file.endswith(".SC2Replay"):
+            try:
+                path = os.path.abspath("{dir}/{file}".format(dir="replays_p3/", file=file))
+                replay = sc2reader.load_replay(
+                    path,
+                    load_map=True,
+                    load_level=4)
+
+                time = 0
+                for i in range(50):
+                    units = get_all_units(replay, time, 1)
+                    print(units)
+                    time = i * 20
+                break
+            except Exception as e:
+                print("ERROR: {}".format(e))
+
+
 if __name__ == "__main__":
+    # test()
+    # test2()
     process_all_files(DATA_FILE)
     pass
