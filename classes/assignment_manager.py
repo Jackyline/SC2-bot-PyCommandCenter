@@ -201,7 +201,7 @@ class AssignmentManager:
         Adds a task to the UNIT_assignment, where UNIT can be worker, military or building, based on the task_type of the task
         """
         # Tasks done by workers
-        if task.task_type is TaskType.MINING or task.task_type is TaskType.GAS or task.task_type is TaskType.BUILD:
+        if task.task_type is TaskType.MINING or task.task_type is TaskType.GAS or task.task_type is TaskType.BUILD or task.task_type is TaskType.SCOUT:
             self.worker_assignments.add_task(task)
 
         # Tasks done by military units

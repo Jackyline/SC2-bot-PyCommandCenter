@@ -16,6 +16,7 @@ class StupidAgent(IDABot):
         for unit in self.get_all_units():
             unit.stop_dance()
         """
+
         my = []
         enemy = []
         for unit in self.get_all_units():
@@ -23,6 +24,7 @@ class StupidAgent(IDABot):
                 my.append(unit)
             elif unit.player == PLAYER_ENEMY and unit.unit_type.is_combat_unit:
                 enemy.append(unit)
+        a = 3
 
         for unit in my:
             if len(enemy) > 0 and not unit.has_target:

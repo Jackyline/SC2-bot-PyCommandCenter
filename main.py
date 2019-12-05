@@ -11,26 +11,26 @@ from strategy.strategy import Strategy
 from classes.scouting_manager import ScoutingManager
 from classes.print_debug import PrintDebug
 from classes.building_manager import BuildingManager
-# TODO:
-# Add building strategy back again when torch installation finished
-#from classes.building_strategy import BuildingStrategy
+from classes.building_strategy import BuildingStrategy
+from strategy.training_data import ALL_BUILDINGS, UNIT_TYPES
 
 
 class MyAgent(IDABot):
     def __init__(self):
         IDABot.__init__(self)
+        self.building_manager = BuildingManager(self)
         self.resource_manager = ResourceManager(self.minerals, self.gas, self.current_supply, self)
         self.unit_manager = UnitManager(self)
-        self.strategy_network = Strategy()
+        self.strategy_network = Strategy(self)
+        self.assignment_manager = AssignmentManager(unit_manager=self.unit_manager,
+                                                    building_manager=self.building_manager)
+        self.task_manager = TaskManager(self.assignment_manager)
+
         self.scout_manager = ScoutingManager(self)
         self.building_manager = BuildingManager(self)
-        # TODO:
-        # Add building strategy back again when torch installation finished
-        #self.building_strategy = BuildingStrategy()
-        self.print_debug = PrintDebug(self, self.building_manager, self.unit_manager, self.scout_manager, True)
-        self.building_manager = BuildingManager(self)
-        self.assignment_manager = AssignmentManager(unit_manager=self.unit_manager, building_manager=self.building_manager)
-        self.task_manager = TaskManager(self.assignment_manager)
+        self.building_strategy = BuildingStrategy(self.resource_manager)
+        self.print_debug = PrintDebug(self, self.building_manager, self.unit_manager, self.scout_manager,
+                                      self.building_strategy, self.strategy_network, True)
 
     def on_game_start(self):
         IDABot.on_game_start(self)
@@ -38,27 +38,8 @@ class MyAgent(IDABot):
     def on_step(self):
         IDABot.on_step(self)
         self.resource_manager.sync()
-
-        # TODO: will be used from building_manager instead
-        command_center_types = [UnitType(UNIT_TYPEID.TERRAN_COMMANDCENTER, self),
-                                UnitType(UNIT_TYPEID.TERRAN_COMMANDCENTERFLYING, self)]
-        command_centers = [b for b in self.get_my_units() if b.unit_type in command_center_types]
-
-        # TODO: Is this how you get the actual seconds?  svar nej
-        curr_seconds = self.current_frame // 24
-        # Minutes, Seconds
-        curr_time = int((curr_seconds) // 60) + (curr_seconds % 60) / 60
-        self.strategy = self.strategy_network.get_strategy([
-            len(self.unit_manager.worker_units),
-            len(self.unit_manager.military_units),
-            self.resource_manager.resources.minerals,
-            self.resource_manager.resources.gas,
-            len(command_centers),
-            curr_time
-        ])
-
         self.unit_manager.on_step(self.get_all_units())
-        self.scout_manager.on_step(self.unit_manager.get_units_of_type(UnitType(UNIT_TYPEID.TERRAN_SCV, self)))
+        self.scout_manager.on_step()
         self.building_manager.on_step(self.get_my_units())
         self.print_debug.on_step()
         self.assignment_manager.on_step()
