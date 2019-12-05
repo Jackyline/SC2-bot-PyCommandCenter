@@ -4,6 +4,9 @@ from typing import Optional
 from library import *
 from classes.resource_manager import ResourceManager
 from classes.unit_manager import UnitManager
+from classes.assignment_manager import AssignmentManager
+from classes.building_manager import BuildingManager
+from classes.task_manager import TaskManager
 from strategy.strategy import Strategy
 from classes.scouting_manager import ScoutingManager
 from classes.print_debug import PrintDebug
@@ -15,14 +18,19 @@ from strategy.training_data import ALL_BUILDINGS, UNIT_TYPES
 class MyAgent(IDABot):
     def __init__(self):
         IDABot.__init__(self)
+        self.building_manager = BuildingManager(self)
         self.resource_manager = ResourceManager(self.minerals, self.gas, self.current_supply, self)
         self.unit_manager = UnitManager(self)
         self.strategy_network = Strategy(self)
+        self.assignment_manager = AssignmentManager(unit_manager=self.unit_manager,
+                                                    building_manager=self.building_manager)
+        self.task_manager = TaskManager(self.assignment_manager)
+
         self.scout_manager = ScoutingManager(self)
         self.building_manager = BuildingManager(self)
-        self.building_strategy = BuildingStrategy()
+        self.building_strategy = BuildingStrategy(self.resource_manager)
         self.print_debug = PrintDebug(self, self.building_manager, self.unit_manager, self.scout_manager,
-                                      self.building_strategy, True)
+                                      self.building_strategy, self.strategy_network, True)
 
     def on_game_start(self):
         IDABot.on_game_start(self)
@@ -31,14 +39,11 @@ class MyAgent(IDABot):
         IDABot.on_step(self)
         self.resource_manager.sync()
         self.unit_manager.on_step(self.get_all_units())
-
-        strategy = self.strategy_network.get_strategy()
-        print(strategy)
-
-        self.unit_manager.on_step(self.get_my_units())
-        self.scout_manager.on_step(self.get_my_units(), self.map_tools.width, self.map_tools.height)
+        self.scout_manager.on_step()
         self.building_manager.on_step(self.get_my_units())
         self.print_debug.on_step()
+        self.assignment_manager.on_step()
+        self.task_manager.on_step()
 
 
 def main():

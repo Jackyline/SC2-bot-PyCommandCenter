@@ -5,12 +5,13 @@ from library import *
 class PrintDebug:
     def __init__(self, ida_bot, building_manager: building_manager.BuildingManager,
                  unit_manager: unit_manager.UnitManager, scout_manager: scouting_manager.ScoutingManager,
-                 building_strategy: building_strategy.BuildingStrategy, on : bool):
+                 building_strategy: building_strategy.BuildingStrategy, strategy_network, on : bool):
         self.ida_bot = ida_bot
         self.building_manager = building_manager
         self.unit_manager = unit_manager
         self.scout_manager = scout_manager
         self.building_strategy = building_strategy
+        self.strategy_network = strategy_network
         self.on = on
         self.print_on_unit = False
 
@@ -36,10 +37,14 @@ class PrintDebug:
             building_str, worker_str, military_str, self.scout_manager.print_debug())
         self.ida_bot.map_tools.draw_text_screen(0.01, 0.01, text)
 
+
         # Building strategy prints:
         build_strat_text = "Building_Strategy: {}".format(self.building_strategy.action())
         self.ida_bot.map_tools.draw_text_screen(0.01, 0.25, build_strat_text)
 
+        # Game strategy prints:
+        game_strat_text = "Strategy: {}".format(self.strategy_network.get_strategy())
+        self.ida_bot.map_tools.draw_text_screen(0.01, 0.50, game_strat_text)
 
 
         # Player base location, used to retrieve mineral fields and geysers.
@@ -52,7 +57,13 @@ class PrintDebug:
         # Prints unit debug information on each unit
         units = list(self.ida_bot.get_my_units())
         for unit in units:
-            self.ida_bot.map_tools.draw_text(unit.position, " %s id: %d" % (str(unit.unit_type), unit.id))
+            # Find what coalition the unit is in (if any) and add that to the print
+            coalition = -1
+            for i, coalition in enumerate(self.unit_manager.cs):
+                if unit in coalition:
+                    coalition = i
+                    break
+            self.ida_bot.map_tools.draw_text(unit.position, " %s id: %d, coal: %d" % (str(unit.unit_type), unit.id, coalition))
 
         # Print mineral information on each mineral
         minerals = list(base_location.minerals)
@@ -63,3 +74,4 @@ class PrintDebug:
         geysers = list(base_location.geysers)
         for geyser in geysers:
             self.ida_bot.map_tools.draw_text(geyser.position, " %s id: %d" % (str(geyser.unit_type), geyser.id))
+
