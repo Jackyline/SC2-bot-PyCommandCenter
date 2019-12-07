@@ -1,8 +1,11 @@
+import math
+
 import numpy as np
 from classes.building_manager import BuildingManager
 from classes.hungarian import Hungarian
 from classes.task_type import TaskType
 from classes.unit_manager import UnitManager
+from library import Point2D
 from munkres import print_matrix
 
 
@@ -43,10 +46,9 @@ class AssignmentManager:
         :param tasks: set of task objects
         :return: dict<task, worker_unit / military_unit / building_unit>
         """
-        assignments = matching
-        for n in range(len(assignments)):
-            assignments[n] = units[assignments[n]]
-            assignments[tasks[n]] = assignments.pop(n)
+        assignments = {}
+        for worker_nr, task_nr in matching.items():
+            assignments[tasks[task_nr]] = units[worker_nr]
         return assignments
 
     def calc_assignments(self, task_type):
@@ -107,7 +109,21 @@ class WorkerAssignments:
         self.tasks = []
 
     def utility_func(self, worker, task):
-        return 3
+        Point2D.distance = lambda self, other: math.sqrt((self.x - other.x)**2 + (self.y - other.y)**2)
+        distance = int(task.pos.distance(worker.get_unit().position))
+        idle = worker.is_idle()
+
+        profit = 0
+
+        if idle:
+            profit += 100
+
+        profit -= distance
+
+        if profit < 0:
+            profit = 0
+
+        return profit
 
     def get_available_units(self):
         available_units = []
@@ -218,7 +234,7 @@ class BuildingAssignments:
                 if building_unit == assigned_building:
                     building_unit.set_task(task)
 
-                    # TODO ta bort task från building när klar? eller behöver vi ens hålla koll på det?
+                    # TODO ta bort task från building när byggnad är färdigbyggd? eller behöver vi ens hålla koll på det tasks för byggnader?
 
     def get_tasks(self):
         return self.tasks
