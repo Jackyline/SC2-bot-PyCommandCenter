@@ -217,7 +217,17 @@ class UnitManager:
         return any(unit.unit_type == unit_type for unit_type in self.WORKER_TYPES)
 
     def command_unit(self, unit, task):
-        print("Commanding unit: ", unit.get_unit_type_id(), "to do task", task.task_type)
+        """
+
+        HÄR SKA VI SE TILL SÅ ATT SAKER HÄNDER.
+
+        unit kan vara byggnad worker, eller grupp av military units. Man kan köra task.task_type för att se vilken typ av task det här
+
+        Om det unit är byggnad och task train_unit finns det ingen garanti för att byggnaden kan producera uniten, får kolla med can_produce
+
+
+        """
+        print("Commanding unit: ", unit.get_id(), "to do task", task.task_type)
 
         if task.task_type is TaskType.SCOUT:
             self.scout_units.append(ScoutUnit(unit.unit, self.idabot.scout_manager))

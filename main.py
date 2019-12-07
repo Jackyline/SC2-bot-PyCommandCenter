@@ -6,7 +6,6 @@ from classes.resource_manager import ResourceManager
 from classes.unit_manager import UnitManager
 from classes.assignment_manager import AssignmentManager
 from classes.building_manager import BuildingManager
-from classes.task_manager import TaskManager
 from strategy.strategy import Strategy
 from classes.scouting_manager import ScoutingManager
 from classes.print_debug import PrintDebug
@@ -24,8 +23,6 @@ class MyAgent(IDABot):
         self.strategy_network = Strategy(self)
         self.assignment_manager = AssignmentManager(unit_manager=self.unit_manager,
                                                     building_manager=self.building_manager)
-        self.task_manager = TaskManager(self.assignment_manager)
-
         self.scout_manager = ScoutingManager(self)
         self.building_manager = BuildingManager(self)
         self.building_strategy = BuildingStrategy(self.resource_manager)
@@ -37,13 +34,16 @@ class MyAgent(IDABot):
 
     def on_step(self):
         IDABot.on_step(self)
+
+        # first sync units, buildings and resources
         self.resource_manager.sync()
-        self.scout_manager.on_step()
         self.unit_manager.on_step(self.get_all_units())
         self.building_manager.on_step(self.get_my_units())
-        self.print_debug.on_step()
-        self.task_manager.on_step()
+
+        # then run specific AI parts
+        self.scout_manager.on_step()
         self.assignment_manager.on_step()
+        self.print_debug.on_step()
 
 
 def main():

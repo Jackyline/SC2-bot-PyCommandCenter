@@ -6,127 +6,6 @@ from classes.unit_manager import UnitManager
 from munkres import print_matrix
 
 
-class WorkerAssignments():
-    """
-    TODO
-    """
-
-    def __init__(self, unit_manager: UnitManager):
-        self.unit_manager = unit_manager
-        self.assignments = {}  # dict<task, worker_unit>
-        self.tasks = []
-
-    def utility_func(self, worker, task):
-        return 3
-
-    def get_available_units(self):
-        return [worker for worker in self.unit_manager.worker_units if worker not in self.unit_manager.scout_units]
-
-    def toString(self):
-        return "worker assignments"
-
-    def update(self, new_assignments: dict):
-        self.assignments.update(new_assignments)
-        for worker_unit in self.get_available_units():
-            for task, assigned_unit in self.assignments.items():
-                if worker_unit == assigned_unit:
-                    prev_task = worker_unit.get_task()
-                    if prev_task != task:
-                        worker_unit.set_task(task)
-                        self.unit_manager.command_unit(worker_unit, task)
-                        print("tasks: ", len(self.assignments))
-
-    def add_task(self, task):
-        self.tasks.append(task)
-
-    def add_already_assigned_tasks(self):
-        self.remove_finished_tasks()
-        for task in self.assignments:
-            if task.task_type is not TaskType.SCOUT:
-                self.tasks.append(task)
-
-    def remove_finished_tasks(self):
-        to_remove = {}
-        for task, worker in self.assignments.items():
-            if worker.get_unit().is_idle or not worker.get_unit().is_alive:
-                to_remove[task] = worker
-        for task, worker in to_remove.items():
-            worker.set_task(None)
-            self.assignments.pop(task)
-
-    def get_tasks(self):
-        self.remove_finished_tasks()
-        self.add_already_assigned_tasks()
-        return self.tasks
-
-class MilitaryAssignments:
-    """
-    TODO
-    """
-
-    def __init__(self, unit_manager: UnitManager):
-        self.unit_manager = unit_manager
-        self.assignments = {}  # dict<task, worker_unit>
-        self.tasks = []
-
-    def utility_func(self, group, task):
-        return 5
-
-    def get_available_units(self):
-        self.unit_manager.create_coalition(5)
-        return self.unit_manager.groups
-
-    def toString(self):
-        return "military assignments"
-
-    def update(self, new_assignments: dict):
-        self.assignments.update(new_assignments) # TODO sätta self.assignments = new_Assignments istället? kommer nya grupper skapas varje gång funktionen kallas? isf behöver inte gamla hållas koll på
-        for group in self.get_available_units(): # TODO skapa group class?
-            for task, assigned_group in self.assignments:
-                if group == assigned_group:
-                    group.set_task(task) # TODO denna metod finns inte än
-
-    def add_task(self, task):
-        self.tasks.append(task)
-
-    def get_tasks(self):
-        return self.tasks
-
-class BuildingAssignments:
-    """
-    TODO
-    """
-
-    def __init__(self, building_manager: BuildingManager):
-        self.building_manager = building_manager
-        self.assignments = {}  # dict<task, worker_unit>
-        self.tasks = []
-
-    def utility_func(self, building, task):
-        return 10
-
-    def get_available_units(self):
-        return self.building_manager.buildings  # TODO kan antalet units förändras under en körning?
-
-    def toString(self):
-        return "building assignments"
-
-    def add_task(self, task):
-        self.tasks.append(task)
-
-    def update(self, new_assignments: dict):
-        self.assignments = new_assignments
-        for building_unit in self.get_available_units():
-            for task, assigned_building in self.assignments:
-                if building_unit == assigned_building:
-                    building_unit.set_task(task)
-
-                    # TODO ta bort task från building när klar? eller behöver vi ens hålla koll på det?
-
-    def get_tasks(self):
-        return self.tasks
-
-
 class AssignmentManager:
 
     def __init__(self, unit_manager: UnitManager, building_manager: BuildingManager):
@@ -171,11 +50,14 @@ class AssignmentManager:
         return assignments
 
     def calc_assignments(self, task_type):
-        matrix = self.generate_matrix(task_type.utility_func, task_type.get_available_units(), task_type.get_tasks())
-        print_matrix(matrix, msg="Matrix generated for: " + task_type.toString())
+        all_tasks = task_type.get_tasks()
+        available_units = task_type.get_available_units()
+        matrix = self.generate_matrix(task_type.utility_func, available_units, all_tasks)
+        #print_matrix(matrix, msg="Matrix generated for: " + task_type.toString())
+        print("### CALCULATING ASSIGNMENTS ### \n Nr tasks: ", len(all_tasks), "\n Nr units: ", len(available_units))
         matching = self.hungarian.compute_assignments(matrix)
         self.hungarian.pretty_print_assignments()
-        assignments = self.convert_matching_to_assignments(matching, task_type.get_available_units(), task_type.get_tasks())
+        assignments = self.convert_matching_to_assignments(matching, available_units, all_tasks)
         task_type.tasks.clear()
         return assignments
 
@@ -186,10 +68,9 @@ class AssignmentManager:
         :param assignment_type: WorkerAssignments, Militaryassignments or BuildingAssignments.
         """
 
-        if assignment_type.tasks:  # Make sure there are new tasks and units that can do them
-            if len(assignment_type.get_available_units()) > 0:  # TODO byggnader? ska kanske kolla can produce?
-                assignments = self.calc_assignments(assignment_type)
-                assignment_type.update(assignments)
+        if assignment_type.tasks and len(assignment_type.get_available_units()) > 0:  # Make sure there are new tasks and units that can do them
+            assignments = self.calc_assignments(assignment_type)
+            assignment_type.update(assignments)
 
     def on_step(self):
         # Update worker assignments
@@ -203,7 +84,7 @@ class AssignmentManager:
 
     def add_task(self, task):
         """
-        Adds a task to the UNIT_assignment, where UNIT can be worker, military or building, based on the task_type of the task
+        Adds a task to the UNIT_assignment, where UNIT can be worker, military group or building
         """
         # Tasks done by workers
         if task.task_type is TaskType.MINING or task.task_type is TaskType.GAS or task.task_type is TaskType.BUILD or task.task_type is TaskType.SCOUT:
@@ -216,3 +97,128 @@ class AssignmentManager:
         # Tasks done by buildings
         elif task.task_type is TaskType.TRAIN:
             self.building_assignments.add_task(task)
+
+
+class WorkerAssignments:
+
+    def __init__(self, unit_manager: UnitManager):
+        self.unit_manager = unit_manager
+        self.assignments = {}  # dict<task, worker_unit>
+        self.tasks = []
+
+    def utility_func(self, worker, task):
+        return 3
+
+    def get_available_units(self):
+        available_units = []
+        for worker in self.unit_manager.worker_units:
+            task = worker.get_task()
+            if task is None:
+                available_units.append(worker) # worker is available
+            elif task is TaskType.MINING or task is TaskType.GAS: # also add those who are mining or collecting gas
+                available_units.append(worker)
+        return available_units
+
+    def toString(self):
+        return "worker assignments"
+
+    def update(self, new_assignments: dict):
+        self.assignments.update(new_assignments)
+        for worker_unit in self.get_available_units():
+            for task, assigned_unit in self.assignments.items():
+                if worker_unit == assigned_unit:
+                    prev_task = worker_unit.get_task()
+                    if prev_task != task:
+                        worker_unit.set_task(task)
+                        self.unit_manager.command_unit(worker_unit, task)
+
+    def add_task(self, task):
+        self.tasks.append(task)
+
+    def add_already_assigned_tasks(self):
+        """
+        Add all mining and gas assignments as new tasks in order to reevaluate who should do what. Sometimes it might be
+        profitable to have a worker that is already assigned to mining to construct something nearby than having an
+        idle worker running a long distance.
+        """
+        self.remove_finished_tasks()
+        for task in self.assignments:
+            if task.task_type is TaskType.MINING or task.task_type is TaskType.GAS:
+                self.tasks.append(task)
+
+    def remove_finished_tasks(self):
+        to_remove = {}
+        for task, worker in self.assignments.items():
+            if worker.get_unit().is_idle or not worker.is_alive():
+                to_remove[task] = worker
+        for task, worker in to_remove.items():
+            worker.set_task(None)
+            self.assignments.pop(task)
+
+    def get_tasks(self):
+        self.remove_finished_tasks()
+        self.add_already_assigned_tasks()
+        return self.tasks
+
+
+class MilitaryAssignments:
+
+    def __init__(self, unit_manager: UnitManager):
+        self.unit_manager = unit_manager
+        self.assignments = {}  # dict<task, worker_unit>
+        self.tasks = []
+
+    def utility_func(self, group, task):
+        return 5
+
+    def get_available_units(self):
+        self.unit_manager.create_coalition(5)
+        return self.unit_manager.groups
+
+    def toString(self):
+        return "military assignments"
+
+    def update(self, new_assignments: dict):
+        self.assignments.update(new_assignments) # TODO sätta self.assignments = new_Assignments istället? kommer nya grupper skapas varje gång funktionen kallas? isf behöver inte gamla hållas koll på, annars borde en remove func läggas till
+        for group in self.get_available_units(): # TODO skapa group class?
+            for task, assigned_group in self.assignments:
+                if group == assigned_group:
+                    group.set_task(task) # TODO denna metod finns inte än
+
+    def add_task(self, task):
+        self.tasks.append(task)
+
+    def get_tasks(self):
+        return self.tasks
+
+
+class BuildingAssignments:
+
+    def __init__(self, building_manager: BuildingManager):
+        self.building_manager = building_manager
+        self.assignments = {}  # dict<task, worker_unit>
+        self.tasks = []
+
+    def utility_func(self, building, task):
+        return 10
+
+    def get_available_units(self):
+        return self.building_manager.buildings
+
+    def toString(self):
+        return "building assignments"
+
+    def add_task(self, task):
+        self.tasks.append(task)
+
+    def update(self, new_assignments: dict):
+        self.assignments = new_assignments
+        for building_unit in self.get_available_units():
+            for task, assigned_building in self.assignments:
+                if building_unit == assigned_building:
+                    building_unit.set_task(task)
+
+                    # TODO ta bort task från building när klar? eller behöver vi ens hålla koll på det?
+
+    def get_tasks(self):
+        return self.tasks
