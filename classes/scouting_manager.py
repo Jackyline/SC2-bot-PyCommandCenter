@@ -18,6 +18,7 @@ class ScoutingManager:
         self.frame_stamps = []
         self.visited = []
         self.hmm = None  # Need map size, which means it has to be created in the on_step.
+        self.scouts_requested = 0
 
         self.neutral_units = [UnitType(UNIT_TYPEID.NEUTRAL_BATTLESTATIONMINERALFIELD, bot),
                               UnitType(UNIT_TYPEID.NEUTRAL_BATTLESTATIONMINERALFIELD750, bot),
@@ -75,7 +76,9 @@ class ScoutingManager:
         # If nr of scouts is less than 2, ask for more.
 
         for i in range(2 - len(self.bot.unit_manager.scout_units)):
-            self.ask_for_scout()
+            if self.scouts_requested < 2:
+                self.ask_for_scout()
+                self.scouts_requested += 1
 
         if self.hmm is None:
             self.hmm = HiddenMarkovModel(self.columns, self.rows, self.bot.current_frame, map_height * map_width)

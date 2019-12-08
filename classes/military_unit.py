@@ -33,7 +33,7 @@ class MilitaryUnit:
         self.state = ""
         self.learning_rate = 0.1
         self.discount_factor = 0.7 #TODO: ändra
-        self.exploration = 0.1 # Set this to 0 to use the learned policy
+        self.exploration = 0.0 # Set this to 0 to use the learned policy
         self.total_reward = 0
 
 
@@ -66,10 +66,11 @@ class MilitaryUnit:
         """
         self.update_in_sight(e_in_sight, enemies_that_can_attack, allies_in_sight, enemies_in_range)
         if not self.in_combat:
+            """
             closest_enemy = self.__get_closest_enemy(self.idabot.unit_manager.visible_enemies)
             if closest_enemy:
                 self.attack_unit(closest_enemy)
-
+            """
         elif self.attacked and self.get_weapon_cooldown() == 0:
             self.action_end_frame += 1
 
@@ -148,7 +149,7 @@ class MilitaryUnit:
             self.stop()
         elif len(self.e_in_sight) > 0 and self.in_combat == False:
             self.action_end_frame = 0
-            #self.stop()
+            self.stop()
             self.first_tick_in_combat = True
         self.in_combat = True if e_in_sight else False
 

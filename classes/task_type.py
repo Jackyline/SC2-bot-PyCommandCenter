@@ -12,5 +12,4 @@ class TaskType(Enum):
     ATTACK = 4
     DEFEND = 5
     TRAIN = 6
-    NOTHING = 7
-    SCOUT = 8
+    SCOUT = 7

@@ -6,7 +6,7 @@ from classes.task_type import TaskType
 from classes.scout_unit import ScoutUnit
 from library import *
 import math
-
+import random
 
 class UnitManager:
 
@@ -63,13 +63,15 @@ class UnitManager:
         info = {}
 
         # {job_type : amount doing that job type}
-        info["workerUnits"] = {worker.get_job().unit_type if worker.get_job() else None:
-                                   len(self.get_units_working_on_type(worker.get_job()))
+        info["workerUnits"] = {task_type : len([worker for worker in self.worker_units if not worker.get_task() is None and worker.get_task().task_type == task_type]) for task_type in TaskType}
+        """
+        info["workerUnits"] = {worker.get_task().task_type if worker.get_task() else None:
+                                   len([task for task in self.idabot.assignment_manager.worker_assignments.assignments if task.task_type == worker.get_task().task_type])
                                for worker in self.worker_units
                                if "workerUnits" not in info
                                or worker.get_job() not in info["workerUnits"]
                                }
-
+        """
         # {Military_type : amount of units of given type}
         info["militaryUnits"] = {
             military_type.get_unit_type(): len(self.get_units_of_type(military_type.get_unit_type()))
@@ -107,7 +109,6 @@ class UnitManager:
         Updates all units states accordingly with our data-structures.
         In short terms, removing dead units and adding new.
         """
-
         # Remove dead worker units
         self.update_dead_units(self.worker_units)
 
@@ -179,7 +180,7 @@ class UnitManager:
         :param unit_list: List of abstraction units
         '''
         for current_unit in unit_list:
-            if not current_unit.is_alive():
+            if not current_unit.is_alive(): # TODO: är denna true när en enhet är i ett refinary?
                 # current_unit.die()
                 if current_unit.get_unit().unit_type.is_combat_unit:
                     print("TOTAL REWARD:", current_unit.total_reward)
@@ -230,4 +231,16 @@ class UnitManager:
         print("Commanding unit: ", unit.get_id(), "to do task", task.task_type)
 
         if task.task_type is TaskType.SCOUT:
+            self.idabot.scout_manager.scouts_requested -= 1
             self.scout_units.append(ScoutUnit(unit.unit, self.idabot.scout_manager))
+
+        elif task.task_type is TaskType.MINING:
+            minerals = self.idabot.get_mineral_fields(task.base_location)
+            unit.set_mining(minerals[random.randint(0, len(minerals)-1)])
+
+        elif task.task_type is TaskType.GAS:
+            refineries = self.idabot.building_manager.get_buildings_of_type(UnitType(UNIT_TYPEID.TERRAN_REFINERY, self.idabot))
+            for refinery in refineries:
+                if refinery.get_pos().x == task.pos.x and refinery.get_pos().y == task.pos.y:
+                    unit.set_gassing(refinery.get_unit())
+        # TODO: Om unit byggt refinery, set unit.stop() så han inte automatiskt börjar collecta gas

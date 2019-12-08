@@ -21,10 +21,8 @@ class MyAgent(IDABot):
         self.resource_manager = ResourceManager(self.minerals, self.gas, self.current_supply, self)
         self.unit_manager = UnitManager(self)
         self.strategy_network = Strategy(self)
-        self.assignment_manager = AssignmentManager(unit_manager=self.unit_manager,
-                                                    building_manager=self.building_manager)
+        self.assignment_manager = AssignmentManager(self)
         self.scout_manager = ScoutingManager(self)
-        self.building_manager = BuildingManager(self)
         self.building_strategy = BuildingStrategy(self.resource_manager)
         self.print_debug = PrintDebug(self, self.building_manager, self.unit_manager, self.scout_manager,
                                       self.building_strategy, self.strategy_network, True)
@@ -45,6 +43,16 @@ class MyAgent(IDABot):
         self.assignment_manager.on_step()
         self.print_debug.on_step()
 
+    def get_mineral_fields(self, base_location: BaseLocation):
+        """ Given a base_location, this method will find and return a list of all mineral fields (Unit) for that base """
+        mineral_fields = []
+        for mineral_field in base_location.mineral_fields:
+            for unit in self.get_all_units():
+                if unit.unit_type.is_mineral \
+                        and mineral_field.tile_position.x == unit.tile_position.x \
+                        and mineral_field.tile_position.y == unit.tile_position.y:
+                    mineral_fields.append(unit)
+        return mineral_fields
 
 def main():
     coordinator = Coordinator(r"D:\StarCraft II\Versions\Base69232\SC2_x64.exe")

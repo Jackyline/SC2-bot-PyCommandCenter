@@ -5,17 +5,26 @@ from classes.building_manager import BuildingManager
 from classes.hungarian import Hungarian
 from classes.task_type import TaskType
 from classes.unit_manager import UnitManager
-from library import Point2D
+from library import *
+from classes.task import Task
+
 from munkres import print_matrix
 
 
 class AssignmentManager:
 
-    def __init__(self, unit_manager: UnitManager, building_manager: BuildingManager):
-        self.worker_assignments = WorkerAssignments(unit_manager)
-        self.military_assignments = MilitaryAssignments(unit_manager)
-        self.building_assignments = BuildingAssignments(building_manager)
+    def __init__(self, ida_bot):
+        self.ida_bot = ida_bot
+        self.building_manager = ida_bot.building_manager
+        self.unit_manager = ida_bot.unit_manager
+        self.worker_assignments = WorkerAssignments(self.unit_manager)
+        self.military_assignments = MilitaryAssignments(self.unit_manager)
+        self.building_assignments = BuildingAssignments(self.building_manager)
         self.hungarian = Hungarian()
+
+        self.last_tick_mining_tasks = 0
+        self.last_tick_gas_tasks = 0
+
 
     def generate_matrix(self, utility_func, units, tasks):
         """
@@ -56,9 +65,9 @@ class AssignmentManager:
         available_units = task_type.get_available_units()
         matrix = self.generate_matrix(task_type.utility_func, available_units, all_tasks)
         #print_matrix(matrix, msg="Matrix generated for: " + task_type.toString())
-        print("### CALCULATING ASSIGNMENTS ### \n Nr tasks: ", len(all_tasks), "\n Nr units: ", len(available_units))
+        #print("### CALCULATING ASSIGNMENTS ### \n Nr tasks: ", len(all_tasks), "\n Nr units: ", len(available_units))
         matching = self.hungarian.compute_assignments(matrix)
-        self.hungarian.pretty_print_assignments()
+        #self.hungarian.pretty_print_assignments()
         assignments = self.convert_matching_to_assignments(matching, available_units, all_tasks)
         task_type.tasks.clear()
         return assignments
@@ -75,6 +84,12 @@ class AssignmentManager:
             assignment_type.update(assignments)
 
     def on_step(self):
+        if self.ida_bot.current_frame % 10 != 0:
+            return
+        # Add recommended nr of gas and mining tasks
+        self.generate_gas_tasks()
+        self.generate_mining_tasks()
+
         # Update worker assignments
         self.update_assignments(self.worker_assignments)
 
@@ -84,10 +99,24 @@ class AssignmentManager:
         # Update building assignments
         self.update_assignments(self.building_assignments)
 
+
+    def generate_mining_tasks(self):
+        for base in self.ida_bot.base_location_manager.get_occupied_base_locations(PLAYER_SELF):
+            for i in range(2*len(self.ida_bot.get_mineral_fields(base))):
+                self.worker_assignments.add_task(Task(task_type=TaskType.MINING, pos=base.position, base_location=base))
+
+
+    def generate_gas_tasks(self):
+        for refinary in self.building_manager.get_buildings_of_type(UnitType(UNIT_TYPEID.TERRAN_REFINERY, self.ida_bot)):
+            for i in range(3):
+                self.last_tick_mining_tasks += 1
+                self.worker_assignments.add_task(Task(task_type=TaskType.GAS, pos=refinary.get_unit().position))
+
     def add_task(self, task):
         """
         Adds a task to the UNIT_assignment, where UNIT can be worker, military group or building
         """
+
         # Tasks done by workers
         if task.task_type is TaskType.MINING or task.task_type is TaskType.GAS or task.task_type is TaskType.BUILD or task.task_type is TaskType.SCOUT:
             self.worker_assignments.add_task(task)
@@ -107,6 +136,7 @@ class WorkerAssignments:
         self.unit_manager = unit_manager
         self.assignments = {}  # dict<task, worker_unit>
         self.tasks = []
+        self.currently_mining = 0
 
     def utility_func(self, worker, task):
         Point2D.distance = lambda self, other: math.sqrt((self.x - other.x)**2 + (self.y - other.y)**2)
@@ -114,9 +144,13 @@ class WorkerAssignments:
         idle = worker.is_idle()
 
         profit = 0
-
+        if not worker.task is None and worker.task == task:
+            profit += 101
         if idle:
             profit += 100
+
+        if task.task_type is TaskType.GAS:
+            profit += 1000
 
         profit -= distance
 
@@ -131,7 +165,7 @@ class WorkerAssignments:
             task = worker.get_task()
             if task is None:
                 available_units.append(worker) # worker is available
-            elif task is TaskType.MINING or task is TaskType.GAS: # also add those who are mining or collecting gas
+            elif task.task_type is TaskType.MINING or task.task_type is TaskType.GAS: # also add those who are mining or collecting gas
                 available_units.append(worker)
         return available_units
 
@@ -139,12 +173,24 @@ class WorkerAssignments:
         return "worker assignments"
 
     def update(self, new_assignments: dict):
-        self.assignments.update(new_assignments)
+        workers_that_previusly_were_mining_but_no_longor_will =  []
+        for task in self.assignments:
+            if task.task_type is not TaskType.MINING and task.task_type is not TaskType.GAS:
+                new_assignments[task] = self.assignments[task]
+            else:
+                workers_that_previusly_were_mining_but_no_longor_will.append(self.assignments[task])
+
+        for worker in workers_that_previusly_were_mining_but_no_longor_will:
+            if not worker in new_assignments.values():
+                worker.set_task(None)
+                worker.set_idle()
+
+        self.assignments = new_assignments
         for worker_unit in self.get_available_units():
             for task, assigned_unit in self.assignments.items():
-                if worker_unit == assigned_unit:
+                if worker_unit.get_id() == assigned_unit.get_id():
                     prev_task = worker_unit.get_task()
-                    if prev_task != task:
+                    if prev_task is None or not prev_task == task:
                         worker_unit.set_task(task)
                         self.unit_manager.command_unit(worker_unit, task)
 
@@ -165,15 +211,21 @@ class WorkerAssignments:
     def remove_finished_tasks(self):
         to_remove = {}
         for task, worker in self.assignments.items():
-            if worker.get_unit().is_idle or not worker.is_alive():
+
+            if worker.get_unit().is_idle:
+                if not worker.get_task().task_type is TaskType.SCOUT:
+                    to_remove[task] = worker
+
+            elif not worker.is_alive():
                 to_remove[task] = worker
+
         for task, worker in to_remove.items():
             worker.set_task(None)
             self.assignments.pop(task)
 
     def get_tasks(self):
         self.remove_finished_tasks()
-        self.add_already_assigned_tasks()
+        #self.add_already_assigned_tasks()
         return self.tasks
 
 

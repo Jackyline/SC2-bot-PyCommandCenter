@@ -6,7 +6,7 @@ from classes.resource_manager import ResourceManager
 from classes.unit_manager import UnitManager
 from classes.assignment_manager import AssignmentManager
 from classes.building_manager import BuildingManager
-from classes.task_manager import TaskManager
+#from classes.task_manager import TaskManager
 from strategy.strategy import Strategy
 from classes.scouting_manager import ScoutingManager
 from classes.print_debug import PrintDebug
@@ -66,6 +66,8 @@ class MyAgent(IDABot):
         #self.print_debug.on_step()
         #self.assignment_manager.on_step()
         #self.task_manager.on_step()
+
+
 
 
 def main():
