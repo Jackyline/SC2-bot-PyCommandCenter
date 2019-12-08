@@ -1,7 +1,7 @@
 
 from library import *
 import random
-
+import math
 class StupidAgent(IDABot):
     def __init__(self):
         IDABot.__init__(self)
@@ -26,7 +26,31 @@ class StupidAgent(IDABot):
                 enemy.append(unit)
         a = 3
 
-        for unit in my:
-            if len(enemy) > 0 and not unit.has_target:
-                unit.attack_unit(random.choice(enemy))
 
+
+        for unit in my:
+            if enemy:
+                unit.attack_unit(closest_enemy(enemy,unit))
+
+
+def get_distance_to(unit, enemy):
+    """
+    Return the distance to a unit, if units is none 10 will be returned
+    :param unit:
+    :return:
+    """
+
+    return math.sqrt((unit.position.x - enemy.position.x)**2 +
+                             (unit.position.y - enemy.position.y)**2)
+
+
+
+def closest_enemy(enemies, unit):
+    closest_enemy = enemies[0]
+    closest_distance = get_distance_to(unit,closest_enemy)
+    for enemy in enemies:
+        distance = get_distance_to(unit, enemy)
+        if distance < closest_distance:
+            closest_distance = distance
+            closest_enemy = enemy
+    return closest_enemy

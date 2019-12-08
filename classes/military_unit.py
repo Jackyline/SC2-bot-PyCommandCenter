@@ -23,6 +23,7 @@ class MilitaryUnit:
         self.e_in_range = []  # enemies in range
 
         self.in_combat = False # A unit is in combat if it is within 10 distance of any enemy units
+        self.first_tick_in_combat = False
         self.target = None
         self.attacked = False # was the last action an attack?
         self.hp = {}  # {unit: hp}  # used to compare hp of units between two ticks
@@ -32,7 +33,7 @@ class MilitaryUnit:
         self.state = ""
         self.learning_rate = 0.1
         self.discount_factor = 0.7 #TODO: ändra
-        self.exploration = 0.0 # Set this to 0 to use the learned policy
+        self.exploration = 0.1 # Set this to 0 to use the learned policy
         self.total_reward = 0
 
 
@@ -49,7 +50,7 @@ class MilitaryUnit:
             self.attack_animation_offset = 1
         elif type_id == UNIT_TYPEID.TERRAN_MARAUDER:
             self.concussive_shells = True  # remove comment when concussive_shells are researched
-            self.attack_animation_offset = 6
+            self.attack_animation_offset = 7
         elif type_id == UNIT_TYPEID.TERRAN_HELLION:
             self.attack_animation_offset = 0
         elif type_id == UNIT_TYPEID.TERRAN_CYCLONE:
@@ -63,9 +64,11 @@ class MilitaryUnit:
         :param enemies_in_range: all enemies within a range of 6
         :return: None
         """
+        self.update_in_sight(e_in_sight, enemies_that_can_attack, allies_in_sight, enemies_in_range)
         if not self.in_combat:
-            if self.idabot.current_frame > self.action_end_frame:
-                self.update_in_sight(e_in_sight, enemies_that_can_attack, allies_in_sight, enemies_in_range)
+            closest_enemy = self.__get_closest_enemy(self.idabot.unit_manager.visible_enemies)
+            if closest_enemy:
+                self.attack_unit(closest_enemy)
 
         elif self.attacked and self.get_weapon_cooldown() == 0:
             self.action_end_frame += 1
@@ -91,16 +94,17 @@ class MilitaryUnit:
             #reward -= 5
 
         self.total_reward += reward # To keep track of the total reward for debugging putposes
-        self.update_in_sight(e_in_sight, enemies_that_can_attack, allies_in_sight, enemies_in_range)
-
-        if not self.in_combat: # If unit was in comnbat but no longer is
-            return
+        self.update_hp()
 
         new_state = self.update_state()  # Get new state, note that self.state still refers to the previous state
         action_to_take = self.q_table.get_action(new_state)  # Get next action to take
 
         if random.uniform(0, 1) < self.exploration:
             action_to_take = random.randint(0, 1)
+
+        if self.first_tick_in_combat:
+            action_to_take = 0
+            self.first_tick_in_combat = False
 
         if self.exploration > 0: # Only if exploration is on should the Q-table be updated
             q_value = (1-self.learning_rate)*self.q_table.get_value(self.state, self.old_action) + \
@@ -113,7 +117,10 @@ class MilitaryUnit:
             #print("attack")
             self.attack_action()
             self.attacked = True
-            self.action_end_frame = self.idabot.current_frame + self.attack_animation_offset
+            if self.get_weapon_cooldown() == 0:
+                self.action_end_frame = self.idabot.current_frame + self.attack_animation_offset
+            else:
+                self.action_end_frame = self.idabot.current_frame
         elif action_to_take == 1:
             #print("retreat")
             self.retreat_action()
@@ -137,13 +144,18 @@ class MilitaryUnit:
 
         #If unit was in combat but no longer is
         if len(self.e_in_sight) == 0 and self.in_combat == True:
-            self.action_end_frame = self.idabot.current_frame
+            self.action_end_frame = 0
             self.stop()
-
+        elif len(self.e_in_sight) > 0 and self.in_combat == False:
+            self.action_end_frame = 0
+            #self.stop()
+            self.first_tick_in_combat = True
         self.in_combat = True if e_in_sight else False
 
+    def update_hp(self):
         # Updates self.hp
         # Enemy units
+        self.hp.clear()
         for unit in self.e_in_sight:
             self.hp[unit] = unit.hit_points
         # Allied units
@@ -216,7 +228,8 @@ class MilitaryUnit:
 
     def lowest_health_enemy(self):
         """
-        Gets the enemy with lowest health (in range or in sight)
+        Gets the enemy with lowest health in range,
+        if there are none in range, the closest enemy in sight will be returned
         :return: unit with lowest health
         """
         if len(self.e_in_range) > 0:
@@ -226,10 +239,8 @@ class MilitaryUnit:
                     lowest_health = enemy
             return lowest_health
         else:
-            lowest_health = self.e_in_sight[0]
-            for enemy in self.e_in_sight:
-                if enemy.hit_points < lowest_health.hit_points:
-                    lowest_health = enemy
+            lowest_health = self.get_closest_enemy()
+
             return lowest_health
 
 
@@ -246,6 +257,22 @@ class MilitaryUnit:
         closest_enemy = self.e_in_sight[0]
         closest_distance = self.get_distance_to(closest_enemy)
         for enemy in self.e_in_sight:
+            distance = self.get_distance_to(enemy)
+            if  distance < closest_distance:
+                closest_distance = distance
+                closest_enemy = enemy
+        return closest_enemy
+
+    def __get_closest_enemy(self,unit_list): #TODO: OUTDATED, to be removed
+        """
+        gets the closest enemy
+        :return: closest unit
+        """
+        if len(unit_list) == 0:
+            return None
+        closest_enemy = unit_list[0]
+        closest_distance = self.get_distance_to(closest_enemy)
+        for enemy in unit_list:
             distance = self.get_distance_to(enemy)
             if  distance < closest_distance:
                 closest_distance = distance
