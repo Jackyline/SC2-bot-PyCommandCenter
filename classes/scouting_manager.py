@@ -103,7 +103,7 @@ class ScoutingManager:
         self.bot.unit_manager.scout_units[0].set_goal(enemy_base.position)
 
     def ask_for_scout(self):
-        task_scout = Task(TaskType.SCOUT)
+        task_scout = Task(TaskType.SCOUT, pos=self.bot.base_location_manager.get_player_starting_base_location(PLAYER_SELF).position)
         self.bot.assignment_manager.add_task(task_scout)
 
     def create_log(self):

@@ -14,6 +14,9 @@ class WorkerUnit:
 
         self.unit.hold_position()
 
+    def is_idle(self):
+        return self.unit.is_idle
+
     def get_id(self):
         return self.unit.id
 
