@@ -225,9 +225,15 @@ class CoalitionstructureGenerator:
         # Restore the coalition to the same value as it started with
         coalition[index] = start_value
 
-    def add_unit(self, unit, groups):
-        #TODO
-        pass
+    def find_best_group(self, unit, cs):
+        max_value = 0
+        best_group = -1
+        for i, coalition in enumerate(cs):
+            value = self.v(coalition)
+            if value > max_value:
+                max_value = value
+                best_group = i
+        return best_group
 
 
 if __name__ == '__main__':

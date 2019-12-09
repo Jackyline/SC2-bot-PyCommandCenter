@@ -199,10 +199,9 @@ class UnitManager:
         :param nr_coalitions: How many coalitions to divide units into
         :return: None, update internal state for coalitions (self.cs)
         '''
-        # TODO: change this to something reasonable, change to military_unit
         info = {}
         info["militaryUnits"] = {
-            military_type.get_unit_type(): list(map(lambda x: x.get_id(), self.get_units_of_type(military_type.get_unit_type())))
+            military_type.get_unit_type(): self.get_units_of_type(military_type.get_unit_type())
             for military_type in self.military_units
             if "militaryUnits" not in info
                or military_type.get_unit_type() not in info["militaryUnits"]
@@ -218,7 +217,7 @@ class UnitManager:
 
         for unit in self.military_units:
             if unit not in units_in_groups:
-                self.csg.add_unit(unit, self.groups)
+                self.groups[self.csg.find_best_group(unit, self.groups)].append(unit)
 
     def command_group(self, task, group):
         for unit in group:
