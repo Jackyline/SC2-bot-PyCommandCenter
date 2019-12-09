@@ -249,7 +249,8 @@ class UnitManager:
 
         if task.task_type is TaskType.SCOUT:
             self.idabot.scout_manager.scouts_requested -= 1
-            self.scout_units.append(ScoutUnit(unit.unit, self.idabot.scout_manager))
+            self.scout_units.append(ScoutUnit(unit.unit, self.idabot.scout_manager, self.idabot.strategy_network,
+                                              len(self.scout_units)))
 
         elif task.task_type is TaskType.MINING:
             minerals = self.idabot.get_mineral_fields(task.base_location)
