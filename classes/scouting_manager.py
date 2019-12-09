@@ -91,7 +91,7 @@ class ScoutingManager:
 
             # Nothing has been spotted
             if self.hmm.get_most_likely()[0] == 0.0:
-                if self.bot.unit_manager.scout_units[0].goal is None or scout.get_unit().is_idle:
+                if self.bot.unit_manager.scout_units[0].goal is None:
                     self.send_away_one_scout_to_enemy()
             else:
                 if scout.reached_goal(self.bot.current_frame) or scout.get_unit().is_idle:
