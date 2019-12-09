@@ -4,7 +4,9 @@ import torch.nn.functional as F
 import numpy as np
 import random
 from classes.assignment_manager import AssignmentManager
-from library import UnitType, UNIT_TYPEID
+from library import *
+from classes.task import Task
+from classes.task_type import TaskType
 from classes.resource_manager import ResourceManager
 
 class Net(nn.Module):
@@ -27,13 +29,17 @@ class Net(nn.Module):
         return x
 
 class BuildingStrategy:
-    def __init__(self, resource_manager: ResourceManager, assignment_manager: AssignmentManager):
+    def __init__(self, idabot, resource_manager: ResourceManager, assignment_manager: AssignmentManager):
+        self.idabot = idabot
+        self.last_build = 0
+        self.first = 0
         self.resource_manager = resource_manager
         self.assignment_manager = assignment_manager
         self.observations = []
         self.model = Net()
         self.model.load_state_dict(torch.load('./buildingstrategy/model_final.pth'))
         self.model.eval()
+        self.last_action = ""
         #TODO fix this in other file
         self.actions = {}
         for key, value in action_id.items():
@@ -44,8 +50,15 @@ class BuildingStrategy:
         pass
 
     def create_task(self):
+        pass
 
     def action(self):
+        curr_seconds = self.idabot.current_frame // 24
+        if curr_seconds - self.last_build < 5:
+            return self.last_action
+
+        self.last_build = curr_seconds
+
         gas = self.resource_manager.get_gas()
         minerals = self.resource_manager.get_minerals()
         supply = self.resource_manager.get_supply()
@@ -77,56 +90,73 @@ class BuildingStrategy:
         else:
             action = predicted_top_three[0]
 
-        return action_name[self.actions[str(action)]]
+        action = action_name[self.actions[str(action)]]
+        action_type = self.name_to_type(action)
+        #print("bajs")
+        #print(self.idabot.base_location_manager.get_player_starting_base_location().position)
+        #print(self.idabot.base_location_manager.get_player_starting_base_location(PLAYER_SELF).depot_position)
+        #supply_depot = UnitType(UNIT_TYPEID.TERRAN_SUPPLYDEPOT, self.idabot)
+        print("Adding Task")
+        if self.resource_manager.can_afford(action_type):
+            location_near = self.idabot.base_location_manager.get_player_starting_base_location(PLAYER_SELF).depot_position
+            build_location = self.idabot.building_placer.get_build_location_near(location_near, action_type)
+            build_location = Point2D(build_location.x, build_location.y)
+            task = Task(TaskType.BUILD, build_location, construct_building=action_type)
+            self.assignment_manager.add_task(task)
+        self.last_action = action
+        return action
 
-name_to_type = {
-    "BarracksReactor": UnitType(UNIT_TYPEID.TERRAN_BARRACKSREACTOR, self.idabot),
-    "FactoryFlying": UnitType(UNIT_TYPEID.TERRAN_FACTORYFLYING, self.idabot),
-    "SupplyDepot": UnitType(UNIT_TYPEID.TERRAN_SUPPLYDEPOT, self.idabot),
-    "BarracksTechLab": UnitType(UNIT_TYPEID.TERRAN_BARRACKSTECHLAB, self.idabot),
-    "OrbitalCommand": UnitType(UNIT_TYPEID.TERRAN_ORBITALCOMMAND, self.idabot),
-    "EngineeringBay": UnitType(UNIT_TYPEID.TERRAN_ENGINEERINGBAY, self.idabot),
-    "Bunker": UnitType(UNIT_TYPEID.TERRAN_BUNKER, self.idabot),
-    "StarportReactor": UnitType(UNIT_TYPEID.TERRAN_STARPORTREACTOR, self.idabot),
-    "Starport": UnitType(UNIT_TYPEID.TERRAN_STARPORT, self.idabot),
-    "StarportTechLab": UnitType(UNIT_TYPEID.TERRAN_STARPORTTECHLAB, self.idabot),
-    "FusionCore": UnitType(UNIT_TYPEID.TERRAN_FUSIONCORE, self.idabot),
-    "MissileTurret": UnitType(UNIT_TYPEID.TERRAN_MISSILETURRET, self.idabot),
-    "Factory": UnitType(UNIT_TYPEID.TERRAN_FACTORY, self.idabot),
-    "FactoryReactor": UnitType(UNIT_TYPEID.TERRAN_FACTORYREACTOR, self.idabot),
-    "Armory": UnitType(UNIT_TYPEID.TERRAN_ARMORY, self.idabot),
-    "BarracksFlying": UnitType(UNIT_TYPEID.TERRAN_BARRACKSFLYING, self.idabot),
-    "TechLab": UnitType(UNIT_TYPEID.TERRAN_TECHLAB, self.idabot),
-    "OrbitalCommandFlying": UnitType(UNIT_TYPEID.TERRAN_ORBITALCOMMANDFLYING, self.idabot),
-    "FactoryTechLab": UnitType(UNIT_TYPEID.TERRAN_FACTORYTECHLAB, self.idabot),
-    "SensorTower": UnitType(UNIT_TYPEID.TERRAN_SENSORTOWER, self.idabot),
-    "CommandCenterFlying": UnitType(UNIT_TYPEID.TERRAN_COMMANDCENTERFLYING, self.idabot),
-    "CommandCenter": UnitType(UNIT_TYPEID.TERRAN_COMMANDCENTER, self.idabot),
-    "GhostAcademy": UnitType(UNIT_TYPEID.TERRAN_GHOSTACADEMY, self.idabot),
-    "PlanetaryFortress": UnitType(UNIT_TYPEID.TERRAN_PLANETARYFORTRESS, self.idabot),
-    "Reactor": UnitType(UNIT_TYPEID.TERRAN_REACTOR, self.idabot),
-    "Barracks": UnitType(UNIT_TYPEID.TERRAN_BARRACKS, self.idabot),
-    "SupplyDepotLowered": UnitType(UNIT_TYPEID.TERRAN_SUPPLYDEPOTLOWERED, self.idabot),
-    "AutoTurret": UnitType(UNIT_TYPEID.TERRAN_AUTOTURRET, self.idabot),
-    "MULE": UnitType(UNIT_TYPEID.TERRAN_MULE, self.idabot),
-    "Medivac": UnitType(UNIT_TYPEID.TERRAN_MEDIVAC, self.idabot),
-    "Thor": UnitType(UNIT_TYPEID.TERRAN_THOR, self.idabot),
-    "Marauder": UnitType(UNIT_TYPEID.TERRAN_MARAUDER, self.idabot),
-    "Battlecruiser": UnitType(UNIT_TYPEID.TERRAN_BATTLECRUISER, self.idabot),
-    "Reaper": UnitType(UNIT_TYPEID.TERRAN_REAPER, self.idabot),
-    "WidowMine": UnitType(UNIT_TYPEID.TERRAN_WIDOWMINE, self.idabot),
-    "Hellion": UnitType(UNIT_TYPEID.TERRAN_HELLION, self.idabot),
-    "Raven": UnitType(UNIT_TYPEID.TERRAN_RAVEN, self.idabot),
-    "Marine": UnitType(UNIT_TYPEID.TERRAN_MARINE, self.idabot),
-    "SiegeTank": UnitType(UNIT_TYPEID.TERRAN_SIEGETANK, self.idabot),
-    "SCV": UnitType(UNIT_TYPEID.TERRAN_SCV, self.idabot),
-    "VikingFighter": UnitType(UNIT_TYPEID.TERRAN_VIKINGFIGHTER, self.idabot),
-    "Cyclone": UnitType(UNIT_TYPEID.TERRAN_CYCLONE, self.idabot),
-    "Liberator": UnitType(UNIT_TYPEID.TERRAN_LIBERATOR, self.idabot),
-    "Banshee": UnitType(UNIT_TYPEID.TERRAN_BANSHEE, self.idabot),
-    "Ghost": UnitType(UNIT_TYPEID.TERRAN_GHOST, self.idabot),
-    "Refinery": UnitType(UNIT_TYPEID.TERRAN_REFINERY)
-}
+    def name_to_type(self, name):
+        to_type = {
+            "BarracksReactor": UnitType(UNIT_TYPEID.TERRAN_BARRACKSREACTOR, self.idabot),
+            "FactoryFlying": UnitType(UNIT_TYPEID.TERRAN_FACTORYFLYING, self.idabot),
+            "SupplyDepot": UnitType(UNIT_TYPEID.TERRAN_SUPPLYDEPOT, self.idabot),
+            "BarracksTechLab": UnitType(UNIT_TYPEID.TERRAN_BARRACKSTECHLAB, self.idabot),
+            "OrbitalCommand": UnitType(UNIT_TYPEID.TERRAN_ORBITALCOMMAND, self.idabot),
+            "EngineeringBay": UnitType(UNIT_TYPEID.TERRAN_ENGINEERINGBAY, self.idabot),
+            "Bunker": UnitType(UNIT_TYPEID.TERRAN_BUNKER, self.idabot),
+            "StarportReactor": UnitType(UNIT_TYPEID.TERRAN_STARPORTREACTOR, self.idabot),
+            "Starport": UnitType(UNIT_TYPEID.TERRAN_STARPORT, self.idabot),
+            "StarportTechLab": UnitType(UNIT_TYPEID.TERRAN_STARPORTTECHLAB, self.idabot),
+            "FusionCore": UnitType(UNIT_TYPEID.TERRAN_FUSIONCORE, self.idabot),
+            "MissileTurret": UnitType(UNIT_TYPEID.TERRAN_MISSILETURRET, self.idabot),
+            "Factory": UnitType(UNIT_TYPEID.TERRAN_FACTORY, self.idabot),
+            "FactoryReactor": UnitType(UNIT_TYPEID.TERRAN_FACTORYREACTOR, self.idabot),
+            "Armory": UnitType(UNIT_TYPEID.TERRAN_ARMORY, self.idabot),
+            "BarracksFlying": UnitType(UNIT_TYPEID.TERRAN_BARRACKSFLYING, self.idabot),
+            "TechLab": UnitType(UNIT_TYPEID.TERRAN_TECHLAB, self.idabot),
+            "OrbitalCommandFlying": UnitType(UNIT_TYPEID.TERRAN_ORBITALCOMMANDFLYING, self.idabot),
+            "FactoryTechLab": UnitType(UNIT_TYPEID.TERRAN_FACTORYTECHLAB, self.idabot),
+            "SensorTower": UnitType(UNIT_TYPEID.TERRAN_SENSORTOWER, self.idabot),
+            "CommandCenterFlying": UnitType(UNIT_TYPEID.TERRAN_COMMANDCENTERFLYING, self.idabot),
+            "CommandCenter": UnitType(UNIT_TYPEID.TERRAN_COMMANDCENTER, self.idabot),
+            "GhostAcademy": UnitType(UNIT_TYPEID.TERRAN_GHOSTACADEMY, self.idabot),
+            "PlanetaryFortress": UnitType(UNIT_TYPEID.TERRAN_PLANETARYFORTRESS, self.idabot),
+            "Reactor": UnitType(UNIT_TYPEID.TERRAN_REACTOR, self.idabot),
+            "Barracks": UnitType(UNIT_TYPEID.TERRAN_BARRACKS, self.idabot),
+            "SupplyDepotLowered": UnitType(UNIT_TYPEID.TERRAN_SUPPLYDEPOTLOWERED, self.idabot),
+            "AutoTurret": UnitType(UNIT_TYPEID.TERRAN_AUTOTURRET, self.idabot),
+            "MULE": UnitType(UNIT_TYPEID.TERRAN_MULE, self.idabot),
+            "Medivac": UnitType(UNIT_TYPEID.TERRAN_MEDIVAC, self.idabot),
+            "Thor": UnitType(UNIT_TYPEID.TERRAN_THOR, self.idabot),
+            "Marauder": UnitType(UNIT_TYPEID.TERRAN_MARAUDER, self.idabot),
+            "Battlecruiser": UnitType(UNIT_TYPEID.TERRAN_BATTLECRUISER, self.idabot),
+            "Reaper": UnitType(UNIT_TYPEID.TERRAN_REAPER, self.idabot),
+            "WidowMine": UnitType(UNIT_TYPEID.TERRAN_WIDOWMINE, self.idabot),
+            "Hellion": UnitType(UNIT_TYPEID.TERRAN_HELLION, self.idabot),
+            "Raven": UnitType(UNIT_TYPEID.TERRAN_RAVEN, self.idabot),
+            "Marine": UnitType(UNIT_TYPEID.TERRAN_MARINE, self.idabot),
+            "SiegeTank": UnitType(UNIT_TYPEID.TERRAN_SIEGETANK, self.idabot),
+            "SCV": UnitType(UNIT_TYPEID.TERRAN_SCV, self.idabot),
+            "VikingFighter": UnitType(UNIT_TYPEID.TERRAN_VIKINGFIGHTER, self.idabot),
+            "Cyclone": UnitType(UNIT_TYPEID.TERRAN_CYCLONE, self.idabot),
+            "Liberator": UnitType(UNIT_TYPEID.TERRAN_LIBERATOR, self.idabot),
+            "Banshee": UnitType(UNIT_TYPEID.TERRAN_BANSHEE, self.idabot),
+            "Ghost": UnitType(UNIT_TYPEID.TERRAN_GHOST, self.idabot),
+            "Refinery": UnitType(UNIT_TYPEID.TERRAN_REFINERY, self.idabot)
+        }
+
+        return to_type[name]
 
 # TODO fix this in other file
 action_id = {
