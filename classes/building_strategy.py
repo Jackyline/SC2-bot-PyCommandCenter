@@ -3,6 +3,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 import random
+from classes.assignment_manager import AssignmentManager
+from library import *
+from classes.task import Task
+from classes.task_type import TaskType
 from classes.resource_manager import ResourceManager
 
 class Net(nn.Module):
@@ -23,13 +27,19 @@ class Net(nn.Module):
         x = F.relu(self.fc5(x))
         x = self.fc6(x)
         return x
+
 class BuildingStrategy:
-    def __init__(self, resource_manager: ResourceManager):
+    def __init__(self, idabot, resource_manager: ResourceManager, assignment_manager: AssignmentManager):
+        self.idabot = idabot
+        self.last_build = 0
+        self.first = 0
         self.resource_manager = resource_manager
+        self.assignment_manager = assignment_manager
         self.observations = []
         self.model = Net()
         self.model.load_state_dict(torch.load('./buildingstrategy/model_final.pth'))
         self.model.eval()
+        self.last_action = ""
         #TODO fix this in other file
         self.actions = {}
         for key, value in action_id.items():
@@ -39,10 +49,16 @@ class BuildingStrategy:
     def update_obs(self, observations):
         pass
 
-    """
-        Returns an action.
-    """
+    def create_task(self):
+        pass
+
     def action(self):
+        curr_seconds = self.idabot.current_frame // 24
+        if curr_seconds - self.last_build < 5:
+            return self.last_action
+
+        self.last_build = curr_seconds
+
         gas = self.resource_manager.get_gas()
         minerals = self.resource_manager.get_minerals()
         supply = self.resource_manager.get_supply()
@@ -74,26 +90,76 @@ class BuildingStrategy:
         else:
             action = predicted_top_three[0]
 
-        return action_name[self.actions[str(action)]]
+        action = action_name[self.actions[str(action)]]
+        action_type = self.name_to_type(action)
+        #print("bajs")
+        #print(self.idabot.base_location_manager.get_player_starting_base_location().position)
+        #print(self.idabot.base_location_manager.get_player_starting_base_location(PLAYER_SELF).depot_position)
+        #supply_depot = UnitType(UNIT_TYPEID.TERRAN_SUPPLYDEPOT, self.idabot)
+        print("Adding Task")
+        if self.resource_manager.can_afford(action_type):
+            location_near = self.idabot.base_location_manager.get_player_starting_base_location(PLAYER_SELF).depot_position
+            build_location = self.idabot.building_placer.get_build_location_near(location_near, action_type)
+            build_location = Point2D(build_location.x, build_location.y)
+            task = Task(TaskType.BUILD, build_location, construct_building=action_type)
+            self.assignment_manager.add_task(task)
+        self.last_action = action
+        return action
+
+    def name_to_type(self, name):
+        to_type = {
+            "BarracksReactor": UnitType(UNIT_TYPEID.TERRAN_BARRACKSREACTOR, self.idabot),
+            "FactoryFlying": UnitType(UNIT_TYPEID.TERRAN_FACTORYFLYING, self.idabot),
+            "SupplyDepot": UnitType(UNIT_TYPEID.TERRAN_SUPPLYDEPOT, self.idabot),
+            "BarracksTechLab": UnitType(UNIT_TYPEID.TERRAN_BARRACKSTECHLAB, self.idabot),
+            "OrbitalCommand": UnitType(UNIT_TYPEID.TERRAN_ORBITALCOMMAND, self.idabot),
+            "EngineeringBay": UnitType(UNIT_TYPEID.TERRAN_ENGINEERINGBAY, self.idabot),
+            "Bunker": UnitType(UNIT_TYPEID.TERRAN_BUNKER, self.idabot),
+            "StarportReactor": UnitType(UNIT_TYPEID.TERRAN_STARPORTREACTOR, self.idabot),
+            "Starport": UnitType(UNIT_TYPEID.TERRAN_STARPORT, self.idabot),
+            "StarportTechLab": UnitType(UNIT_TYPEID.TERRAN_STARPORTTECHLAB, self.idabot),
+            "FusionCore": UnitType(UNIT_TYPEID.TERRAN_FUSIONCORE, self.idabot),
+            "MissileTurret": UnitType(UNIT_TYPEID.TERRAN_MISSILETURRET, self.idabot),
+            "Factory": UnitType(UNIT_TYPEID.TERRAN_FACTORY, self.idabot),
+            "FactoryReactor": UnitType(UNIT_TYPEID.TERRAN_FACTORYREACTOR, self.idabot),
+            "Armory": UnitType(UNIT_TYPEID.TERRAN_ARMORY, self.idabot),
+            "BarracksFlying": UnitType(UNIT_TYPEID.TERRAN_BARRACKSFLYING, self.idabot),
+            "TechLab": UnitType(UNIT_TYPEID.TERRAN_TECHLAB, self.idabot),
+            "OrbitalCommandFlying": UnitType(UNIT_TYPEID.TERRAN_ORBITALCOMMANDFLYING, self.idabot),
+            "FactoryTechLab": UnitType(UNIT_TYPEID.TERRAN_FACTORYTECHLAB, self.idabot),
+            "SensorTower": UnitType(UNIT_TYPEID.TERRAN_SENSORTOWER, self.idabot),
+            "CommandCenterFlying": UnitType(UNIT_TYPEID.TERRAN_COMMANDCENTERFLYING, self.idabot),
+            "CommandCenter": UnitType(UNIT_TYPEID.TERRAN_COMMANDCENTER, self.idabot),
+            "GhostAcademy": UnitType(UNIT_TYPEID.TERRAN_GHOSTACADEMY, self.idabot),
+            "PlanetaryFortress": UnitType(UNIT_TYPEID.TERRAN_PLANETARYFORTRESS, self.idabot),
+            "Reactor": UnitType(UNIT_TYPEID.TERRAN_REACTOR, self.idabot),
+            "Barracks": UnitType(UNIT_TYPEID.TERRAN_BARRACKS, self.idabot),
+            "SupplyDepotLowered": UnitType(UNIT_TYPEID.TERRAN_SUPPLYDEPOTLOWERED, self.idabot),
+            "AutoTurret": UnitType(UNIT_TYPEID.TERRAN_AUTOTURRET, self.idabot),
+            "MULE": UnitType(UNIT_TYPEID.TERRAN_MULE, self.idabot),
+            "Medivac": UnitType(UNIT_TYPEID.TERRAN_MEDIVAC, self.idabot),
+            "Thor": UnitType(UNIT_TYPEID.TERRAN_THOR, self.idabot),
+            "Marauder": UnitType(UNIT_TYPEID.TERRAN_MARAUDER, self.idabot),
+            "Battlecruiser": UnitType(UNIT_TYPEID.TERRAN_BATTLECRUISER, self.idabot),
+            "Reaper": UnitType(UNIT_TYPEID.TERRAN_REAPER, self.idabot),
+            "WidowMine": UnitType(UNIT_TYPEID.TERRAN_WIDOWMINE, self.idabot),
+            "Hellion": UnitType(UNIT_TYPEID.TERRAN_HELLION, self.idabot),
+            "Raven": UnitType(UNIT_TYPEID.TERRAN_RAVEN, self.idabot),
+            "Marine": UnitType(UNIT_TYPEID.TERRAN_MARINE, self.idabot),
+            "SiegeTank": UnitType(UNIT_TYPEID.TERRAN_SIEGETANK, self.idabot),
+            "SCV": UnitType(UNIT_TYPEID.TERRAN_SCV, self.idabot),
+            "VikingFighter": UnitType(UNIT_TYPEID.TERRAN_VIKINGFIGHTER, self.idabot),
+            "Cyclone": UnitType(UNIT_TYPEID.TERRAN_CYCLONE, self.idabot),
+            "Liberator": UnitType(UNIT_TYPEID.TERRAN_LIBERATOR, self.idabot),
+            "Banshee": UnitType(UNIT_TYPEID.TERRAN_BANSHEE, self.idabot),
+            "Ghost": UnitType(UNIT_TYPEID.TERRAN_GHOST, self.idabot),
+            "Refinery": UnitType(UNIT_TYPEID.TERRAN_REFINERY, self.idabot)
+        }
+
+        return to_type[name]
 
 # TODO fix this in other file
-action_id = {'140': '1',
-             '168': '11',
-             '261': '0',
-             '300': '16',
-             '301': '17',
-             '304': '18',
-             '305': '19',
-             '309': '22',
-             '312': '23',
-             '317': '26',
-             '318': '27',
-             '319': '28',
-             '320': '33',
-             '321': '30',
-             '322': '31',
-             '326': '35',
-             '327': '38',
+action_id = {
              '352': '58',
              '353': '55',
              '354': '57',
@@ -151,77 +217,61 @@ action_id = {'140': '1',
              '91': '48',
              '92': '50',
              '93': '53'}
-action_name = {'140': 'Cancel_quick',
-               '168': 'Cancel_Last_quick',
-               '261': 'Halt_quick',
-               '300': 'Morph_Hellbat_quick',
-               '301': 'Morph_Hellion_quick',
-               '304': 'Morph_LiberatorAAMode_quick',
-               '305': 'Morph_LiberatorAGMode_screen',
-               '309': 'Morph_OrbitalCommand_quick',
-               '312': 'Morph_PlanetaryFortress_quick',
-               '317': 'Morph_SiegeMode_quick',
-               '318': 'Morph_SupplyDepot_Lower_quick',
-               '319': 'Morph_SupplyDepot_Raise_quick',
-               '320': 'Morph_ThorExplosiveMode_quick',
-               '321': 'Morph_ThorHighImpactMode_quick',
-               '322': 'Morph_Unsiege_quick',
-               '326': 'Morph_VikingAssaultMode_quick',
-               '327': 'Morph_VikingFighterMode_quick',
-               '352': 'Research_AdvancedBallistics_quick',
-               '353': 'Research_BansheeCloakingField_quick',
-               '354': 'Research_BansheeHyperflightRotors_quick',
-               '355': 'Research_BattlecruiserWeaponRefit_quick',
-               '361': 'Research_CombatShield_quick',
-               '362': 'Research_ConcussiveShells_quick',
-               '363': 'Research_DrillingClaws_quick',
-               '369': 'Research_HiSecAutoTracking_quick',
-               '370': 'Research_HighCapacityFuelTanks_quick',
-               '371': 'Research_InfernalPreigniter_quick',
-               '375': 'Research_NeosteelFrame_quick',
-               '378': 'Research_PersonalCloaking_quick',
-               '39': 'Build_Armory_screen',
-               '402': 'Research_RavenCorvidReactor_quick',
-               '403': 'Research_RavenRecalibratedExplosives_quick',
-               '405': 'Research_Stimpack_quick',
-               '406': 'Research_TerranInfantryArmor_quick',
-               '410': 'Research_TerranInfantryWeapons_quick',
-               '414': 'Research_TerranShipWeapons_quick',
-               '418': 'Research_TerranStructureArmorUpgrade_quick',
-               '419': 'Research_TerranVehicleAndShipPlating_quick',
-               '42': 'Build_Barracks_screen',
-               '423': 'Research_TerranVehicleWeapons_quick',
-               '43': 'Build_Bunker_screen',
-               '44': 'Build_CommandCenter_screen',
-               '453': 'Stop_quick',
-               '459': 'Train_Banshee_quick',
-               '460': 'Train_Battlecruiser_quick',
-               '464': 'Train_Cyclone_quick',
-               '468': 'Train_Ghost_quick',
-               '469': 'Train_Hellbat_quick',
-               '470': 'Train_Hellion_quick',
-               '475': 'Train_Liberator_quick',
-               '476': 'Train_Marauder_quick',
-               '477': 'Train_Marine_quick',
-               '478': 'Train_Medivac_quick',
-               '487': 'Train_Raven_quick',
-               '488': 'Train_Reaper_quick',
-               '490': 'Train_SCV_quick',
-               '492': 'Train_SiegeTank_quick',
-               '496': 'Train_Thor_quick',
-               '498': 'Train_VikingFighter_quick',
-               '50': 'Build_EngineeringBay_screen',
-               '502': 'Train_WidowMine_quick',
-               '53': 'Build_Factory_screen',
-               '56': 'Build_FusionCore_screen',
-               '58': 'Build_GhostAcademy_screen',
-               '64': 'Build_MissileTurret_screen',
-               '66': 'Build_Nuke_quick',
-               '71': 'Build_Reactor_quick',
-               '72': 'Build_Reactor_screen',
-               '79': 'Build_Refinery_screen',
-               '83': 'Build_SensorTower_screen',
-               '89': 'Build_Starport_screen',
-               '91': 'Build_SupplyDepot_screen',
-               '92': 'Build_TechLab_quick',
-               '93': 'Build_TechLab_screen'}
+action_name = {
+               '352': 'Research_AdvancedBallistics',
+               '353': 'Research_BansheeCloakingField',
+               '354': 'Research_BansheeHyperflightRotors',
+               '355': 'Research_BattlecruiserWeaponRefit',
+               '361': 'Research_CombatShield',
+               '362': 'Research_ConcussiveShells',
+               '363': 'Research_DrillingClaws',
+               '369': 'Research_HiSecAutoTracking',
+               '370': 'Research_HighCapacityFuelTanks',
+               '371': 'Research_InfernalPreigniter',
+               '375': 'Research_NeosteelFrame',
+               '378': 'Research_PersonalCloaking',
+               '39': 'Armory',
+               '402': 'Research_RavenCorvidReactor',
+               '403': 'Research_RavenRecalibratedExplosives',
+               '405': 'Research_Stimpack',
+               '406': 'Research_TerranInfantryArmor',
+               '410': 'Research_TerranInfantryWeapons',
+               '414': 'Research_TerranShipWeapons',
+               '418': 'Research_TerranStructureArmorUpgrade',
+               '419': 'Research_TerranVehicleAndShipPlating',
+               '42': 'Barracks',
+               '423': 'Research_TerranVehicleWeapons',
+               '43': 'Bunker',
+               '44': 'CommandCenter',
+               '453': 'Stop',
+               '459': 'Banshee',
+               '460': 'Battlecruiser',
+               '464': 'Cyclone',
+               '468': 'Ghost',
+               '469': 'Hellbat',
+               '470': 'Hellion',
+               '475': 'Liberator',
+               '476': 'Marauder',
+               '477': 'Marine',
+               '478': 'Medivac',
+               '487': 'Raven',
+               '488': 'Reaper',
+               '490': 'SCV',
+               '492': 'SiegeTank',
+               '496': 'Thor',
+               '498': 'VikingFighter',
+               '50': 'EngineeringBay',
+               '502': 'WidowMine',
+               '53': 'Factory',
+               '56': 'FusionCore',
+               '58': 'GhostAcademy',
+               '64': 'MissileTurret',
+               '66': 'Nuke',
+               '71': 'Reactor',
+               '72': 'Reactor',
+               '79': 'Refinery',
+               '83': 'SensorTower',
+               '89': 'Starport',
+               '91': 'SupplyDepot',
+               '92': 'TechLab',
+               '93': 'TechLab'}

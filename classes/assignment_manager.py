@@ -84,7 +84,7 @@ class AssignmentManager:
             assignment_type.update(assignments)
 
     def on_step(self):
-        if self.ida_bot.current_frame % 10 != 0:
+        if self.ida_bot.current_frame % 10 == 0:
             return
         # Add recommended nr of gas and mining tasks
         self.generate_gas_tasks()
@@ -144,13 +144,17 @@ class WorkerAssignments:
         idle = worker.is_idle()
 
         profit = 0
-        if not worker.task is None and worker.task == task:
+        if not worker.task is None and worker.task == task: # valuable to do the same task as before
             profit += 101
+        if task.task_type == TaskType.SCOUT:
+            profit += 1000
+        elif task.task_type == TaskType.BUILD:
+            profit += 10000
+        elif task.task_type is TaskType.GAS:
+            profit += 1000
         if idle:
             profit += 100
 
-        if task.task_type is TaskType.GAS:
-            profit += 1000
 
         profit -= distance
 
