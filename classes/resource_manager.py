@@ -53,9 +53,9 @@ class ResourceManager():
     def can_afford(self, unit_type: UnitType):
         """ Returns True if there are an sufficient amount of minerals, gas and supply to build the given unit_type,
         alse otherwise """
-        return self.get_minerals >= unit_type.mineral_price and \
-               self.get_gas >= unit_type.gas_price \
-               and (self.bot.max_supply - self.get_supply) >= unit_type.supply_required
+        return self.get_minerals() >= unit_type.mineral_price and \
+               self.get_gas() >= unit_type.gas_price \
+               and (self.bot.max_supply - self.get_supply()) >= unit_type.supply_required
 
 class Resources():
     def __init__(self, minerals, gas, supply):
