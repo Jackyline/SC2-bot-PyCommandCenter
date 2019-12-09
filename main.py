@@ -88,7 +88,7 @@ class MyAgent(IDABot):
         if strategy == StrategyName.OFFENSIVE:
             offensive_groups = 4
             defensive_groups = 1
-            attack_pos = (10, 10)  # TODO: get from scouting_manager
+            attack_pos = self.scout_manager.get_enemy_target()
         else:  # strategy == StrategyName.DEFENSIVE
             offensive_groups = 0
             defensive_groups = len(command_centers)
