@@ -18,7 +18,7 @@ class AssignmentManager:
         self.building_manager = ida_bot.building_manager
         self.unit_manager = ida_bot.unit_manager
         self.worker_assignments = WorkerAssignments(self.unit_manager)
-        self.military_assignments = MilitaryAssignments(self.unit_manager)
+        self.military_assignments = MilitaryAssignments(self.ida_bot)
         self.building_assignments = BuildingAssignments(self.building_manager)
         self.hungarian = Hungarian()
 
@@ -173,14 +173,14 @@ class WorkerAssignments:
         return "worker assignments"
 
     def update(self, new_assignments: dict):
-        workers_that_previusly_were_mining_but_no_longor_will =  []
+        workers_that_previusly_were_mining_or_gassing_but_no_longor_will =  []
         for task in self.assignments:
             if task.task_type is not TaskType.MINING and task.task_type is not TaskType.GAS:
                 new_assignments[task] = self.assignments[task]
             else:
-                workers_that_previusly_were_mining_but_no_longor_will.append(self.assignments[task])
+                workers_that_previusly_were_mining_or_gassing_but_no_longor_will.append(self.assignments[task])
 
-        for worker in workers_that_previusly_were_mining_but_no_longor_will:
+        for worker in workers_that_previusly_were_mining_or_gassing_but_no_longor_will:
             if not worker in new_assignments.values():
                 worker.set_task(None)
                 worker.set_idle()
@@ -231,8 +231,9 @@ class WorkerAssignments:
 
 class MilitaryAssignments:
 
-    def __init__(self, unit_manager: UnitManager):
-        self.unit_manager = unit_manager
+    def __init__(self, IDABot: IDABot):
+        self.IDABot = IDABot
+        self.unit_manager = IDABot.unit_manager
         self.assignments = {}  # dict<task, worker_unit>
         self.tasks = []
 
@@ -240,18 +241,19 @@ class MilitaryAssignments:
         return 5
 
     def get_available_units(self):
-        self.unit_manager.create_coalition(5)
+        #if not len(self.tasks) == len() # If strategy has changed, or number of base locations has changed and we are in defensive strategy, create new groups
+        self.unit_manager.create_coalition()
+        #else:
+            #self.unit_manager.add_units_to_coalition()
         return self.unit_manager.groups
 
     def toString(self):
         return "military assignments"
 
     def update(self, new_assignments: dict):
-        self.assignments.update(new_assignments) # TODO sätta self.assignments = new_Assignments istället? kommer nya grupper skapas varje gång funktionen kallas? isf behöver inte gamla hållas koll på, annars borde en remove func läggas till
-        for group in self.get_available_units(): # TODO skapa group class?
-            for task, assigned_group in self.assignments:
-                if group == assigned_group:
-                    group.set_task(task) # TODO denna metod finns inte än
+        self.assignments = new_assignments
+        for task, group in new_assignments.items():
+            self.unit_manager.command_group(task, group)
 
     def add_task(self, task):
         self.tasks.append(task)
