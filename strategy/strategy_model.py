@@ -7,12 +7,12 @@ import torchvision
 
 import random
 
-from strategy.training_data import read_from_file
+from training_data import read_from_file
 
 BATCH_SIZE = 10
-EPOCHES = 10
+EPOCHES = 5
 LEARNING_RATE = 0.00001
-MOMENTUM = 0.5
+MOMENTUM = 0.9
 DATA_FILE = "data.txt"
 MODAL_NAME = "strategy/network"
 
@@ -32,8 +32,8 @@ class StrategyNet(nn.Module):
     def forward(self, input):
         output = torch.relu(self.linear1(input))
         output = torch.relu(self.linear2(output))
-        output = self.linear3(output)
-        output = torch.sigmoid(self.linear4(output))
+        output = torch.relu(self.linear3(output))
+        output = torch.relu(self.linear4(output))
         output = self.linear5(output)
 
         return output
@@ -60,8 +60,8 @@ class StrategyNetwork():
         return self.net(torch.FloatTensor(inputs)).tolist()
 
     def train_network(self, training_data):
-
-        criterion = nn.MSELoss()
+        #criterion = nn.MSELoss()
+        #criterion = F.cross_entropy()
         optimizer = optim.SGD(self.net.parameters(), lr=LEARNING_RATE, momentum=MOMENTUM)
 
         # Try add opponent strategy in input (being other than our own)
@@ -76,16 +76,24 @@ class StrategyNetwork():
 
                 actual_strategy = data["strategy"]
                 if actual_strategy == "Offensive":
-                    target = torch.FloatTensor([1, 0])
+                    target = torch.LongTensor([0])
                 else:  # actual_strategy == "Defensive":
-                    target = torch.FloatTensor([0, 1])
+                    target = torch.LongTensor([1])
+                    #target = torch.autograd.variable()
+                    #target = torch.autograd.Variable(torch.randn((3, 5)))
+                #target = torch.empty(1, dtype=torch.long).random_(2)
 
                 # zero the parameter gradients
                 optimizer.zero_grad()
 
                 # forward + backward + optimize
                 outputs = self.net(inputs)
-                loss = criterion(outputs, target)
+
+                outputs = outputs.view(1, 2)
+
+
+                #loss = criterion(outputs, target)
+                loss = F.cross_entropy(outputs, target)
                 loss.backward()
                 optimizer.step()
 
@@ -203,9 +211,9 @@ def create_network():
     net.train_network(training_data)
     net.test_network(testing_data)
 
-    net.save_network(MODAL_NAME)
+    #net.save_network(MODAL_NAME)
 
-
+create_network()
 # n = net.load_network("network")
 # net.test_network(testing_data)
 
