@@ -4,6 +4,7 @@ from classes.q_table import QTable
 from classes.coalitionstructure_generation import CoalitionstructureGenerator
 from classes.task_type import TaskType
 from classes.scout_unit import ScoutUnit
+from classes.resource_manager import ResourceManager
 from library import *
 import math
 import random
@@ -12,7 +13,6 @@ class UnitManager:
 
     def __init__(self, idabot):
         self.idabot = idabot
-
         # All military types
         self.MILITARY_TYPES = [UnitType(UNIT_TYPEID.PROTOSS_STALKER, idabot),
                                UnitType(UNIT_TYPEID.TERRAN_MARINE, idabot),
@@ -247,4 +247,9 @@ class UnitManager:
             for refinery in refineries:
                 if refinery.get_pos().x == task.pos.x and refinery.get_pos().y == task.pos.y:
                     unit.set_gassing(refinery.get_unit())
+
+        elif task.task_type is TaskType.BUILD:
+            self.idabot.resource_manager.use(task.construct_building)
+            unit.build(task.construct_building, task.pos)
+
         # TODO: Om unit byggt refinery, set unit.stop() så han inte automatiskt börjar collecta gas
