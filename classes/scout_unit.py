@@ -1,7 +1,7 @@
 from library import *
 import random
 import math
-
+from strategy.strategy import StrategyName
 Point2D.distance = lambda self, other: math.sqrt((self.x - other.x) ** 2 + (self.y - other.y) ** 2)
 Point2D.equal = lambda self, other: self.x == other.x and self.y == other.y
 
@@ -85,7 +85,7 @@ class ScoutUnit:
             player_constant=PLAYER_SELF).position.y / height_ratio)
         strategy = self.strategy_manager.get_strategy()
         goal = None
-        if strategy == "Defensive":
+        if strategy is StrategyName.DEFENSIVE:
             # Top corner base
             if y_base_cell - 16 > 0 and self.num is 1:
                 pos = self.rand_loc((2, 2), (16, 19), (2, 19))
@@ -95,7 +95,7 @@ class ScoutUnit:
                 pos = self.rand_loc((2, 2), (16, 19), (16, 2))
                 goal = Point2D((pos[0] + 0.5) * width_ratio, (pos[1] + 0.5) * height_ratio)
 
-        elif strategy == "Offensive":
+        elif strategy is StrategyName.OFFENSIVE:
             # Top corner base
             if y_base_cell - 16 > 0 and self.num is 1:
                 pos = self.rand_loc((2, 2), (16, 19), (16, 2))

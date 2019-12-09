@@ -248,6 +248,9 @@ class MilitaryUnit:
     def attack_unit(self, enemy):
         self.get_unit().attack_unit(enemy)
 
+    def attack_move(self, position: Point2D):
+        self.get_unit().attack_move(position)
+
     def get_closest_enemy(self):
         """
         gets the closest enemy
