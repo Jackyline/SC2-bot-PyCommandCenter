@@ -23,7 +23,7 @@ class MyAgent(IDABot):
         self.strategy_network = Strategy(self)
         self.assignment_manager = AssignmentManager(self)
         self.scout_manager = ScoutingManager(self)
-        self.building_strategy = BuildingStrategy(self.resource_manager, self.assignment_manager)
+        self.building_strategy = BuildingStrategy(self, self.resource_manager, self.assignment_manager)
         self.print_debug = PrintDebug(self, self.building_manager, self.unit_manager, self.scout_manager,
                                       self.building_strategy, self.strategy_network, True)
 
