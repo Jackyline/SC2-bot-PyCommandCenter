@@ -6,7 +6,7 @@ from classes.resource_manager import ResourceManager
 from classes.unit_manager import UnitManager
 from classes.assignment_manager import AssignmentManager
 from classes.building_manager import BuildingManager
-from classes.task_manager import TaskManager
+#from classes.task_manager import TaskManager
 from strategy.strategy import Strategy
 from classes.scouting_manager import ScoutingManager
 from classes.print_debug import PrintDebug
@@ -68,6 +68,8 @@ class MyAgent(IDABot):
         #self.task_manager.on_step()
 
 
+
+
 def main():
     coordinator = Coordinator(r"G:\StarCraft II\Versions\Base69232\SC2_x64.exe")
 
@@ -82,7 +84,18 @@ def main():
     coordinator.set_participants([participant_1, participant_2])
     coordinator.launch_starcraft()
 
-    path = os.path.join(os.getcwd(), "maps", "helion-marine-5-5-random-spawn.SC2Map")
+    #path = os.path.join(os.getcwd(), "maps", "helion-marine-5-5-random-spawn.SC2Map")
+
+    #path = os.path.join(os.getcwd(), "maps", "marauder-marine-random-spawn-concussive.SC2Map")
+    #path = os.path.join(os.getcwd(), "maps", "marauder-marine-5-5-random-spawn-concussive.SC2Map")
+    #path = os.path.join(os.getcwd(), "maps", "marauder-marine-5-10-random-spawn-concussive.SC2Map")
+    path = os.path.join(os.getcwd(), "maps", "marauder-marine-10-10-random-spawn-concussive.SC2Map")
+
+    #path = os.path.join(os.getcwd(), "maps", "marauder-marauder-10-10-random-spawn-concussive.SC2Map")
+
+    #path = os.path.join(os.getcwd(), "maps", "marauder-cyclone-10-10-random-spawn-concussive.SC2Map")
+
+    #path = os.path.join(os.getcwd(), "maps", "cyclone-marine-5-10-random-spawn.SC2Map")
     coordinator.start_game(path)
 
     while coordinator.update():

@@ -24,14 +24,14 @@ class PrintDebug:
         # of the unit summary as its value.
         building_str = self.building_manager.print_debug()
         units = self.unit_manager.get_info()
-        worker_units = sorted(units["workerUnits"].items(), key=(lambda x: x[0]))
-        military_units = sorted(units["militaryUnits"].items(), key=(lambda x: x[0]))
+        worker_units = units["workerUnits"].items()
+        military_units = units["militaryUnits"].items() #TODO: this line crashes when we have multiple unit types
         worker_str = ""
         for type, count in worker_units:
             worker_str += "{}: {}\n".format(type, count)
         military_str = ""
         for type, count in military_units:
-            military_str += "{}: {}\n".format(type, count)
+           military_str += "{}: {}\n".format(type, count)
 
         text = "Buildings: \n_ _ _ _ _ _ _\n\n{}\n Workers: \n_ _ _ _ _ _ _\n\n{}\n Military: \n _ _ _ _ _ _ _\n\n{} \n\n{}".format(
             building_str, worker_str, military_str, self.scout_manager.print_debug())
@@ -43,7 +43,8 @@ class PrintDebug:
         self.ida_bot.map_tools.draw_text_screen(0.01, 0.25, build_strat_text)
 
         # Game strategy prints:
-        game_strat_text = "Strategy: {}".format(self.strategy_network.get_strategy())
+        strategy = self.strategy_network.get_strategy()
+        game_strat_text = "Strategy: {}".format(strategy.name)
         self.ida_bot.map_tools.draw_text_screen(0.01, 0.50, game_strat_text)
 
 

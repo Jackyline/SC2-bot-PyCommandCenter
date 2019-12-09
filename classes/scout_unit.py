@@ -7,10 +7,12 @@ Point2D.equal = lambda self, other: self.x == other.x and self.y == other.y
 
 
 class ScoutUnit:
-    def __init__(self, scout_unit, scout_manager):
+    def __init__(self, scout_unit, scout_manager, strategy_manager, number):
         self.unit = scout_unit
         self.goal = None
         self.manager = scout_manager
+        self.strategy_manager = strategy_manager
+        self.num = number
 
     def get_unit(self):
         return self.unit
@@ -59,8 +61,7 @@ class ScoutUnit:
                     self.set_goal(first_visited)
                 else:
                     # If we just spotted our first discover recently, go random.
-                    goal = Point2D((random.randrange(2, 16) + 0.5) * width_ratio, (random.randrange(2, 19) + 0.5)
-                                   * height_ratio)
+                    goal = self.set_goal_strategy(width_ratio, height_ratio)
                     self.set_goal(goal)
 
     def check_in_visited(self, point, *args):
@@ -73,3 +74,43 @@ class ScoutUnit:
                     self.manager.frame_stamps.pop(index)
                 return True
         return False
+
+    def set_goal_strategy(self, width_ratio, height_ratio):
+        """
+        Sets random explore point as goal depending on our strategy and base location
+        :param width_ratio: width ratio on map, given from scout manager
+        :param height_ratio: height ratio on map, given from scout manager
+        """
+        y_base_cell = math.floor(self.manager.bot.base_location_manager.get_player_starting_base_location(
+            player_constant=PLAYER_SELF).position.y / height_ratio)
+        strategy = self.strategy_manager.get_strategy()
+        goal = None
+        if strategy == "Defensive":
+            # Top corner base
+            if y_base_cell - 16 > 0 and self.num is 1:
+                pos = self.rand_loc((2, 2), (16, 19), (2, 19))
+                goal = Point2D((pos[0] + 0.5) * width_ratio, (pos[1] + 0.5) * height_ratio)
+            # Low corner base
+            else:
+                pos = self.rand_loc((2, 2), (16, 19), (16, 2))
+                goal = Point2D((pos[0] + 0.5) * width_ratio, (pos[1] + 0.5) * height_ratio)
+
+        elif strategy == "Offensive":
+            # Top corner base
+            if y_base_cell - 16 > 0 and self.num is 1:
+                pos = self.rand_loc((2, 2), (16, 19), (16, 2))
+                goal = Point2D((pos[0] + 0.5) * width_ratio, (pos[1] + 0.5) * height_ratio)
+            # Low corner base
+            else:
+                pos = self.rand_loc((2, 2), (16, 19), (2, 19))
+                goal = Point2D((pos[0] + 0.5) * width_ratio, (pos[1] + 0.5) * height_ratio)
+
+        return goal
+
+    def rand_loc(self, pt1, pt2, pt3):
+        """
+        Random point within the base location
+        """
+        b, t = sorted([random.random(), random.random()])
+        return (math.floor(b * pt1[0] + (t - b) * pt2[0] + (1 - t) * pt3[0]),
+                math.floor(b * pt1[1] + (t - b) * pt2[1] + (1 - t) * pt3[1]))

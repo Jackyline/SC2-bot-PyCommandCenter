@@ -34,6 +34,18 @@ class BuildingManager:
             self.buildings = [b for b in self.buildings if b.get_unit() in buildings]
             self.under_construction = [b for b in self.under_construction if b.get_unit() in buildings]
 
+    def get_geysers(self, base_location: BaseLocation):
+        """
+        Det finns någon bugg som gör det krångligt att hitta geysrar. Denna funktion gavs på labbsidan
+        """
+        geysers = []
+        for geyser in base_location.geysers:
+            for unit in self.IDABot.get_all_units():
+                if unit.unit_type.is_geyser \
+                        and geyser.tile_position.x == unit.tile_position.x \
+                        and geyser.tile_position.y == unit.tile_position.y:
+                    geysers.append(unit)
+        return geysers
 
     def get_buildings_of_type(self, type : UnitType):
         return [b for b in self.buildings if b.get_unit_type() == type]

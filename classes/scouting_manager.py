@@ -18,6 +18,7 @@ class ScoutingManager:
         self.frame_stamps = []
         self.visited = []
         self.hmm = None  # Need map size, which means it has to be created in the on_step.
+        self.scouts_requested = 0
 
         self.neutral_units = [UnitType(UNIT_TYPEID.NEUTRAL_BATTLESTATIONMINERALFIELD, bot),
                               UnitType(UNIT_TYPEID.NEUTRAL_BATTLESTATIONMINERALFIELD750, bot),
@@ -75,20 +76,28 @@ class ScoutingManager:
         # If nr of scouts is less than 2, ask for more.
 
         for i in range(2 - len(self.bot.unit_manager.scout_units)):
-            self.ask_for_scout()
+            if self.scouts_requested < 2:
+                self.ask_for_scout()
+                self.scouts_requested += 1
 
         if self.hmm is None:
             self.hmm = HiddenMarkovModel(self.columns, self.rows, self.bot.current_frame, map_height * map_width)
 
-        if self.bot.current_frame % 600 == 0:
+        if self.bot.current_frame % 200 == 0:
             self.check_for_units(enemy_units)
             self.hmm.on_step(self.log, self.bot.current_frame)
+            # Reset the log so it only contains the last spotted frame,
+            # no need to save what has been seen. It is already in the HMM.
+            last_captured_frame = str(list(self.log.keys())[-1])
+            last_captured = self.log[int(last_captured_frame)]
+            self.log.clear()
+            self.log[int(last_captured_frame)] = last_captured
 
         for scout in self.bot.unit_manager.scout_units:
 
             # Nothing has been spotted
             if self.hmm.get_most_likely()[0] == 0.0:
-                if self.bot.unit_manager.scout_units[0].goal is None or scout.get_unit().is_idle:
+                if self.bot.unit_manager.scout_units[0].goal is None:
                     self.send_away_one_scout_to_enemy()
             else:
                 if scout.reached_goal(self.bot.current_frame) or scout.get_unit().is_idle:
@@ -103,7 +112,7 @@ class ScoutingManager:
         self.bot.unit_manager.scout_units[0].set_goal(enemy_base.position)
 
     def ask_for_scout(self):
-        task_scout = Task(TaskType.SCOUT)
+        task_scout = Task(TaskType.SCOUT, pos=self.bot.base_location_manager.get_player_starting_base_location(PLAYER_SELF).position)
         self.bot.assignment_manager.add_task(task_scout)
 
     def create_log(self):
@@ -125,7 +134,7 @@ class ScoutingManager:
         if time_spotted not in self.log:
             self.log[time_spotted] = {}
         for unit in enemy_units:
-            if unit.player == PLAYER_ENEMY and unit.unit_type.is_worker and \
+            if unit.player == PLAYER_ENEMY and \
                     unit.unit_type not in self.neutral_units:
                 self.append_unit(unit, time_spotted)
 
@@ -161,6 +170,25 @@ class ScoutingManager:
         # Send to scout, check if been visited before of the scout
         scout.check_if_visited(points, self.bot.current_frame, self.width_ratio, self.height_ratio, self.columns)
 
+    def get_enemy_target(self):
+        """
+        Gives the best location to attack the enemy
+        :return: Point2D, attack location
+        """
+        most_likely = self.hmm.get_most_likely()
+
+        # Worst case, HMM has highest prob 0.0 and scout has not reached their base for new info
+        if most_likely[0] is 0.0:
+            enemy_base = self.bot.base_location_manager.get_player_starting_base_location(
+                player_constant=PLAYER_ENEMY)
+            return Point2D(enemy_base)
+        else:
+            points = most_likely[1]
+            for i in range(len(points)):
+                points[i] = Point2D((points[i][0] + 0.5) * self.width_ratio, ((self.rows - points[i][1]) + 0.5)
+                                    * self.height_ratio)
+            return points[0]
+
     def print_debug(self):
         last_captured_frame = '0'
         if len(self.log.keys()) > 0:
@@ -173,12 +201,6 @@ class ScoutingManager:
                 output += "[" + position[:len(position) // 2] + "]" + "[" + position[len(position) // 2:] + "]" \
                           + " = " + str(len(units))
                 output += '\n'
-        if len(self.log.keys()) > 0:
-            # Reset the log so it only contains the last spotted frame,
-            # no need to save what has been seen. It is already in the HMM.
-            last_captured = self.log[int(last_captured_frame)]
-            self.log.clear()
-            self.log[int(last_captured_frame)] = last_captured
         return output
 
     def print_scout_backpack(self):

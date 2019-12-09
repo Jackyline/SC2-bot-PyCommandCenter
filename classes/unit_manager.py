@@ -6,7 +6,7 @@ from classes.task_type import TaskType
 from classes.scout_unit import ScoutUnit
 from library import *
 import math
-
+import random
 
 class UnitManager:
 
@@ -54,7 +54,7 @@ class UnitManager:
 
         # Keeps track of current coalition structure, structured as [[id1, id2, ...], [id1, id2...], ...]
         self.csg = CoalitionstructureGenerator()
-        self.cs = None
+        self.groups = None
 
     def get_info(self):
         '''
@@ -63,13 +63,15 @@ class UnitManager:
         info = {}
 
         # {job_type : amount doing that job type}
-        info["workerUnits"] = {worker.get_job().unit_type if worker.get_job() else None:
-                                   len(self.get_units_working_on_type(worker.get_job()))
+        info["workerUnits"] = {task_type : len([worker for worker in self.worker_units if not worker.get_task() is None and worker.get_task().task_type == task_type]) for task_type in TaskType}
+        """
+        info["workerUnits"] = {worker.get_task().task_type if worker.get_task() else None:
+                                   len([task for task in self.idabot.assignment_manager.worker_assignments.assignments if task.task_type == worker.get_task().task_type])
                                for worker in self.worker_units
                                if "workerUnits" not in info
                                or worker.get_job() not in info["workerUnits"]
                                }
-
+        """
         # {Military_type : amount of units of given type}
         info["militaryUnits"] = {
             military_type.get_unit_type(): len(self.get_units_of_type(military_type.get_unit_type()))
@@ -107,7 +109,6 @@ class UnitManager:
         Updates all units states accordingly with our data-structures.
         In short terms, removing dead units and adding new.
         """
-
         # Remove dead worker units
         self.update_dead_units(self.worker_units)
 
@@ -182,8 +183,12 @@ class UnitManager:
         :param unit_list: List of abstraction units
         '''
         for current_unit in unit_list:
-            if not current_unit.is_alive():
+            if not current_unit.is_alive(): # TODO: är denna true när en enhet är i ett refinary?
                 # current_unit.die()
+                if current_unit is ScoutUnit:
+                    # Mark the goal is visited if the unit died, prevents suicide mission next
+                    self.idabot.scout_manager.visited.append(current_unit.get_goal())
+                    self.idabot.scout_manager.frame_stamps.append(self.idabot.current_frame)
                 if current_unit.get_unit().unit_type.is_combat_unit:
                     print("TOTAL REWARD:", current_unit.total_reward)
                 unit_list.remove(current_unit)
@@ -194,7 +199,7 @@ class UnitManager:
         :param nr_coalitions: How many coalitions to divide units into
         :return: None, update internal state for coalitions (self.cs)
         '''
-        # TODO: change this to something reasonable
+        # TODO: change this to something reasonable, change to military_unit
         info = {}
         info["militaryUnits"] = {
             military_type.get_unit_type(): list(map(lambda x: x.get_id(), self.get_units_of_type(military_type.get_unit_type())))
@@ -203,7 +208,21 @@ class UnitManager:
                or military_type.get_unit_type() not in info["militaryUnits"]
         }
 
-        self.cs = self.csg.create_coalition(info["militaryUnits"], nr_coalitions)
+        self.groups = self.csg.create_coalition(info["militaryUnits"], nr_coalitions)
+
+    def add_units_to_coalition(self):
+        units_to_add = []
+        units_in_groups = []
+        for group in self.groups:
+            units_in_groups += group
+
+        for unit in self.military_units:
+            if unit not in units_in_groups:
+                self.csg.add_unit(unit, self.groups)
+
+    def command_group(self, task, group):
+        for unit in group:
+            unit.attack_move(task.pos)
 
     def is_military_type(self, unit):
         '''
@@ -220,6 +239,32 @@ class UnitManager:
         return any(unit.unit_type == unit_type for unit_type in self.WORKER_TYPES)
 
     def command_unit(self, unit, task):
-        print("Commanding unit: ", unit.get_unit_type_id(), "to do task", task.task_type)
-        if task.task_type is TaskType.SCOUT and len(self.scout_units) < 2:
-            self.scout_units.append(ScoutUnit(unit.unit, self.idabot.scout_manager))
+        """
+
+        HÄR SKA VI SE TILL SÅ ATT SAKER HÄNDER.
+
+        unit kan vara byggnad worker, eller grupp av military units. Man kan köra task.task_type för att se vilken typ av task det här
+
+        Om det unit är byggnad och task train_unit finns det ingen garanti för att byggnaden kan producera uniten, får kolla med can_produce
+        """
+        print("Commanding unit: ", unit.get_id(), "to do task", task.task_type)
+
+
+        if task.task_type is TaskType.SCOUT:
+            self.idabot.scout_manager.scouts_requested -= 1
+            self.scout_units.append(ScoutUnit(unit.unit, self.idabot.scout_manager, self.idabot.strategy_network,
+                                              len(self.scout_units)))
+
+        elif task.task_type is TaskType.MINING:
+            minerals = self.idabot.get_mineral_fields(task.base_location)
+            unit.set_mining(minerals[random.randint(0, len(minerals)-1)])
+
+        elif task.task_type is TaskType.GAS:
+            refineries = self.idabot.building_manager.get_buildings_of_type(UnitType(UNIT_TYPEID.TERRAN_REFINERY, self.idabot))
+            for refinery in refineries:
+                if refinery.get_pos().x == task.pos.x and refinery.get_pos().y == task.pos.y:
+                    unit.set_gassing(refinery.get_unit())
+
+        elif task.task_type is TaskType.BUILD:
+            pass
+            # TODO: Om unit byggt refinery, set unit.stop() så han inte automatiskt börjar collecta gas

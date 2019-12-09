@@ -101,7 +101,7 @@ def get_state_marauder(health, on_cooldown, distance_to_closest_enemy, e_that_ca
             calc_on_cooldown() + \
             calc_distance_to_closest_enemy() + \
             calc_e_that_can_attack() + \
-            calc_enemy_ally_ratio(4) + \
+            calc_enemy_ally_ratio(8) + \
             calc_concussive_shells()
     #print("STATE:", state)
     return state
@@ -136,11 +136,11 @@ def get_state_hellion(health, on_cooldown, distance_to_closest_enemy, e_that_can
 
 
     state = "" + \
-            calc_health(4) + \
+            calc_health(10) + \
             calc_on_cooldown() + \
             calc_distance_to_closest_enemy() + \
             calc_e_that_can_attack() + \
-            calc_enemy_ally_ratio(5)
+            calc_enemy_ally_ratio(10)
     #print("STATE:", state)
     return state
 
@@ -174,11 +174,11 @@ def get_state_cyclone(health, on_cooldown, distance_to_closest_enemy, e_that_can
 
 
     state = "" + \
-            calc_health(4) + \
+            calc_health(8) + \
             calc_on_cooldown() + \
             calc_distance_to_closest_enemy() + \
             calc_e_that_can_attack() + \
-            calc_enemy_ally_ratio(5)
+            calc_enemy_ally_ratio(8)
     #print("STATE:", state)
     return state
 
@@ -192,7 +192,11 @@ def get_reward(units_hp: dict):
     for unit, old_hp in units_hp.items():
         if unit.player == PLAYER_SELF:
             reward -= (old_hp - unit.hit_points)
+            if not unit.is_alive:
+                reward -= 10
         else:
             reward += (old_hp - unit.hit_points)
+            if not unit.is_alive:
+                reward += 10
     #print("REWARD", reward)
     return reward
