@@ -205,6 +205,13 @@ def create_network():
 
     net.save_network(MODAL_NAME)
 
+def test_network():
+    trainig_data, testing_data = get_data()
+
+    net = StrategyNetwork()
+    net.load_network("network")
+    net.test_network(testing_data)
+
 
 # n = net.load_network("network")
 # net.test_network(testing_data)
