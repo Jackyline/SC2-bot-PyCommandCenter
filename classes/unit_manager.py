@@ -54,7 +54,7 @@ class UnitManager:
 
         # Keeps track of current coalition structure, structured as [[id1, id2, ...], [id1, id2...], ...]
         self.csg = CoalitionstructureGenerator()
-        self.groups = None
+        self.groups = []
 
     def get_info(self):
         '''
@@ -217,9 +217,6 @@ class UnitManager:
             if unit not in units_in_groups:
                 self.csg.add_unit(unit, self.groups)
 
-    def command_group(self, task, group):
-        for unit in group:
-            unit.attack_move(task.pos)
 
     def is_military_type(self, unit):
         '''
@@ -234,6 +231,11 @@ class UnitManager:
         :return:  If given unit is any worker unit type
         '''
         return any(unit.unit_type == unit_type for unit_type in self.WORKER_TYPES)
+
+    def command_group(self, task, group):
+        for unit in group:
+            if not unit.is_in_combat():
+                unit.attack_move(task.pos)
 
     def command_unit(self, unit, task):
         """
