@@ -1,18 +1,50 @@
 import strategy.strategy_model as strategy_model
 from library import UnitType, UNIT_TYPEID
 from strategy.training_data import ALL_BUILDINGS, UNIT_TYPES
+from enum import Enum
 
+
+class StrategyName(Enum):
+    OFFENSIVE = 0
+    DEFENSIVE = 1
+
+
+# Wait this many seconds if strategy is OFFENSIVE and new strategy is DEFENSIVE, this is done since OFFENSIVE
+# takes some time to actually perform, and we don't want to walk back and forth all the time.
+STRATEGY_DELAY = 20
 
 class Strategy():
     def __init__(self, idabot):
         self.model = strategy_model.get_trained_network()
         self.idabot = idabot
+        self.actual_strategy = StrategyName.DEFENSIVE  # (Strategy, Time)
+        self.last_updated_strategy = 0
 
+    # TODO: Might want to "randomize" OFFENSIVE strategy sometimes if it never gets predicted.
     def get_strategy(self):
-        res = self.model.calculate(self.get_strategy_inputs())
+        # Inputs to model
+        inputs = self.get_strategy_inputs()
 
-        strategy = res.index(max(res))
-        return "Offensive" if strategy == 0 else "Defensive"
+        # Output from model
+        res = self.model.calculate(inputs)
+
+        # Get new predicted strategy, OFFENSIVE or DEFENSIVE
+        new_strategy = StrategyName(res.index(max(res)))
+
+        # Current game seconds
+        curr_seconds = self.idabot.current_frame // 24
+
+        # Update our strategy immediately if OFFENSIVE, since it doesn't happen too often.
+        if new_strategy == StrategyName.OFFENSIVE:
+            self.actual_strategy = StrategyName.OFFENSIVE
+            self.last_updated_strategy = curr_seconds
+        # If last strategy was OFFENSIVE, we want to wait STRATEGY_DELAY seconds before changing it to DEFENSIVE
+        elif self.actual_strategy == StrategyName.OFFENSIVE and new_strategy == StrategyName.DEFENSIVE and \
+                curr_seconds - self.last_updated_strategy >= STRATEGY_DELAY:
+            self.actual_strategy = StrategyName.DEFENSIVE
+            self.last_updated_strategy = curr_seconds
+
+        return self.actual_strategy
 
     def get_strategy_inputs(self):
         unit_type_to_name = {
