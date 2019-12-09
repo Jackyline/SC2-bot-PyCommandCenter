@@ -134,6 +134,9 @@ class UnitManager:
         self.cyclone_q_table.on_step()
         self.helion_q_table.on_step()
 
+        if len(self.military_units) > 5 and self.cs == None:
+            self.create_coalition(3)
+
     def update_military_units(self):
         unit: MilitaryUnit
         for unit in self.military_units:
@@ -194,7 +197,7 @@ class UnitManager:
         # TODO: change this to something reasonable
         info = {}
         info["militaryUnits"] = {
-            military_type.get_unit_type(): len(self.get_units_of_type(military_type.get_unit_type()))
+            military_type.get_unit_type(): list(map(lambda x: x.get_id(), self.get_units_of_type(military_type.get_unit_type())))
             for military_type in self.military_units
             if "militaryUnits" not in info
                or military_type.get_unit_type() not in info["militaryUnits"]

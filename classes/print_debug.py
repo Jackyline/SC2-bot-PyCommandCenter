@@ -54,19 +54,21 @@ class PrintDebug:
         if not self.print_on_unit:
             return
 
-        """ ############# FINNS BUGG HÄR ###########
+        ############# FINNS BUGG HÄR ###########
     
         # Prints unit debug information on each unit
         units = list(self.ida_bot.get_my_units())
         for unit in units:
             # Find what coalition the unit is in (if any) and add that to the print
-            coalition = -1
-            for i, coalition in enumerate(self.unit_manager.cs):
-                if unit in coalition:
-                    coalition = i
-                    break
-            self.ida_bot.map_tools.draw_text(unit.position, " %s id: %d, coal: %d" % (str(unit.unit_type), unit.id, coalition))
+            temp = -1
+            if self.unit_manager.cs is not None:
+                for i, coalition in enumerate(self.unit_manager.cs):
+                    if unit.id in coalition:
+                        temp = i
+                        break
+            self.ida_bot.map_tools.draw_text(unit.position, " %s id: %d, coal: %d" % (str(unit.unit_type), unit.id, temp))
 
+        """
         # Print mineral information on each mineral
         minerals = list(base_location.minerals)
         for mineral in minerals:
