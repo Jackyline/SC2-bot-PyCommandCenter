@@ -39,6 +39,10 @@ class ScoutUnit:
             if self.unit.position.distance(self.goal) < 5:
                 self.manager.visited.append(self.goal)
                 self.manager.frame_stamps.append(current_frame)
+                for cur_goal in self.manager.goals:
+                    if cur_goal.equal(self.goal):
+                        print("D")
+                        self.manager.goals.remove(cur_goal)
                 return True
             else:
                 return False
@@ -46,8 +50,9 @@ class ScoutUnit:
     def set_goal(self, goal):
         self.unit.move(goal)
         self.goal = goal
+        self.manager.goals.append(goal)
 
-    def check_if_visited(self, goals, current_frame, width_ratio, height_ratio, columns):
+    def check_if_visited(self, goals, current_frame, width_ratio, height_ratio):
         for point in goals:
             if not self.check_in_visited(point):
                 self.set_goal(point)
@@ -62,6 +67,9 @@ class ScoutUnit:
                 else:
                     # If we just spotted our first discover recently, go random.
                     goal = self.set_goal_strategy(width_ratio, height_ratio)
+                    for cur_goal in self.manager.goals:
+                        if cur_goal.equal(goal):
+                            self.check_if_visited(goals, current_frame, width_ratio, height_ratio)
                     self.set_goal(goal)
 
     def check_in_visited(self, point, *args):
@@ -88,11 +96,11 @@ class ScoutUnit:
         if strategy is StrategyName.DEFENSIVE:
             # Top corner base
             if y_base_cell - 16 > 0 and self.num is 1:
-                pos = self.rand_loc((2, 2), (16, 19), (2, 19))
+                pos = self.rand_loc((2, 2), (16, 18), (2, 18))
                 goal = Point2D((pos[0] + 0.5) * width_ratio, (pos[1] + 0.5) * height_ratio)
             # Low corner base
             else:
-                pos = self.rand_loc((2, 2), (16, 19), (16, 2))
+                pos = self.rand_loc((2, 2), (16, 18), (16, 2))
                 goal = Point2D((pos[0] + 0.5) * width_ratio, (pos[1] + 0.5) * height_ratio)
 
         elif strategy is StrategyName.OFFENSIVE:

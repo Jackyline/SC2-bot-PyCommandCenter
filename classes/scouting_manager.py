@@ -17,8 +17,10 @@ class ScoutingManager:
         self.rows = 0
         self.frame_stamps = []
         self.visited = []
+        self.goals = []
         self.hmm = None  # Need map size, which means it has to be created in the on_step.
         self.scouts_requested = 0
+        self.enemy_base = None
 
         self.neutral_units = [UnitType(UNIT_TYPEID.NEUTRAL_BATTLESTATIONMINERALFIELD, bot),
                               UnitType(UNIT_TYPEID.NEUTRAL_BATTLESTATIONMINERALFIELD750, bot),
@@ -81,6 +83,8 @@ class ScoutingManager:
                 self.scouts_requested += 1
 
         if self.hmm is None:
+            self.enemy_base = self.bot.base_location_manager.get_player_starting_base_location(
+                player_constant=PLAYER_ENEMY)
             self.hmm = HiddenMarkovModel(self.columns, self.rows, self.bot.current_frame, map_height * map_width)
 
         if self.bot.current_frame % 1000 == 0:
@@ -97,7 +101,7 @@ class ScoutingManager:
 
             # Nothing has been spotted
             if self.hmm.get_most_likely()[0] == 0.0:
-                if self.bot.unit_manager.scout_units[0].goal is None:
+                if self.bot.unit_manager.scout_units[0].goal is None or self.enemy_base.position not in self.goals:
                     self.send_away_one_scout_to_enemy()
             else:
                 if scout.reached_goal(self.bot.current_frame) or scout.get_unit().is_idle:
@@ -107,12 +111,11 @@ class ScoutingManager:
         """
         In the beginning of the game, send one of the scouts to the enemy camp
         """
-        enemy_base = self.bot.base_location_manager.get_player_starting_base_location(
-            player_constant=PLAYER_ENEMY)
-        self.bot.unit_manager.scout_units[0].set_goal(enemy_base.position)
+        self.bot.unit_manager.scout_units[0].set_goal(self.enemy_base.position)
 
     def ask_for_scout(self):
-        task_scout = Task(TaskType.SCOUT, pos=self.bot.base_location_manager.get_player_starting_base_location(PLAYER_SELF).position)
+        task_scout = Task(TaskType.SCOUT,
+                          pos=self.bot.base_location_manager.get_player_starting_base_location(PLAYER_SELF).position)
         self.bot.assignment_manager.add_task(task_scout)
 
     def create_log(self):
@@ -168,7 +171,7 @@ class ScoutingManager:
             points[i] = Point2D((points[i][0] + 0.5) * self.width_ratio, ((self.rows - points[i][1]) + 0.5)
                                 * self.height_ratio)
         # Send to scout, check if been visited before of the scout
-        scout.check_if_visited(points, self.bot.current_frame, self.width_ratio, self.height_ratio, self.columns)
+        scout.check_if_visited(points, self.bot.current_frame, self.width_ratio, self.height_ratio)
 
     def get_enemy_target(self):
         """
@@ -179,9 +182,7 @@ class ScoutingManager:
 
         # Worst case, HMM has highest prob 0.0 and scout has not reached their base for new info
         if most_likely[0] is 0.0:
-            enemy_base = self.bot.base_location_manager.get_player_starting_base_location(
-                player_constant=PLAYER_ENEMY)
-            return Point2D(enemy_base)
+            return Point2D(self.enemy_base.position)
         else:
             points = most_likely[1]
             for i in range(len(points)):

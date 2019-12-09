@@ -89,6 +89,10 @@ class HiddenMarkovModel:
                         elif prob_units > 0.1:
                             self.change_probability_trans_matrix(i, j, prob_units, n_units_frame[0], current_frame,
                                                                  self.add_probability_trans_matrix)
+                map_cell.sort(key=self.get_time)
+
+    def get_time(self, elem):
+        return elem[0]
 
     def calculate_probability_cell(self, x_ratio, y_ratio, nr_units):
         """
