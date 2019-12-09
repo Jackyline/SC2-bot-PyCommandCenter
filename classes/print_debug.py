@@ -43,7 +43,8 @@ class PrintDebug:
         self.ida_bot.map_tools.draw_text_screen(0.01, 0.25, build_strat_text)
 
         # Game strategy prints:
-        game_strat_text = "Strategy: {}".format(self.strategy_network.get_strategy())
+        strategy = self.strategy_network.get_strategy()
+        game_strat_text = "Strategy: {}".format(strategy.name)
         self.ida_bot.map_tools.draw_text_screen(0.01, 0.50, game_strat_text)
 
 
