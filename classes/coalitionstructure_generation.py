@@ -225,6 +225,10 @@ class CoalitionstructureGenerator:
         # Restore the coalition to the same value as it started with
         coalition[index] = start_value
 
+    def add_unit(self, unit, groups):
+        #TODO
+        pass
+
 
 testing = False
 if testing:

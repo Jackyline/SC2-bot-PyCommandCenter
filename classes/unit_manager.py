@@ -196,7 +196,7 @@ class UnitManager:
         :param nr_coalitions: How many coalitions to divide units into
         :return: None, update internal state for coalitions (self.cs)
         '''
-        # TODO: change this to something reasonable
+        # TODO: change this to something reasonable, change to military_unit
         info = {}
         info["militaryUnits"] = {
             military_type.get_unit_type(): len(self.get_units_of_type(military_type.get_unit_type()))
@@ -206,6 +206,20 @@ class UnitManager:
         }
 
         self.groups = self.csg.create_coalition(info["militaryUnits"], nr_coalitions)
+
+    def add_units_to_coalition(self):
+        units_to_add = []
+        units_in_groups = []
+        for group in self.groups:
+            units_in_groups += group
+
+        for unit in self.military_units:
+            if unit not in units_in_groups:
+                self.csg.add_unit(unit, self.groups)
+
+    def command_group(self, task, group):
+        for unit in group:
+            unit.attack_move(task.pos)
 
     def is_military_type(self, unit):
         '''
@@ -229,10 +243,9 @@ class UnitManager:
         unit kan vara byggnad worker, eller grupp av military units. Man kan köra task.task_type för att se vilken typ av task det här
 
         Om det unit är byggnad och task train_unit finns det ingen garanti för att byggnaden kan producera uniten, får kolla med can_produce
-
-
         """
         print("Commanding unit: ", unit.get_id(), "to do task", task.task_type)
+
 
         if task.task_type is TaskType.SCOUT:
             self.idabot.scout_manager.scouts_requested -= 1
@@ -247,4 +260,7 @@ class UnitManager:
             for refinery in refineries:
                 if refinery.get_pos().x == task.pos.x and refinery.get_pos().y == task.pos.y:
                     unit.set_gassing(refinery.get_unit())
-        # TODO: Om unit byggt refinery, set unit.stop() så han inte automatiskt börjar collecta gas
+
+        elif task.task_type is TaskType.BUILD:
+            pass
+            # TODO: Om unit byggt refinery, set unit.stop() så han inte automatiskt börjar collecta gas
