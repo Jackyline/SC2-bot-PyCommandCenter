@@ -5,13 +5,12 @@ from library import *
 class PrintDebug:
     def __init__(self, ida_bot, building_manager: building_manager.BuildingManager,
                  unit_manager: unit_manager.UnitManager, scout_manager: scouting_manager.ScoutingManager,
-                 building_strategy: building_strategy.BuildingStrategy, strategy_network, on : bool):
+                 building_strategy: building_strategy.BuildingStrategy, on : bool):
         self.ida_bot = ida_bot
         self.building_manager = building_manager
         self.unit_manager = unit_manager
         self.scout_manager = scout_manager
         self.building_strategy = building_strategy
-        self.strategy_network = strategy_network
         self.on = on
         self.print_on_unit = True
 
@@ -43,7 +42,7 @@ class PrintDebug:
         self.ida_bot.map_tools.draw_text_screen(0.01, 0.25, build_strat_text)
 
         # Game strategy prints:
-        strategy = self.strategy_network.get_strategy()
+        strategy = self.ida_bot.strategy_network.actual_strategy
         game_strat_text = "Strategy: {}".format(strategy.name)
         self.ida_bot.map_tools.draw_text_screen(0.01, 0.50, game_strat_text)
 
