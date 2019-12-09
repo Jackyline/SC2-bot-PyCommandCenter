@@ -2,7 +2,7 @@ import numpy as np
 import math
 import munkres
 
-abort_time = 4000  # Can be set to whatever feels right, after certain time remove object.
+abort_time = 2000  # Can be set to whatever feels right, after certain time remove object.
 average_speed = 0.2  # The SCV moves in this speed, which is a good average for all units.
 
 
@@ -12,7 +12,7 @@ class HiddenMarkovModel:
         self.cell_size = map_area / (rows * columns)
         self.columns = columns
         self.rows = rows
-        self.time_matrix = self.create_time_matrix()
+        self.emission_matrix = self.create_emission_matrix()
         self.trans_matrix = np.full((rows, columns), 0.0)
 
     def on_step(self, log, time_frame):
@@ -33,21 +33,21 @@ class HiddenMarkovModel:
         :return: The highest probability and the points were it's located.
         """
         highest_prob = np.amax(self.trans_matrix)
-        indices = np.where(self.trans_matrix == highest_prob)  # change name
+        indices = np.where(self.trans_matrix == highest_prob)
         goals = list(zip(indices[1], indices[0]))
         return highest_prob, goals
 
-    def create_time_matrix(self):
+    def create_emission_matrix(self):
         """
-        Create the time matrix, used when HMM is init
-        :return: A time matrix model
+        Create the emission matrix, used when HMM is init
+        :return: A emission matrix model
         """
-        time_matrix = []
+        emission_matrix = []
         for i in range(self.columns):
-            time_matrix.append([])
+            emission_matrix.append([])
             for j in range(self.rows):
-                time_matrix[i].append([])
-        return time_matrix
+                emission_matrix[i].append([])
+        return emission_matrix
 
     def add_from_log(self, log):
         """
@@ -58,14 +58,13 @@ class HiddenMarkovModel:
             for position, units in log[frame].items():
                 x_position = int(position[:len(position)//2])
                 y_position = int(position[len(position)//2:])
-                list_position = self.time_matrix[x_position][y_position]
+                list_position = self.emission_matrix[x_position][y_position]
                 # Added new line.
                 prob_units = self.calculate_probability_cell(x_position, y_position, len(units))
 
                 n_units_frame = (frame, prob_units)
                 if n_units_frame not in list_position:
                     list_position.append(n_units_frame)
-
 
     def update_time_matrix(self, current_frame, log):
         """
@@ -77,7 +76,7 @@ class HiddenMarkovModel:
         """
         for i in range(self.columns):
             for j in range(self.rows):
-                map_cell = self.time_matrix[i][j]
+                map_cell = self.emission_matrix[i][j]
                 if len(map_cell) > 0:
                     for k in range(len(map_cell) - 1, -1, -1):
                         n_units_frame = map_cell[k]
@@ -86,14 +85,10 @@ class HiddenMarkovModel:
                             if n_units_frame[0] in log:
                                 del log[n_units_frame[0]]
                             del map_cell[k]
-                            # self.change_probability_trans_matrix(i, j, prob_units, n_units_frame[0], current_frame,
-                            #                                    self.remove_probability_trans_matrix)
                             self.remove_probability_trans_matrix(i, j, n_units_frame[1], n_units_frame)
-                        elif prob_units > 0.01:
+                        elif prob_units > 0.1:
                             self.change_probability_trans_matrix(i, j, prob_units, n_units_frame[0], current_frame,
                                                                  self.add_probability_trans_matrix)
-                            # del map_cell[k]
-
 
     def calculate_probability_cell(self, x_ratio, y_ratio, nr_units):
         """
@@ -140,22 +135,19 @@ class HiddenMarkovModel:
                     if steps >= 1:
                         new_time = time_spotted + (math.sqrt(self.cell_size) / average_speed)
                         prob_units = self.calculate_probability_cell(x, y, prob_units)
-                        if prob_units > 0.01:
+                        if prob_units > 0.1:
                             self.change_probability_trans_matrix(x, y, prob_units, new_time, current_time,
                                                                  change_trans_matrix)
 
     def add_probability_trans_matrix(self, x, y, prob_units, n_units_frame):
-        if prob_units > 0.01:
-            if n_units_frame not in self.time_matrix[x][y]:
-                self.time_matrix[x][y].append(n_units_frame)
+        if prob_units > 0.1:
+            if n_units_frame not in self.emission_matrix[x][y]:
+                self.emission_matrix[x][y].append(n_units_frame)
                 self.trans_matrix[y][x] = self.trans_matrix[y][x] + prob_units
 
     def remove_probability_trans_matrix(self, x, y, prob_units, n_units_frame):
-        # cell = self.trans_matrix[y][x]
-        #if n_units_frame in self.time_matrix[x][y]:
-        #    self.time_matrix[x][y].remove(n_units_frame)
         self.trans_matrix[y][x] = self.trans_matrix[y][x] - prob_units
-        if self.trans_matrix[y][x] < 0.001:
+        if self.trans_matrix[y][x] < 0.01:
             self.trans_matrix[y][x] = 0
 
     def check_in_range(self, i, j):
