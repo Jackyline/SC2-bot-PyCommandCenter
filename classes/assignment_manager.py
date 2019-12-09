@@ -242,7 +242,7 @@ class MilitaryAssignments:
 
     def get_available_units(self):
         #if not len(self.tasks) == len() # If strategy has changed, or number of base locations has changed and we are in defensive strategy, create new groups
-        self.unit_manager.create_coalition()
+        #self.unit_manager.create_coalition()
         #else:
             #self.unit_manager.add_units_to_coalition()
         return self.unit_manager.groups
