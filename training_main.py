@@ -85,17 +85,18 @@ def main():
     coordinator.launch_starcraft()
 
     #path = os.path.join(os.getcwd(), "maps", "helion-marine-5-5-random-spawn.SC2Map")
+    path = os.path.join(os.getcwd(), "maps", "marine-marine-10-10-random-spawn.SC2Map")
 
     #path = os.path.join(os.getcwd(), "maps", "marauder-marine-random-spawn-concussive.SC2Map")
     #path = os.path.join(os.getcwd(), "maps", "marauder-marine-5-5-random-spawn-concussive.SC2Map")
     #path = os.path.join(os.getcwd(), "maps", "marauder-marine-5-10-random-spawn-concussive.SC2Map")
-    path = os.path.join(os.getcwd(), "maps", "marauder-marine-10-10-random-spawn-concussive.SC2Map")
+    #path = os.path.join(os.getcwd(), "maps", "marauder-marine-10-10-random-spawn-concussive.SC2Map")
 
     #path = os.path.join(os.getcwd(), "maps", "marauder-marauder-10-10-random-spawn-concussive.SC2Map")
 
     #path = os.path.join(os.getcwd(), "maps", "marauder-cyclone-10-10-random-spawn-concussive.SC2Map")
 
-    #path = os.path.join(os.getcwd(), "maps", "cyclone-marine-5-10-random-spawn.SC2Map")
+    #path = os.path.join(os.getcwd(), "maps", "cyclone-marine-10-10-random-spawn.SC2Map")
     coordinator.start_game(path)
 
     while coordinator.update():

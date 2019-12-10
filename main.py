@@ -70,8 +70,7 @@ class MyAgent(IDABot):
         Generates jobs depending on our chosen strategy
         """
 
-        # Calculate new predicted strategy
-        strategy = self.strategy_network.get_strategy()
+
 
         curr_seconds = self.current_frame // 24
 
@@ -79,10 +78,11 @@ class MyAgent(IDABot):
         if curr_seconds - self.last_handled_strategy < HANDLE_STRATEGY_DELAY:
             return
 
+        # Calculate new predicted strategy
+        strategy = self.strategy_network.get_strategy()
+
         # Now handling a strategy decision
         self.last_handled_strategy = curr_seconds
-
-
 
         # Get all of our command centers
         command_centers = self.building_manager.get_buildings_of_type(UnitType(UNIT_TYPEID.TERRAN_COMMANDCENTER, self))

@@ -23,6 +23,8 @@ class ScoutingManager:
         self.scouts_requested = 0
         self.enemy_base = None
 
+        self.last_run = 0
+
         self.neutral_units = [UnitType(UNIT_TYPEID.NEUTRAL_BATTLESTATIONMINERALFIELD, bot),
                               UnitType(UNIT_TYPEID.NEUTRAL_BATTLESTATIONMINERALFIELD750, bot),
                               UnitType(UNIT_TYPEID.NEUTRAL_COLLAPSIBLEROCKTOWERDEBRIS, bot),
@@ -66,6 +68,16 @@ class ScoutingManager:
                               ]
 
     def on_step(self):
+
+
+        curr_seconds = self.bot.current_frame // 24
+
+        # Only run every 2 seconds
+        if curr_seconds - self.last_run < 2:
+            return
+
+        self.last_run = curr_seconds
+
         # Width and height needs to be done in step because of IDABot loads map slowly.
         enemy_units = list(set(self.bot.get_all_units()) - set(self.bot.get_my_units()))
         map_width = self.bot.map_tools.width
