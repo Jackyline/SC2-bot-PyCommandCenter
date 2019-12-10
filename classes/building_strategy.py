@@ -115,6 +115,7 @@ class BuildingStrategy:
                         if self.get_refinery(geyser) is None:
                             task = Task(TaskType.BUILD, pos=geyser.position, geyser=geyser,
                                         construct_building=action_type)
+                            print("Adding Task: ", task.task_type, "Action_type: ", action_type)
                             self.assignment_manager.add_task(task)
                             return
                 return

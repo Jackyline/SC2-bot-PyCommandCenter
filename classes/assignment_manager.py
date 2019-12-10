@@ -103,16 +103,21 @@ class AssignmentManager:
 
 
     def generate_mining_tasks(self):
+        nr_mining_jobs = len(self.unit_manager.worker_units)
         if self.worker_assignments.get_available_units():  # Only generate if there are available workers
-            for base in self.ida_bot.base_location_manager.get_occupied_base_locations(PLAYER_SELF):
+            for base in sorted(self.ida_bot.base_location_manager.get_occupied_base_locations(PLAYER_SELF),key= lambda x: x.is_start_location, reverse=True):
                 for i in range(2*len(self.ida_bot.get_mineral_fields(base))):
-                    self.worker_assignments.add_task(Task(task_type=TaskType.MINING, pos=base.position, base_location=base))
-
+                    self.worker_assignments.add_task(Task(task_type=TaskType.MINING,
+                                                          pos=Point2D(base.depot_position.x, base.depot_position.y),
+                                                          base_location=base))
+                    nr_mining_jobs -= 1
+                    if nr_mining_jobs == 0:
+                        return
 
     def generate_gas_tasks(self):
         if self.worker_assignments.get_available_units(): # Only generate if there are available workers
             for refinary in self.building_manager.get_buildings_of_type(UnitType(UNIT_TYPEID.TERRAN_REFINERY, self.ida_bot)):
-                for i in range(3):
+                for i in range(2):
                     self.last_tick_mining_tasks += 1
                     self.worker_assignments.add_task(Task(task_type=TaskType.GAS, pos=refinary.get_unit().position))
 
@@ -159,8 +164,9 @@ class WorkerAssignments:
         if idle:
             profit += 100
 
-
         profit -= distance
+
+
 
         if profit < 0:
             profit = 0
