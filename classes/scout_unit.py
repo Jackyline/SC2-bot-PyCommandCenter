@@ -1,7 +1,10 @@
 from library import *
 import random
 import math
+from classes.task import Task
+from classes.task_type import TaskType
 from strategy.strategy import StrategyName
+
 Point2D.distance = lambda self, other: math.sqrt((self.x - other.x) ** 2 + (self.y - other.y) ** 2)
 Point2D.equal = lambda self, other: self.x == other.x and self.y == other.y
 
@@ -39,6 +42,13 @@ class ScoutUnit:
             if self.unit.position.distance(self.goal) < 5:
                 self.manager.visited.append(self.goal)
                 self.manager.frame_stamps.append(current_frame)
+                if self.manager.scouts_requested < 2 and len(self.manager.bot.unit_manager.scout_units) < 2:
+                    task_scout = Task(TaskType.SCOUT,
+                                      pos=self.manager.bot.base_location_manager.get_player_starting_base_location(
+                                          PLAYER_SELF).position)
+                    self.manager.bot.assignment_manager.add_task(task_scout)
+                    self.manager.scouts_requested += 1
+
                 for cur_goal in self.manager.goals:
                     if cur_goal.equal(self.goal):
                         self.manager.goals.remove(cur_goal)
@@ -53,23 +63,29 @@ class ScoutUnit:
 
     def check_if_visited(self, goals, current_frame, width_ratio, height_ratio):
         for point in goals:
-            if not self.check_in_visited(point):
+            if not self.check_in_visited(point) and (len(self.manager.bot.unit_manager.scout_units) > 1 or
+                                                     self.strategy_manager.get_strategy() is StrategyName.OFFENSIVE):
+                self.check_if_goal_is_active(point, width_ratio, height_ratio)
                 self.set_goal(point)
             else:
                 # Check how long time it was since first discovery and go there if it is been more than 2000 frames
                 # since last time
                 first_time_visited = self.manager.frame_stamps[0]
-                if (current_frame - first_time_visited) > 4000:
+                if (current_frame - first_time_visited) > 8000:
                     first_visited = self.manager.visited[0]
                     self.check_in_visited(point, True)
+                    self.check_if_goal_is_active(point, width_ratio, height_ratio)
                     self.set_goal(first_visited)
                 else:
                     # If we just spotted our first discover recently, go random.
                     goal = self.set_goal_strategy(width_ratio, height_ratio)
-                    for cur_goal in self.manager.goals:
-                        if cur_goal.equal(goal) or cur_goal.distance(goal) < 10:
-                            goal = self.set_goal_strategy(width_ratio, height_ratio)
+                    self.check_if_goal_is_active(goal, width_ratio, height_ratio)
                     self.set_goal(goal)
+
+    def check_if_goal_is_active(self, goal, width_ratio, height_ratio):
+        for cur_goal in self.manager.goals:
+            if cur_goal.equal(goal) or cur_goal.distance(goal) < 20:
+                goal = self.set_goal_strategy(width_ratio, height_ratio)
 
     def check_in_visited(self, point, *args):
         for visited in self.manager.visited:

@@ -2,7 +2,7 @@ import numpy as np
 import math
 import munkres
 
-abort_time = 4000  # Can be set to whatever feels right, after certain time remove object.
+abort_time = 3000  # Can be set to whatever feels right, after certain time remove object.
 average_speed = 0.2  # The SCV moves in this speed, which is a good average for all units.
 
 

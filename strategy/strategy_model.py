@@ -105,10 +105,12 @@ class StrategyNetwork():
         offensive = 0
         offensive_guessed = 0
         correct_offensive_guessed = 0
+        off_dict = {}
 
         defensive = 0
         defensive_guessed = 0
         correct_defensive_guessed = 0
+        def_dict = {}
 
         for i, data in enumerate(testing_data, 0):
 
@@ -135,11 +137,21 @@ class StrategyNetwork():
             # Guessed Offensive
             if network_guessed_strategy == 0:
                 offensive_guessed += 1
+                for k,v in data["state"].items():
+                    if k not in off_dict:
+                        off_dict[k] = v
+                    else:
+                        off_dict[k] += v
                 if actual_strategy == "Offensive":
                     correct_offensive_guessed += 1
             # Guessed Defensive
             elif network_guessed_strategy == 1:
                 defensive_guessed += 1
+                for k,v in data["state"].items():
+                    if k not in def_dict:
+                        def_dict[k] = v
+                    else:
+                        def_dict[k] += v
                 if actual_strategy == "Defensive":
                     correct_defensive_guessed += 1
 
@@ -155,6 +167,14 @@ class StrategyNetwork():
         print("defensive: {} out of {}. {} of them were correct.".format(defensive_guessed, defensive,
                                                                          correct_defensive_guessed))
 
+        off_dict = {k : v/offensive_guessed for k,v in off_dict.items()}
+        def_dict = {k : v/defensive_guessed for k,v in def_dict.items()}
+
+        print("Off dict:")
+        print(off_dict)
+        print("Def dict:")
+        print(def_dict)
+
 
 def get_data():
     # Load training data
@@ -164,7 +184,7 @@ def get_data():
     random.shuffle(data)
 
     # Use same amount of data points for each strategy
-    amount_offensive = 11000
+    amount_offensive = 7000
     amount_defensive = 0
 
     new_d = []
@@ -203,7 +223,7 @@ def create_network():
     net.train_network(training_data)
     net.test_network(testing_data)
 
-    net.save_network(MODAL_NAME)
+    #net.save_network(MODAL_NAME)
 
 def test_network():
     trainig_data, testing_data = get_data()
@@ -211,7 +231,55 @@ def test_network():
     net = StrategyNetwork()
     net.load_network("network")
     net.test_network(testing_data)
+"""
+import os
+from training_data import process_replay_data
+def test_network_on_match():
+    net = StrategyNetwork()
+    net.load_network("network")
 
+    files = os.listdir("replays_p3/")
+    for j, file in enumerate(files):
+        if file.endswith(".SC2Replay"):
+            try:
+                path = os.path.abspath("{dir}/{file}".format(dir="replays_p3/", file=file))
+                file = path
+                states = process_replay_data(file)
+                print("NEW MATCH")
+                for i, data in enumerate(states, 0):
+
+                    # state_array = [v for k, v in data["state"].items()]
+                    state_array = [v for k, v in sorted(data["state"].items(), key=lambda x: x[0])]
+
+                    inputs = torch.FloatTensor(state_array)
+
+                    actual_strategy = data["strategy"]
+
+                    if actual_strategy == "Offensive":
+                        target = torch.FloatTensor([1, 0])
+                    else:  # actual_strategy == "Defensive":
+                        target = torch.FloatTensor([0, 1])
+
+                    output = net.calculate(inputs)
+
+                    print("Offensive, actual: {}".format(actual_strategy) if output.index(
+                        max(output)) == 0 else "Defensive, actual: {}".format(actual_strategy))
+
+
+            except Exception as e:
+                print("ERROR: {}".format(e))
+
+        if j == 3:
+            return
+"""
+
+
+
+
+
+#create_network()
+#test_network()
+#test_network_on_match()
 
 # n = net.load_network("network")
 # net.test_network(testing_data)
