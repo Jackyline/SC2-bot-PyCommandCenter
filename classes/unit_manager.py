@@ -3,6 +3,7 @@ from classes.worker_unit import WorkerUnit
 from classes.q_table import QTable
 from classes.coalitionstructure_generation import CoalitionstructureGenerator
 from classes.task_type import TaskType
+from classes.task import Task
 from classes.scout_unit import ScoutUnit
 from classes.resource_manager import ResourceManager
 from library import *
@@ -238,7 +239,7 @@ class UnitManager:
             if not unit.is_in_combat():
                 unit.attack_move(task.pos)
 
-    def command_unit(self, unit, task):
+    def command_unit(self, unit, task : Task):
         """
 
         HÄR SKA VI SE TILL SÅ ATT SAKER HÄNDER.
@@ -267,4 +268,6 @@ class UnitManager:
 
         elif task.task_type is TaskType.BUILD:
             self.idabot.resource_manager.use(task.construct_building)
-            unit.build(task.construct_building, task.pos)
+            unit.build(task.construct_building, task.build_position)
+
+            # TODO: required structures
