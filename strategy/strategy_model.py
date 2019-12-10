@@ -7,7 +7,7 @@ import torchvision
 
 import random
 
-from training_data import read_from_file
+from strategy.training_data import read_from_file
 
 BATCH_SIZE = 10
 EPOCHES = 10
@@ -223,7 +223,7 @@ def create_network():
     net.train_network(training_data)
     net.test_network(testing_data)
 
-    net.save_network(MODAL_NAME)
+    #net.save_network(MODAL_NAME)
 
 def test_network():
     trainig_data, testing_data = get_data()
@@ -231,9 +231,55 @@ def test_network():
     net = StrategyNetwork()
     net.load_network("network")
     net.test_network(testing_data)
+"""
+import os
+from training_data import process_replay_data
+def test_network_on_match():
+    net = StrategyNetwork()
+    net.load_network("network")
+
+    files = os.listdir("replays_p3/")
+    for j, file in enumerate(files):
+        if file.endswith(".SC2Replay"):
+            try:
+                path = os.path.abspath("{dir}/{file}".format(dir="replays_p3/", file=file))
+                file = path
+                states = process_replay_data(file)
+                print("NEW MATCH")
+                for i, data in enumerate(states, 0):
+
+                    # state_array = [v for k, v in data["state"].items()]
+                    state_array = [v for k, v in sorted(data["state"].items(), key=lambda x: x[0])]
+
+                    inputs = torch.FloatTensor(state_array)
+
+                    actual_strategy = data["strategy"]
+
+                    if actual_strategy == "Offensive":
+                        target = torch.FloatTensor([1, 0])
+                    else:  # actual_strategy == "Defensive":
+                        target = torch.FloatTensor([0, 1])
+
+                    output = net.calculate(inputs)
+
+                    print("Offensive, actual: {}".format(actual_strategy) if output.index(
+                        max(output)) == 0 else "Defensive, actual: {}".format(actual_strategy))
+
+
+            except Exception as e:
+                print("ERROR: {}".format(e))
+
+        if j == 3:
+            return
+"""
+
+
+
+
 
 #create_network()
-test_network()
+#test_network()
+#test_network_on_match()
 
 # n = net.load_network("network")
 # net.test_network(testing_data)
