@@ -1,7 +1,8 @@
 #from library import *
 from typing import Dict, Any, List
 from copy import deepcopy
-
+from classes.task import Task
+from classes.task_type import TaskType
 
 class CoalitionstructureGenerator:
     """
@@ -22,12 +23,17 @@ class CoalitionstructureGenerator:
         self.r_list = None
         self.q_list = None
         self.all_b = []
-        self.nr_coal = 0
         self.agent_types = []
+        self.temp = []
+        self.total_coal = None
+        self.total_agent_count = None
+        # The index in a coalition that is the different tasks coalitions should be assigned to
+        self.task_index = None
+
         return
 
     #    def create_coalition(self, military_units: Dict[UNIT_TYPEID: List[Unit.id]]) -> List[List[Unit.id]]:
-    def create_coalition(self, military_units, nr_coalitions):
+    def create_coalition(self, military_units):
         """"
         Input should be a dictionary with UNIT_TYPEID as key and a list of unit ids of all units of that type as the
         value. Return is structured as [coalition1, coalition2, ...] where each coalition is a list as
@@ -35,13 +41,20 @@ class CoalitionstructureGenerator:
         """
 
         # Init stuff
-        self.nr_coal = nr_coalitions
         self.agent_types = military_units.keys()
+        # Set the index in the coalition that is the task
+        for i, agent_type in enumerate(self.agent_types):
+            if agent_type is Task:
+                self.task_index = i
+                break
 
         # Initialize type coalition with all units
         coalition = []
         for agent_count in military_units.values():
             coalition.append(len(agent_count))
+
+        self.total_coal = deepcopy(coalition)
+        self.total_agent_count = sum(coalition)
 
         # Initialize lists v, q, r to nested lists with None values
         self.v_list = self.init_list(coalition)
@@ -113,10 +126,6 @@ class CoalitionstructureGenerator:
             # Calculate the value of this splitting of the coalition
             value = self.get_q(new_col) + self.get_v(set_of_b)
 
-            # Check if the current cs has more coalitions than requested, if so continue to the next one
-            if len(self.get_r(new_col)) >= self.nr_coal:
-                continue
-
             if value > max_value:
                 max_value = value
                 max_coal = self.get_r(new_col) + [set_of_b]  # this is basically optimal structure for new_col + set of b
@@ -160,18 +169,18 @@ class CoalitionstructureGenerator:
         :return: int
         """
 
-        value = 0
-        for nr_type in coalition:
-            c = 1
-            for agent in range(nr_type):
-                value += c
-                c = c/2
+        if coalition[self.task_index] != 1:
+            return 0
+
+        value = self.total_agent_count
+        for i, agent_count in enumerate(coalition):
+            value -= abs(self.total_coal[i] / self.total_coal[self.task_index] - agent_count)
 
         """
         if len(coalition) - coalition.count(0) != 1:
             return 0
         value = sum(map(lambda x: 1 + x ** 2, coalition))
-        """
+        #"""
         """
         value = 0
         if coalition.count(0) > 0:
@@ -237,14 +246,19 @@ class CoalitionstructureGenerator:
 
 
 if __name__ == '__main__':
+
+    t1 = Task(TaskType(1))
+    t2 = Task(TaskType(2))
+
+
     csg = CoalitionstructureGenerator()
     b = []
     dict_to_test = {"typ 1": [11, 12, 13], "typ 2": [21, 22, 23, 24], "typ 3": [31, 32, 33],
-                    "typ 4": [41, 42, 43, 44, 45, 46, 47, 48]}#, "typ 5": [51, 52, 53, 54]}#, "typ 6": [61, 62, 63, 64]}
+                    "typ 4": [41, 42, 43, 44, 45, 46, 47, 48], type(t1): [t1, t2]}#, "typ 6": [61, 62, 63, 64]}
     list_to_test = []
     for agent_count in dict_to_test.values():
         list_to_test.append(len(agent_count))
-    cs = csg.create_coalition(dict_to_test, 3)
+    cs = csg.create_coalition(dict_to_test)
     print(cs)
 
     """
