@@ -96,8 +96,9 @@ class BuildingStrategy:
         #print(self.idabot.base_location_manager.get_player_starting_base_location().position)
         #print(self.idabot.base_location_manager.get_player_starting_base_location(PLAYER_SELF).depot_position)
         #supply_depot = UnitType(UNIT_TYPEID.TERRAN_SUPPLYDEPOT, self.idabot)
-        print("Adding Task")
+
         if self.resource_manager.can_afford(action_type):
+            print("Adding Task")
             location_near = self.idabot.base_location_manager.get_player_starting_base_location(PLAYER_SELF).depot_position
             build_location = self.idabot.building_placer.get_build_location_near(location_near, action_type)
             build_location = Point2D(build_location.x, build_location.y)
@@ -105,6 +106,7 @@ class BuildingStrategy:
             self.assignment_manager.add_task(task)
         self.last_action = action
         return action
+
 
     def name_to_type(self, name):
         to_type = {
