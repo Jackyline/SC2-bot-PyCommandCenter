@@ -43,8 +43,10 @@ class PrintDebug:
 
         # Game strategy prints:
         strategy = self.ida_bot.strategy_network.actual_strategy
+        last_guess = self.ida_bot.strategy_network.last_res
         game_strat_text = "Strategy: {}".format(strategy.name)
-        self.ida_bot.map_tools.draw_text_screen(0.01, 0.50, game_strat_text)
+        self.ida_bot.map_tools.draw_text_screen(0.01, 0.40, game_strat_text)
+        self.ida_bot.map_tools.draw_text_screen(0.01, 0.43, str(last_guess))
 
 
         # Player base location, used to retrieve mineral fields and geysers.

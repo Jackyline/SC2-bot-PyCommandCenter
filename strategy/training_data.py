@@ -4,7 +4,7 @@ import os
 import math
 import json
 
-# import sc2reader
+#import sc2reader
 
 """
 TODO:
@@ -248,6 +248,9 @@ def get_all_buildings(replay, second, player_id):
                 and event.unit.name in buildings:
             buildings[event.unit.name] -= 1
 
+    # If some value would be less than 0
+    buildings = {k: v if v >= 0 else 0 for k,v in buildings.items()}
+
     return buildings
 
 
@@ -335,13 +338,17 @@ def is_offensive(replay, second, player, time_offset):
     if not armies_selected:
         return False
 
+    # If we do not have armies enough to actually perform attack
+    if army_counter(replay, second, player) < 5:
+        return False
+
     attack_location = attack_event.location
 
     # Location of players command centers
     base_locations = [com.location for com in buildings_of_type(replay, second, player, COMMAND_CENTERS)]
 
     # Only class as attack if outside of command centers
-    if max_distance_between(attack_location, base_locations) > 30:
+    if max_distance_between(attack_location, base_locations) > 10:
         return True
 
     return False
