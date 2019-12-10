@@ -1,5 +1,6 @@
 from classes.hmm import HiddenMarkovModel
 from classes.scout_unit import ScoutUnit
+import strategy.strategy
 from library import *
 from classes.task import Task
 from classes.task_type import TaskType
@@ -100,7 +101,8 @@ class ScoutingManager:
         for scout in self.bot.unit_manager.scout_units:
 
             # Nothing has been spotted
-            if self.hmm.get_most_likely()[0] == 0.0:
+            if self.hmm.get_most_likely()[0] == 0.0 and (scout.num % 2 == 0 or self.bot.strategy_manager.get_strategy()
+                                                         is strategy.strategy.StrategyName.OFFENSIVE):
                 if self.bot.unit_manager.scout_units[0].goal is None or self.enemy_base.position not in self.goals:
                     self.send_away_one_scout_to_enemy()
             else:
