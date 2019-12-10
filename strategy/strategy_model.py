@@ -7,14 +7,14 @@ import torchvision
 
 import random
 
-from strategy.training_data import read_from_file
+from training_data import read_from_file
 
 BATCH_SIZE = 10
 EPOCHES = 10
 LEARNING_RATE = 0.00001
 MOMENTUM = 0.5
 DATA_FILE = "data.txt"
-MODAL_NAME = "strategy/network"
+MODAL_NAME = "network"
 
 
 # output_classes = ("Offensive", "Defensive")
@@ -105,10 +105,12 @@ class StrategyNetwork():
         offensive = 0
         offensive_guessed = 0
         correct_offensive_guessed = 0
+        off_dict = {}
 
         defensive = 0
         defensive_guessed = 0
         correct_defensive_guessed = 0
+        def_dict = {}
 
         for i, data in enumerate(testing_data, 0):
 
@@ -135,11 +137,21 @@ class StrategyNetwork():
             # Guessed Offensive
             if network_guessed_strategy == 0:
                 offensive_guessed += 1
+                for k,v in data["state"].items():
+                    if k not in off_dict:
+                        off_dict[k] = v
+                    else:
+                        off_dict[k] += v
                 if actual_strategy == "Offensive":
                     correct_offensive_guessed += 1
             # Guessed Defensive
             elif network_guessed_strategy == 1:
                 defensive_guessed += 1
+                for k,v in data["state"].items():
+                    if k not in def_dict:
+                        def_dict[k] = v
+                    else:
+                        def_dict[k] += v
                 if actual_strategy == "Defensive":
                     correct_defensive_guessed += 1
 
@@ -155,6 +167,14 @@ class StrategyNetwork():
         print("defensive: {} out of {}. {} of them were correct.".format(defensive_guessed, defensive,
                                                                          correct_defensive_guessed))
 
+        off_dict = {k : v/offensive_guessed for k,v in off_dict.items()}
+        def_dict = {k : v/defensive_guessed for k,v in def_dict.items()}
+
+        print("Off dict:")
+        print(off_dict)
+        print("Def dict:")
+        print(def_dict)
+
 
 def get_data():
     # Load training data
@@ -164,7 +184,7 @@ def get_data():
     random.shuffle(data)
 
     # Use same amount of data points for each strategy
-    amount_offensive = 11000
+    amount_offensive = 7000
     amount_defensive = 0
 
     new_d = []
@@ -212,6 +232,8 @@ def test_network():
     net.load_network("network")
     net.test_network(testing_data)
 
+#create_network()
+test_network()
 
 # n = net.load_network("network")
 # net.test_network(testing_data)

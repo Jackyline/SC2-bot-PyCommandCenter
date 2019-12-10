@@ -1,6 +1,6 @@
-import strategy.strategy_model as strategy_model
-from library import UnitType, UNIT_TYPEID
-from strategy.training_data import ALL_BUILDINGS, UNIT_TYPES
+import strategy_model as strategy_model
+#from library import UnitType, UNIT_TYPEID
+from training_data import ALL_BUILDINGS, UNIT_TYPES
 from enum import Enum
 
 
