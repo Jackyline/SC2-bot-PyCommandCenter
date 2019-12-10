@@ -82,6 +82,8 @@ class AssignmentManager:
         if assignment_type.tasks and len(assignment_type.get_available_units()) > 0:  # Make sure there are new tasks and units that can do them
             assignments = self.calc_assignments(assignment_type)
             assignment_type.update(assignments)
+        else:
+            assignment_type.tasks.clear()
 
     def on_step(self):
         if self.ida_bot.current_frame % 10 == 0:
@@ -128,7 +130,7 @@ class AssignmentManager:
             self.military_assignments.add_task(task)
 
         # Tasks done by buildings
-        elif task.task_type is TaskType.TRAIN:
+        elif task.task_type is TaskType.TRAIN or task.task_type is TaskType.ADD_ON:
             self.building_assignments.add_task(task)
 
 
@@ -147,9 +149,9 @@ class WorkerAssignments:
 
         profit = 0
         if not worker.task is None and worker.task == task: # valuable to do the same task as before
-            profit += 101
+            profit += 1000
         if task.task_type == TaskType.SCOUT:
-            profit += 441000
+            profit += 10000
         elif task.task_type == TaskType.BUILD:
             profit += 10000
         elif task.task_type is TaskType.GAS:
@@ -244,6 +246,7 @@ class MilitaryAssignments:
         self.tasks = []
 
     def utility_func(self, group, task):
+        #TODO: här måste vi kolla att det är mkt reward om den kan bygga, lite annars
         return 5
 
     def get_available_units(self):
@@ -276,10 +279,23 @@ class BuildingAssignments:
         self.tasks = []
 
     def utility_func(self, building, task):
-        return 10
+
+        profit = 0
+        if task.task_type is TaskType.TRAIN:
+            if building.get_unit() in self.building_manager.get_my_producers(task.produce_unit):
+                profit += 1000
+        elif task.task_type is TaskType.ADD_ON:
+            if building.get_unit() in self.building_manager.get_my_producers(task.construct_building):
+                profit += 1000
+        if building.is_training:
+            profit -= 100
+
+        if profit < 0:
+            profit = 0
+        return profit
 
     def get_available_units(self):
-        return self.building_manager.buildings
+        return [building for building in self.building_manager.buildings if not building.get_unit().is_training]
 
     def toString(self):
         return "building assignments"
@@ -289,12 +305,9 @@ class BuildingAssignments:
 
     def update(self, new_assignments: dict):
         self.assignments = new_assignments
-        for building_unit in self.get_available_units():
-            for task, assigned_building in self.assignments:
-                if building_unit == assigned_building:
-                    building_unit.set_task(task)
+        for task, building in self.assignments.items():
 
-                    # TODO ta bort task från building när byggnad är färdigbyggd? eller behöver vi ens hålla koll på det tasks för byggnader?
+            self.building_manager.command_building(building, task)
 
     def get_tasks(self):
         return self.tasks

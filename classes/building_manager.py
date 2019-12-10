@@ -1,11 +1,12 @@
 from library import *
 from classes.building_unit import BuildingUnit
 from collections import defaultdict
-
+from classes.task_type import TaskType
+from classes.task import Task
 
 class BuildingManager:
-    def __init__(self, IDABot : IDABot):
-        self.IDABot = IDABot
+    def __init__(self, ida_bot : IDABot):
+        self.ida_bot = ida_bot
         self.buildings = []                         #:[BuildingUnit]
         self.under_construction = []                      #:[BuildingUnit]
 
@@ -14,6 +15,7 @@ class BuildingManager:
         """ Update internal lists 'buildings' and 'under_construction'. """
 
         # Check for completed buildings in self.under_construction
+        buildings = [unit for unit in buildings if unit.unit_type.is_building or unit.unit_type.is_addon]
         for b in self.under_construction:
             if b.get_unit().is_completed:
                 self.under_construction.remove(b)
@@ -40,7 +42,7 @@ class BuildingManager:
         """
         geysers = []
         for geyser in base_location.geysers:
-            for unit in self.IDABot.get_all_units():
+            for unit in self.ida_bot.get_all_units():
                 if unit.unit_type.is_geyser \
                         and geyser.tile_position.x == unit.tile_position.x \
                         and geyser.tile_position.y == unit.tile_position.y:
@@ -53,8 +55,30 @@ class BuildingManager:
     def get_under_construction_of_type(self, type : UnitType):
         return [b for b in self.under_construction if b.get_unit_type() ==  type]
 
-    def train(self, building : BuildingUnit, unit : Unit): # Todo: ändra till klasserna som vi själva gjort för unit
-        pass
+    def get_my_producers(self, unit_type: UnitType):
+        """ Returns a list of units which can build or train units of type unit_type """
+        producers = []
+        type_data = self.ida_bot.tech_tree.get_data(unit_type)
+        what_builds = type_data.what_builds
+
+        for unit in self.ida_bot.get_my_units():
+            if unit.unit_type in what_builds:
+                producers.append(unit)
+
+        return producers
+
+    def command_building(self, building : BuildingUnit, task):
+
+        if task.task_type is TaskType.ADD_ON:
+            if building in self.get_my_producers(task.construct_building):
+                self.ida_bot.resource_manager.use(task.construct_building)
+                building.build_addon(task.construct_building)
+                building.set_task(task)
+
+        elif task.task_type is TaskType.TRAIN:
+            if building.get_unit() in self.get_my_producers(task.produce_unit):
+                building.train(task.produce_unit)
+                building.set_task(task)
 
     def print_debug(self):
         types_buildings = {}

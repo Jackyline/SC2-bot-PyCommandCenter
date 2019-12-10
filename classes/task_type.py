@@ -13,3 +13,4 @@ class TaskType(Enum):
     DEFEND = 5
     TRAIN = 6
     SCOUT = 7
+    ADD_ON = 8
