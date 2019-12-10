@@ -226,6 +226,8 @@ class WorkerAssignments:
 
             elif not worker.is_alive():
                 to_remove[task] = worker
+            # TODO: fix worker task when refinery is done
+            #elif worker.task.construct_building.is_refinery and worker.task.construct_building.is_complete and worker.task.task_type is TaskType.BUILD:
 
         for task, worker in to_remove.items():
             worker.set_task(None)

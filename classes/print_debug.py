@@ -56,7 +56,7 @@ class PrintDebug:
         if not self.print_on_unit:
             return
 
-    
+        """
         # Prints unit debug information on each unit
         units = list(self.ida_bot.get_my_units())
         for unit in units:
@@ -80,7 +80,7 @@ class PrintDebug:
         geysers = list(base_location.geysers)
         for geyser in geysers:
             self.ida_bot.map_tools.draw_text(geyser.position, " %s id: %d" % (str(geyser.unit_type), geyser.id))
-    
+        """
 
         for worker in self.unit_manager.worker_units:
             task = worker.get_task()
