@@ -3,6 +3,7 @@ from classes.worker_unit import WorkerUnit
 from classes.q_table import QTable
 from classes.coalitionstructure_generation import CoalitionstructureGenerator
 from classes.task_type import TaskType
+from classes.task import Task
 from classes.scout_unit import ScoutUnit
 from classes.resource_manager import ResourceManager
 from library import *
@@ -135,6 +136,9 @@ class UnitManager:
         self.cyclone_q_table.on_step()
         self.helion_q_table.on_step()
 
+        if len(self.military_units) > 5 and self.cs == None:
+            self.create_coalition(3)
+
     def update_military_units(self):
         unit: MilitaryUnit
         for unit in self.military_units:
@@ -186,6 +190,7 @@ class UnitManager:
                     # Mark the goal is visited if the unit died, prevents suicide mission next
                     self.idabot.scout_manager.visited.append(current_unit.get_goal())
                     self.idabot.scout_manager.frame_stamps.append(self.idabot.current_frame)
+                    self.idabot.scout_manager.goals.remove(current_unit.get_goal())
                 if current_unit.get_unit().unit_type.is_combat_unit:
                     print("TOTAL REWARD:", current_unit.total_reward)
                 unit_list.remove(current_unit)
@@ -196,10 +201,9 @@ class UnitManager:
         :param nr_coalitions: How many coalitions to divide units into
         :return: None, update internal state for coalitions (self.cs)
         '''
-        # TODO: change this to something reasonable, change to military_unit
         info = {}
         info["militaryUnits"] = {
-            military_type.get_unit_type(): len(self.get_units_of_type(military_type.get_unit_type()))
+            military_type.get_unit_type(): self.get_units_of_type(military_type.get_unit_type())
             for military_type in self.military_units
             if "militaryUnits" not in info
                or military_type.get_unit_type() not in info["militaryUnits"]
@@ -215,7 +219,7 @@ class UnitManager:
 
         for unit in self.military_units:
             if unit not in units_in_groups:
-                self.csg.add_unit(unit, self.groups)
+                self.groups[self.csg.find_best_group(unit, self.groups)].append(unit)
 
 
     def is_military_type(self, unit):
@@ -237,7 +241,7 @@ class UnitManager:
             if not unit.is_in_combat():
                 unit.attack_move(task.pos)
 
-    def command_unit(self, unit, task):
+    def command_unit(self, unit, task : Task):
         """
 
         HÄR SKA VI SE TILL SÅ ATT SAKER HÄNDER.
@@ -266,4 +270,6 @@ class UnitManager:
 
         elif task.task_type is TaskType.BUILD:
             self.idabot.resource_manager.use(task.construct_building)
-            unit.build(task.construct_building, task.pos)
+            unit.build(task.construct_building, task.build_position)
+
+            # TODO: required structures
