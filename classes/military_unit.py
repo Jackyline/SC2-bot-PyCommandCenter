@@ -32,8 +32,8 @@ class MilitaryUnit:
         self.old_action = 0  # The latest action taken by this unit
         self.state = ""
         self.learning_rate = 0.1
-        self.discount_factor = 0.7 #TODO: ändra
-        self.exploration = 0.0 # Set this to 0 to use the learned policy
+        self.discount_factor = 0.9 #TODO: ändra
+        self.exploration = 0.2 # Set this to 0 to use the learned policy
         self.total_reward = 0
 
 
@@ -47,7 +47,7 @@ class MilitaryUnit:
         type_id = self.get_unit_type_id()
         # Specifika variabler för olika enheter
         if type_id == UNIT_TYPEID.TERRAN_MARINE:
-            self.attack_animation_offset = 1
+            self.attack_animation_offset = 0
         elif type_id == UNIT_TYPEID.TERRAN_MARAUDER:
             self.concussive_shells = True  # remove comment when concussive_shells are researched
             self.attack_animation_offset = 7
@@ -55,7 +55,30 @@ class MilitaryUnit:
             self.attack_animation_offset = 0
         elif type_id == UNIT_TYPEID.TERRAN_CYCLONE:
             self.attack_animation_offset = 0
-
+        elif type_id == UNIT_TYPEID.TERRAN_MEDIVAC:
+            self.attack_animation_offset = -1
+        elif type_id == UNIT_TYPEID.TERRAN_THOR:
+            self.attack_animation_offset = -1
+        elif type_id == UNIT_TYPEID.TERRAN_BATTLECRUISER:
+            self.attack_animation_offset = -1
+        elif type_id == UNIT_TYPEID.TERRAN_REAPER:
+            self.attack_animation_offset = -1
+        elif type_id == UNIT_TYPEID.TERRAN_WIDOWMINE:
+            self.attack_animation_offset = -1
+        elif type_id == UNIT_TYPEID.TERRAN_RAVEN:
+            self.attack_animation_offset = -1
+        elif type_id == UNIT_TYPEID.TERRAN_SIEGETANK:
+            self.attack_animation_offset = -1
+        elif type_id == UNIT_TYPEID.TERRAN_SIEGETANKSIEGED:
+            self.attack_animation_offset -= 1
+        elif type_id == UNIT_TYPEID.TERRAN_VIKINGFIGHTER:
+            self.attack_animation_offset = -1
+        elif type_id == UNIT_TYPEID.TERRAN_LIBERATOR:
+            self.attack_animation_offset = -1
+        elif type_id == UNIT_TYPEID.TERRAN_BANSHEE:
+            self.attack_animation_offset = -1
+        elif type_id == UNIT_TYPEID.TERRAN_GHOST:
+            self.attack_animation_offset = -1
 
     def on_step(self, e_in_sight, enemies_that_can_attack, allies_in_sight, enemies_in_range):
         """
@@ -66,11 +89,16 @@ class MilitaryUnit:
         """
         self.update_in_sight(e_in_sight, enemies_that_can_attack, allies_in_sight, enemies_in_range)
         if not self.in_combat:
+            if self.attack_animation_offset == -1:
+                self.not_trained_on_step()
             """
             closest_enemy = self.__get_closest_enemy(self.idabot.unit_manager.visible_enemies)
             if closest_enemy:
                 self.attack_unit(closest_enemy)
             """
+        elif self.attack_animation_offset == -1:
+            self.in_combat_on_step_not_trained(e_in_sight, enemies_that_can_attack, allies_in_sight, enemies_in_range)
+
         elif self.attacked and self.get_weapon_cooldown() == 0:
             self.action_end_frame += 1
 
@@ -79,6 +107,14 @@ class MilitaryUnit:
 
         elif self.attacked and self.get_weapon_cooldown() > 0 and len(e_in_sight) > 0:
             self.retreat_action()
+
+    def not_trained_on_step(self):
+        if self.get_unit_type_id() == UNIT_TYPEID.TERRAN_SIEGETANKSIEGED:
+            self.get_unit().ability(ABILITY_ID.MORPH_UNSIEGE)
+
+    def in_combat_on_step_not_trained(self, e_in_sight, enemies_that_can_attack, allies_in_sight, enemies_in_range):
+        if self.get_unit_type_id() == UNIT_TYPEID.TERRAN_SIEGETANK:
+            self.get_unit().ability(ABILITY_ID.MORPH_SIEGEMODE)
 
     def in_combat_on_step(self, e_in_sight, enemies_that_can_attack, allies_in_sight, enemies_in_range):
         """
@@ -293,6 +329,13 @@ class MilitaryUnit:
             return math.sqrt((self.get_position().x - unit.position.x)**2 +
                                      (self.get_position().y - unit.position.y)**2)
         return 10
+
+    def update_unit_type(self, unit):
+        self.unit = unit
+        self.attack_range = self.get_unit_type().attack_range
+        self.movement_speed = self.get_unit_type().movement_speed
+        self.sight_range = self.get_unit_type().sight_range
+
 
     def stop(self):
         self.get_unit().stop()

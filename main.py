@@ -70,8 +70,7 @@ class MyAgent(IDABot):
         Generates jobs depending on our chosen strategy
         """
 
-        # Calculate new predicted strategy
-        strategy = self.strategy_network.get_strategy()
+
 
         curr_seconds = self.current_frame // 24
 
@@ -79,10 +78,11 @@ class MyAgent(IDABot):
         if curr_seconds - self.last_handled_strategy < HANDLE_STRATEGY_DELAY:
             return
 
+        # Calculate new predicted strategy
+        strategy = self.strategy_network.get_strategy()
+
         # Now handling a strategy decision
         self.last_handled_strategy = curr_seconds
-
-
 
         # Get all of our command centers
         command_centers = self.building_manager.get_buildings_of_type(UnitType(UNIT_TYPEID.TERRAN_COMMANDCENTER, self))
@@ -104,7 +104,7 @@ class MyAgent(IDABot):
         defensive_tasks = [Task(task_type=TaskType.DEFEND,
                                 pos=command_centers[i % len(command_centers)])
                            # Loop through all bases we have and
-                           for i in range(defensive_groups)]
+                           for i in range(defensive_groups) if command_centers]
 
         # Add all generated tasks to assignment_manager
         for task in [*offensive_tasks, *defensive_tasks]:
@@ -112,7 +112,7 @@ class MyAgent(IDABot):
 
 
 def main():
-    coordinator = Coordinator(r"D:\StarCraft II\Versions\Base69232\SC2_x64.exe")
+    coordinator = Coordinator(r"C:\Users\Dylan\Desktop\StarCraft II\Versions\Base69232\SC2_x64.exe")
 
     bot1 = MyAgent()
     # bot2 = MyAgent()

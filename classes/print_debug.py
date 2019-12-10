@@ -56,19 +56,21 @@ class PrintDebug:
         if not self.print_on_unit:
             return
 
-        """ ############# FINNS BUGG HÄR ###########
-    
+        """
         # Prints unit debug information on each unit
         units = list(self.ida_bot.get_my_units())
         for unit in units:
             # Find what coalition the unit is in (if any) and add that to the print
-            coalition = -1
-            for i, coalition in enumerate(self.unit_manager.groups):
-                if unit in coalition:
-                    coalition = i
-                    break
-            self.ida_bot.map_tools.draw_text(unit.position, " %s id: %d, coal: %d" % (str(unit.unit_type), unit.id, coalition))
+            temp = -1
+            if self.unit_manager.groups is not None:
+                for i, coalition in enumerate(self.unit_manager.groups):
+                    if unit.id in coalition:
+                        temp = i
+                        break
+            self.ida_bot.map_tools.draw_text(unit.position, " %s id: %d, coal: %d" % (str(unit.unit_type), unit.id, temp))
 
+
+        ############# FINNS BUGG HÄR (kanske) ###########
         # Print mineral information on each mineral
         minerals = list(base_location.minerals)
         for mineral in minerals:
@@ -78,8 +80,8 @@ class PrintDebug:
         geysers = list(base_location.geysers)
         for geyser in geysers:
             self.ida_bot.map_tools.draw_text(geyser.position, " %s id: %d" % (str(geyser.unit_type), geyser.id))
-    
         """
+
         for worker in self.unit_manager.worker_units:
             task = worker.get_task()
             if task is not None:

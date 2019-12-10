@@ -3,6 +3,7 @@ from classes.worker_unit import WorkerUnit
 from classes.q_table import QTable
 from classes.coalitionstructure_generation import CoalitionstructureGenerator
 from classes.task_type import TaskType
+from classes.task import Task
 from classes.scout_unit import ScoutUnit
 from classes.resource_manager import ResourceManager
 from library import *
@@ -31,7 +32,8 @@ class UnitManager:
                                UnitType(UNIT_TYPEID.TERRAN_RAVEN, idabot),
                                UnitType(UNIT_TYPEID.TERRAN_BANSHEE, idabot),
                                UnitType(UNIT_TYPEID.TERRAN_BATTLECRUISER, idabot),
-                               UnitType(UNIT_TYPEID.TERRAN_AUTOTURRET, idabot)]
+                               UnitType(UNIT_TYPEID.TERRAN_AUTOTURRET, idabot),
+                               UnitType(UNIT_TYPEID.TERRAN_SIEGETANKSIEGED, idabot)]
         # Worker types
         self.WORKER_TYPES = [UnitType(UNIT_TYPEID.TERRAN_SCV, idabot)]
 
@@ -51,6 +53,7 @@ class UnitManager:
         self.marine_q_table = QTable(self.idabot, "marine")
         self.helion_q_table = QTable(self.idabot, "helion")
         self.cyclone_q_table = QTable(self.idabot, "cyclone")
+        self.dummy_q_table = QTable(self.idabot, "dummy")
 
         # Keeps track of current coalition structure, structured as [[id1, id2, ...], [id1, id2...], ...]
         self.csg = CoalitionstructureGenerator()
@@ -168,12 +171,49 @@ class UnitManager:
                         known_units.append(unit_class(latest_unit, self.idabot, self.marauder_q_table))
                     elif latest_unit.unit_type.unit_typeid == UNIT_TYPEID.TERRAN_MARINE:
                         known_units.append(unit_class(latest_unit, self.idabot, self.marine_q_table))
-                    elif latest_unit.unit_type.unit_typeid == UNIT_TYPEID.TERRAN_SCV:
-                        known_units.append(unit_class(latest_unit, self.idabot))
                     elif latest_unit.unit_type.unit_typeid == UNIT_TYPEID.TERRAN_CYCLONE:
                         known_units.append(unit_class(latest_unit,self.idabot, self.cyclone_q_table))
                     elif latest_unit.unit_type.unit_typeid == UNIT_TYPEID.TERRAN_HELLION:
                         known_units.append(unit_class(latest_unit,self.idabot, self.helion_q_table))
+                    elif latest_unit.unit_type.unit_typeid == UNIT_TYPEID.TERRAN_MEDIVAC:
+                        known_units.append(unit_class(latest_unit,self.idabot, self.helion_q_table))
+                    elif latest_unit.unit_type.unit_typeid == UNIT_TYPEID.TERRAN_THOR:
+                        known_units.append(unit_class(latest_unit,self.idabot, self.dummy_q_table))
+                    elif latest_unit.unit_type.unit_typeid == UNIT_TYPEID.TERRAN_BATTLECRUISER:
+                        known_units.append(unit_class(latest_unit,self.idabot, self.dummy_q_table))
+                    elif latest_unit.unit_type.unit_typeid == UNIT_TYPEID.TERRAN_REAPER:
+                        known_units.append(unit_class(latest_unit,self.idabot, self.dummy_q_table))
+                    elif latest_unit.unit_type.unit_typeid == UNIT_TYPEID.TERRAN_WIDOWMINE:
+                        known_units.append(unit_class(latest_unit,self.idabot, self.dummy_q_table))
+                    elif latest_unit.unit_type.unit_typeid == UNIT_TYPEID.TERRAN_RAVEN:
+                        known_units.append(unit_class(latest_unit,self.idabot, self.dummy_q_table))
+                    elif latest_unit.unit_type.unit_typeid == UNIT_TYPEID.TERRAN_SIEGETANK:
+                        known_units.append(unit_class(latest_unit,self.idabot, self.dummy_q_table))
+                    elif latest_unit.unit_type.unit_typeid == UNIT_TYPEID.TERRAN_SIEGETANKSIEGED:
+                        known_units.append(unit_class(latest_unit,self.idabot, self.dummy_q_table))
+                    elif latest_unit.unit_type.unit_typeid == UNIT_TYPEID.TERRAN_VIKINGFIGHTER:
+                        known_units.append(unit_class(latest_unit,self.idabot, self.dummy_q_table))
+                    elif latest_unit.unit_type.unit_typeid == UNIT_TYPEID.TERRAN_LIBERATOR:
+                        known_units.append(unit_class(latest_unit,self.idabot, self.dummy_q_table))
+                    elif latest_unit.unit_type.unit_typeid == UNIT_TYPEID.TERRAN_BANSHEE:
+                        known_units.append(unit_class(latest_unit,self.idabot, self.dummy_q_table))
+                    elif latest_unit.unit_type.unit_typeid == UNIT_TYPEID.TERRAN_GHOST:
+                        known_units.append(unit_class(latest_unit,self.idabot, self.dummy_q_table))
+                    elif latest_unit.unit_type.unit_typeid == UNIT_TYPEID.TERRAN_SCV:
+                        known_units.append(unit_class(latest_unit, self.idabot))
+
+                elif latest_unit.unit_type.unit_typeid == UNIT_TYPEID.TERRAN_SIEGETANK:
+                    for unit in self.military_units:
+                        if unit.get_unit_type_id() == UNIT_TYPEID.TERRAN_SIEGETANKSIEGED and\
+                                latest_unit.id == unit.get_id():
+                            unit.update_unit_type(latest_unit)
+
+                elif latest_unit.unit_type.unit_typeid == UNIT_TYPEID.TERRAN_SIEGETANKSIEGED:
+                    for unit in self.military_units:
+                        if unit.get_unit_type_id() == UNIT_TYPEID.TERRAN_SIEGETANK and\
+                                latest_unit.id == unit.get_id():
+                            unit.update_unit_type(latest_unit)
+
     def update_dead_units(self, unit_list):
         '''
         Removes all units of given list that are not alive anymore
@@ -197,10 +237,9 @@ class UnitManager:
         :param nr_coalitions: How many coalitions to divide units into
         :return: None, update internal state for coalitions (self.cs)
         '''
-        # TODO: change this to something reasonable, change to military_unit
         info = {}
         info["militaryUnits"] = {
-            military_type.get_unit_type(): len(self.get_units_of_type(military_type.get_unit_type()))
+            military_type.get_unit_type(): self.get_units_of_type(military_type.get_unit_type())
             for military_type in self.military_units
             if "militaryUnits" not in info
                or military_type.get_unit_type() not in info["militaryUnits"]
@@ -216,7 +255,7 @@ class UnitManager:
 
         for unit in self.military_units:
             if unit not in units_in_groups:
-                self.csg.add_unit(unit, self.groups)
+                self.groups[self.csg.find_best_group(unit, self.groups)].append(unit)
 
 
     def is_military_type(self, unit):
@@ -238,7 +277,7 @@ class UnitManager:
             if not unit.is_in_combat():
                 unit.attack_move(task.pos)
 
-    def command_unit(self, unit, task):
+    def command_unit(self, unit, task : Task):
         """
 
         HÄR SKA VI SE TILL SÅ ATT SAKER HÄNDER.
@@ -266,5 +305,14 @@ class UnitManager:
                     unit.set_gassing(refinery.get_unit())
 
         elif task.task_type is TaskType.BUILD:
-            self.idabot.resource_manager.use(task.construct_building)
-            unit.build(task.construct_building, task.pos)
+            if task.construct_building.is_refinery:
+                self.idabot.resource_manager.use(task.construct_building)
+                unit.get_unit().build_target(task.construct_building, task.geyser)
+            else:
+                self.idabot.resource_manager.use(task.construct_building)
+                unit.get_unit().stop()
+
+                unit.build(task.construct_building, task.build_position)
+
+
+            # TODO: required structures
