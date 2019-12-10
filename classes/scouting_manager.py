@@ -100,7 +100,7 @@ class ScoutingManager:
         for scout in self.bot.unit_manager.scout_units:
 
             # Nothing has been spotted
-            if self.hmm.get_most_likely()[0] == 0.0:
+            if self.hmm.get_most_likely()[0] == 0.0 and len(self.bot.unit_manager.scout_units) == 2:
                 if self.bot.unit_manager.scout_units[0].goal is None or self.enemy_base.position not in self.goals:
                     self.send_away_one_scout_to_enemy()
             else:

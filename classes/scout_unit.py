@@ -41,7 +41,6 @@ class ScoutUnit:
                 self.manager.frame_stamps.append(current_frame)
                 for cur_goal in self.manager.goals:
                     if cur_goal.equal(self.goal):
-                        print("D")
                         self.manager.goals.remove(cur_goal)
                 return True
             else:
@@ -68,8 +67,8 @@ class ScoutUnit:
                     # If we just spotted our first discover recently, go random.
                     goal = self.set_goal_strategy(width_ratio, height_ratio)
                     for cur_goal in self.manager.goals:
-                        if cur_goal.equal(goal):
-                            self.check_if_visited(goals, current_frame, width_ratio, height_ratio)
+                        if cur_goal.equal(goal) or cur_goal.distance(goal) < 10:
+                            goal = self.set_goal_strategy(width_ratio, height_ratio)
                     self.set_goal(goal)
 
     def check_in_visited(self, point, *args):
