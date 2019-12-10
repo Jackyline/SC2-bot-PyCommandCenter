@@ -84,7 +84,7 @@ class AssignmentManager:
             assignment_type.update(assignments)
 
     def on_step(self):
-        if self.ida_bot.current_frame % 10 != 0:
+        if self.ida_bot.current_frame % 10 == 0:
             return
         # Add recommended nr of gas and mining tasks
         self.generate_gas_tasks()
@@ -101,16 +101,18 @@ class AssignmentManager:
 
 
     def generate_mining_tasks(self):
-        for base in self.ida_bot.base_location_manager.get_occupied_base_locations(PLAYER_SELF):
-            for i in range(2*len(self.ida_bot.get_mineral_fields(base))):
-                self.worker_assignments.add_task(Task(task_type=TaskType.MINING, pos=base.position, base_location=base))
+        if self.worker_assignments.get_available_units():  # Only generate if there are available workers
+            for base in self.ida_bot.base_location_manager.get_occupied_base_locations(PLAYER_SELF):
+                for i in range(2*len(self.ida_bot.get_mineral_fields(base))):
+                    self.worker_assignments.add_task(Task(task_type=TaskType.MINING, pos=base.position, base_location=base))
 
 
     def generate_gas_tasks(self):
-        for refinary in self.building_manager.get_buildings_of_type(UnitType(UNIT_TYPEID.TERRAN_REFINERY, self.ida_bot)):
-            for i in range(3):
-                self.last_tick_mining_tasks += 1
-                self.worker_assignments.add_task(Task(task_type=TaskType.GAS, pos=refinary.get_unit().position))
+        if self.worker_assignments.get_available_units(): # Only generate if there are available workers
+            for refinary in self.building_manager.get_buildings_of_type(UnitType(UNIT_TYPEID.TERRAN_REFINERY, self.ida_bot)):
+                for i in range(3):
+                    self.last_tick_mining_tasks += 1
+                    self.worker_assignments.add_task(Task(task_type=TaskType.GAS, pos=refinary.get_unit().position))
 
     def add_task(self, task):
         """
@@ -144,13 +146,17 @@ class WorkerAssignments:
         idle = worker.is_idle()
 
         profit = 0
-        if not worker.task is None and worker.task == task:
+        if not worker.task is None and worker.task == task: # valuable to do the same task as before
             profit += 101
+        if task.task_type == TaskType.SCOUT:
+            profit += 441000
+        elif task.task_type == TaskType.BUILD:
+            profit += 10000
+        elif task.task_type is TaskType.GAS:
+            profit += 1000
         if idle:
             profit += 100
 
-        if task.task_type is TaskType.GAS:
-            profit += 1000
 
         profit -= distance
 
@@ -242,7 +248,7 @@ class MilitaryAssignments:
 
     def get_available_units(self):
         #if not len(self.tasks) == len() # If strategy has changed, or number of base locations has changed and we are in defensive strategy, create new groups
-        self.unit_manager.create_coalition()
+        #self.unit_manager.create_coalition()
         #else:
             #self.unit_manager.add_units_to_coalition()
         return self.unit_manager.groups

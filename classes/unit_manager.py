@@ -4,6 +4,7 @@ from classes.q_table import QTable
 from classes.coalitionstructure_generation import CoalitionstructureGenerator
 from classes.task_type import TaskType
 from classes.scout_unit import ScoutUnit
+from classes.resource_manager import ResourceManager
 from library import *
 import math
 import random
@@ -12,7 +13,6 @@ class UnitManager:
 
     def __init__(self, idabot):
         self.idabot = idabot
-
         # All military types
         self.MILITARY_TYPES = [UnitType(UNIT_TYPEID.PROTOSS_STALKER, idabot),
                                UnitType(UNIT_TYPEID.TERRAN_MARINE, idabot),
@@ -54,7 +54,7 @@ class UnitManager:
 
         # Keeps track of current coalition structure, structured as [[id1, id2, ...], [id1, id2...], ...]
         self.csg = CoalitionstructureGenerator()
-        self.groups = None
+        self.groups = []
 
     def get_info(self):
         '''
@@ -189,6 +189,7 @@ class UnitManager:
                     # Mark the goal is visited if the unit died, prevents suicide mission next
                     self.idabot.scout_manager.visited.append(current_unit.get_goal())
                     self.idabot.scout_manager.frame_stamps.append(self.idabot.current_frame)
+                    self.idabot.scout_manager.goals.remove(current_unit.get_goal())
                 if current_unit.get_unit().unit_type.is_combat_unit:
                     print("TOTAL REWARD:", current_unit.total_reward)
                 unit_list.remove(current_unit)
@@ -219,9 +220,6 @@ class UnitManager:
             if unit not in units_in_groups:
                 self.groups[self.csg.find_best_group(unit, self.groups)].append(unit)
 
-    def command_group(self, task, group):
-        for unit in group:
-            unit.attack_move(task.pos)
 
     def is_military_type(self, unit):
         '''
@@ -236,6 +234,11 @@ class UnitManager:
         :return:  If given unit is any worker unit type
         '''
         return any(unit.unit_type == unit_type for unit_type in self.WORKER_TYPES)
+
+    def command_group(self, task, group):
+        for unit in group:
+            if not unit.is_in_combat():
+                unit.attack_move(task.pos)
 
     def command_unit(self, unit, task):
         """
@@ -265,5 +268,5 @@ class UnitManager:
                     unit.set_gassing(refinery.get_unit())
 
         elif task.task_type is TaskType.BUILD:
-            pass
-            # TODO: Om unit byggt refinery, set unit.stop() så han inte automatiskt börjar collecta gas
+            self.idabot.resource_manager.use(task.construct_building)
+            unit.build(task.construct_building, task.pos)

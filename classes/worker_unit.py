@@ -1,3 +1,5 @@
+from library import *
+
 class WorkerUnit:
     def __init__(self, worker_unit, idabot):
         self.unit = worker_unit
@@ -32,6 +34,7 @@ class WorkerUnit:
         self.unit.right_click(refinery)
 
     def build(self, unit_type_id, location):
+        location = Point2DI(int(location.x), int(location.y))
         self.unit.build(building_type=unit_type_id, position=location)
 
     def set_task(self, task):

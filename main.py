@@ -28,7 +28,7 @@ class MyAgent(IDABot):
         self.strategy_network = Strategy(self)
         self.assignment_manager = AssignmentManager(self)
         self.scout_manager = ScoutingManager(self)
-        self.building_strategy = BuildingStrategy(self.resource_manager)
+        self.building_strategy = BuildingStrategy(self, self.resource_manager, self.assignment_manager)
         self.print_debug = PrintDebug(self, self.building_manager, self.unit_manager, self.scout_manager,
                                       self.building_strategy, True)
 
@@ -70,6 +70,9 @@ class MyAgent(IDABot):
         Generates jobs depending on our chosen strategy
         """
 
+        # Calculate new predicted strategy
+        strategy = self.strategy_network.get_strategy()
+
         curr_seconds = self.current_frame // 24
 
         # Only look at new strategy and generate new tasks every now and then
@@ -79,8 +82,7 @@ class MyAgent(IDABot):
         # Now handling a strategy decision
         self.last_handled_strategy = curr_seconds
 
-        # Calculate new predicted strategy
-        strategy = self.strategy_network.get_strategy()
+
 
         # Get all of our command centers
         command_centers = self.building_manager.get_buildings_of_type(UnitType(UNIT_TYPEID.TERRAN_COMMANDCENTER, self))

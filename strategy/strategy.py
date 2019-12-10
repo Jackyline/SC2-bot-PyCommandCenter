@@ -19,6 +19,7 @@ class Strategy():
         self.idabot = idabot
         self.actual_strategy = StrategyName.DEFENSIVE  # (Strategy, Time)
         self.last_updated_strategy = 0
+        self.last_res = [0, 0]
 
     # TODO: Might want to "randomize" OFFENSIVE strategy sometimes if it never gets predicted.
     def get_strategy(self):
@@ -27,6 +28,8 @@ class Strategy():
 
         # Output from model
         res = self.model.calculate(inputs)
+
+        self.last_res = res
 
         # Get new predicted strategy, OFFENSIVE or DEFENSIVE
         new_strategy = StrategyName(res.index(max(res)))
