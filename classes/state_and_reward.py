@@ -58,11 +58,11 @@ def get_state_marine(health, on_cooldown, distance_to_closest_enemy, e_that_can_
 
 
     state = "" + \
-            calc_health(4) + \
+            calc_health(8) + \
             calc_on_cooldown() + \
             calc_distance_to_closest_enemy() + \
             calc_e_that_can_attack() + \
-            calc_enemy_ally_ratio(5)
+            calc_enemy_ally_ratio(10)
     #print("STATE:", state)
     return state
 
@@ -174,11 +174,11 @@ def get_state_cyclone(health, on_cooldown, distance_to_closest_enemy, e_that_can
 
 
     state = "" + \
-            calc_health(8) + \
+            calc_health(5) + \
             calc_on_cooldown() + \
             calc_distance_to_closest_enemy() + \
             calc_e_that_can_attack() + \
-            calc_enemy_ally_ratio(8)
+            calc_enemy_ally_ratio(10)
     #print("STATE:", state)
     return state
 
