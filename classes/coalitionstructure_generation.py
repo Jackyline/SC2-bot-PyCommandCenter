@@ -66,18 +66,25 @@ class CoalitionstructureGenerator:
         cs = self.get_r(coalition)
 
         # Create the output coalition structure by designating a unit (by id) for each unit the coalition should have.
-        output_coalition_structure = []
+
+        output_dictionary = {}
         agent_types = list(military_units.keys())
+
         for coalition in cs:
             output_coalition = []
+            task = None
             # For each type of agent in a coalition
             for current_agent_type in range(len(coalition)):
                 # Insert as many units of type current_agent_type as the coalition has
+                if current_agent_type == self.task_index:
+                    task = military_units[agent_types[current_agent_type]].pop(-1)
+                    continue
                 for agent_count in range(coalition[current_agent_type]):
                     output_coalition.append(military_units[agent_types[current_agent_type]].pop(-1))
-            output_coalition_structure.append(output_coalition)
 
-        return output_coalition_structure
+            output_dictionary[task] = output_coalition
+
+        return output_dictionary
 
     def init_list(self, coalition, index = 0):
         """
