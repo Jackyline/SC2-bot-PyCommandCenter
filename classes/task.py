@@ -18,7 +18,7 @@ class Task:
     så tex Task(TaskType.ATTACK, position)
     """
 
-    def __init__(self, task_type: TaskType, pos: Unit.tile_position = None, construct_building=None, produce_unit=None, base_location=None, build_position=None):
+    def __init__(self, task_type: TaskType, pos: Unit.tile_position = None, construct_building=None, produce_unit=None, base_location=None, build_position=None, geyser=None):
         self.id = uuid.uuid4()
         self.task_type = task_type
         self.pos = pos
@@ -26,6 +26,7 @@ class Task:
         self.produce_unit = produce_unit
         self.base_location = base_location
         self.build_position = build_position
+        self.geyser = geyser
 
     def __eq__(self, other):
         return self.task_type == other.task_type and\

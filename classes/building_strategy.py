@@ -54,7 +54,7 @@ class BuildingStrategy:
 
     def action(self):
         curr_seconds = self.idabot.current_frame // 24
-        if curr_seconds - self.last_build < 5:
+        if curr_seconds - self.last_build < 2:
             return self.last_action
 
         self.last_build = curr_seconds
@@ -72,12 +72,7 @@ class BuildingStrategy:
         # TODO, fix this
         food_army = (supply - supply/2) / 200
         food_workers = (supply / 2) / 200
-        """
-        print("gas: {}".format(gas))
-        print("minerals: {}".format(minerals))
-        print("supply: {}".format(supply))
-        print("supply: {}".format(max_supply))
-        """
+
         v = torch.Tensor([input_minerals, input_gas, food_cap, food_used, food_army, food_workers])
         # Hardcoded input atm
         predicted = self.model(v)
@@ -92,10 +87,6 @@ class BuildingStrategy:
 
         action = action_name[self.actions[str(action)]]
         action_type = self.name_to_type(action)
-        #print("bajs")
-        #print(self.idabot.base_location_manager.get_player_starting_base_location().position)
-        #print(self.idabot.base_location_manager.get_player_starting_base_location(PLAYER_SELF).depot_position)
-        #supply_depot = UnitType(UNIT_TYPEID.TERRAN_SUPPLYDEPOT, self.idabot)
 
         self.add_task(action_type)
         self.last_action = action
@@ -118,12 +109,35 @@ class BuildingStrategy:
                 task = Task(TaskType.TRAIN, produce_unit=action_type)
             elif action_type.is_addon:
                 task = Task(TaskType.ADD_ON, construct_building=action_type)
+            elif action_type.is_refinery:
+                for manager in self.idabot.base_location_manager.get_occupied_base_locations(PLAYER_SELF):
+                    for geyser in manager.geysers:
+                        if self.get_refinery(geyser) is None:
+                            task = Task(TaskType.BUILD, pos=geyser.position, geyser=geyser,
+                                        construct_building=action_type)
+                            self.assignment_manager.add_task(task)
+                            return
+                return
             elif action_type.is_building:
                 task = Task(TaskType.BUILD, pos=build_location, build_position=build_pos,
                             construct_building=action_type)
 
+
             print("Adding Task: ", task.task_type, "Action_type: ", action_type)
             self.assignment_manager.add_task(task)
+
+    def get_refinery(self, geyser: Unit):
+        """ Returns: A refinery which is on top of unit `geyser` if any, None otherwise """
+
+        def squared_distance(p1: Point2D, p2: Point2D) -> float:
+            return (p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2
+
+        for unit in self.idabot.get_my_units():
+            if unit.unit_type.is_refinery and squared_distance(unit.position, geyser.position) < 1:
+                return unit
+
+        return None
+
 
     def name_to_type(self, name):
         to_type = {

@@ -269,7 +269,12 @@ class UnitManager:
                     unit.set_gassing(refinery.get_unit())
 
         elif task.task_type is TaskType.BUILD:
-            self.idabot.resource_manager.use(task.construct_building)
-            unit.build(task.construct_building, task.build_position)
+            if task.construct_building.is_refinery:
+                self.idabot.resource_manager.use(task.construct_building)
+                unit.get_unit().build_target(task.construct_building, task.geyser)
+            else:
+                self.idabot.resource_manager.use(task.construct_building)
+                unit.build(task.construct_building, task.build_position)
+
 
             # TODO: required structures

@@ -14,7 +14,7 @@ EPOCHES = 10
 LEARNING_RATE = 0.00001
 MOMENTUM = 0.5
 DATA_FILE = "data.txt"
-MODAL_NAME = "strategy/network"
+MODAL_NAME = "strategy/defensivenetwork"
 
 
 # output_classes = ("Offensive", "Defensive")
