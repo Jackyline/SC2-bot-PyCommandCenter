@@ -1,6 +1,6 @@
 import math
 import os
-import vlc
+import winsound
 
 from typing import Optional
 from library import *
@@ -41,8 +41,6 @@ class MyAgent(IDABot):
         self.dance = 0
         # Last time that strategy was handled by generating tasks etc
         self.last_handled_strategy = 0
-        p = vlc.MediaPlayer("file:///path/to/track.mp3")
-        p.play()
 
     def on_game_start(self):
         IDABot.on_game_start(self)
@@ -54,6 +52,7 @@ class MyAgent(IDABot):
                 if worker.unit_type.is_worker:
                     self.workers.append(worker)
                     worker.move(Point2D(31, 31))
+            winsound.PlaySound('stadiljus1.wav', winsound.SND_ASYNC | winsound.SND_ALIAS)
             self.first = False
         done = False
 

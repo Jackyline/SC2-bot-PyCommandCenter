@@ -3,6 +3,7 @@ from typing import Dict, Any, List
 from copy import deepcopy
 from classes.task import Task
 from classes.task_type import TaskType
+import math
 
 class CoalitionstructureGenerator:
     """
@@ -175,13 +176,13 @@ class CoalitionstructureGenerator:
         :param coalition: coalition type to be evaluated
         :return: int
         """
-
+    
         if coalition[self.task_index] != 1:
             return 0
 
-        value = self.total_agent_count
+        value = self.total_agent_count*(len(coalition) - coalition.count(0))
         for i, agent_count in enumerate(coalition):
-            value -= abs(self.total_coal[i] / self.total_coal[self.task_index] - agent_count)
+            value -= abs(math.ceil(self.total_coal[i] / self.total_coal[self.task_index]) - agent_count)
 
         """
         if len(coalition) - coalition.count(0) != 1:
@@ -242,6 +243,9 @@ class CoalitionstructureGenerator:
         coalition[index] = start_value
 
     def find_best_group(self, unit, cs):
+        #TODO: kom på ngt sätt att kunna använda detta när vi redan har grupper och vill lägga till enheter
+        self.task_index = len(cs)
+        map(lambda x: x.append(1))
         max_value = 0
         best_group = -1
         for i, coalition in enumerate(cs):
@@ -262,6 +266,7 @@ if __name__ == '__main__':
     b = []
     dict_to_test = {"typ 1": [11, 12, 13], "typ 2": [21, 22, 23, 24], "typ 3": [31, 32, 33],
                     "typ 4": [41, 42, 43, 44, 45, 46, 47, 48], type(t1): [t1, t2]}#, "typ 6": [61, 62, 63, 64]}
+    dict_to_test = {"typ1": [11, 12, 13, 14, 15, 16, 17, 18], type(t1): [1,2,3,4,5,6]}
     list_to_test = []
     for agent_count in dict_to_test.values():
         list_to_test.append(len(agent_count))

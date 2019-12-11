@@ -14,7 +14,7 @@ from classes.building_strategy import BuildingStrategy
 from strategy.training_data import ALL_BUILDINGS, UNIT_TYPES
 from strategy.strategy import StrategyName
 from classes.task import Task, TaskType
-
+import random
 # Only handle the predicted strategy this often (seconds)
 HANDLE_STRATEGY_DELAY = 5
 
@@ -22,6 +22,7 @@ HANDLE_STRATEGY_DELAY = 5
 class MyAgent(IDABot):
     def __init__(self):
         IDABot.__init__(self)
+        self.minerals_in_base = {}
         self.building_manager = BuildingManager(self)
         self.resource_manager = ResourceManager(self.minerals, self.gas, self.current_supply, self)
         self.unit_manager = UnitManager(self)
@@ -34,17 +35,26 @@ class MyAgent(IDABot):
 
         # Last time that strategy was handled by generating tasks etc
         self.last_handled_strategy = 0
+        self.first_tick = True
 
     def on_game_start(self):
+
         IDABot.on_game_start(self)
 
     def on_step(self):
         IDABot.on_step(self)
 
+        # Sync minerals available only sometimes
+        if self.current_frame % 100 == 0:
+            self.minerals_in_base.clear()
+            for base in self.base_location_manager.get_occupied_base_locations(PLAYER_SELF):
+                self.minerals_in_base[base] = [mineral for mineral in self.get_mineral_fields(base)]
+
         # first sync units, buildings and resources
         self.resource_manager.sync()
         self.unit_manager.on_step(self.get_all_units())
         self.building_manager.on_step(self.get_my_units())
+        self.building_strategy.action()
 
         # then run specific AI parts
         self.scout_manager.on_step()
@@ -70,8 +80,6 @@ class MyAgent(IDABot):
         Generates jobs depending on our chosen strategy
         """
 
-
-
         curr_seconds = self.current_frame // 24
 
         # Only look at new strategy and generate new tasks every now and then
@@ -86,10 +94,11 @@ class MyAgent(IDABot):
 
         # Get all of our command centers
         command_centers = self.building_manager.get_buildings_of_type(UnitType(UNIT_TYPEID.TERRAN_COMMANDCENTER, self))
-
+        """
         if strategy == StrategyName.OFFENSIVE:
             offensive_groups = 4
             defensive_groups = 1
+
             attack_pos = self.scout_manager.get_enemy_target()
         else:  # strategy == StrategyName.DEFENSIVE
             offensive_groups = 0
@@ -110,7 +119,7 @@ class MyAgent(IDABot):
         for task in [*offensive_tasks, *defensive_tasks]:
             self.assignment_manager.add_task(task)
 
-
+        """
 def main():
     coordinator = Coordinator(r"D:\StarCraft II\Versions\Base69232\SC2_x64.exe")
 

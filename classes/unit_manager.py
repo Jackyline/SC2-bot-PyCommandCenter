@@ -254,7 +254,7 @@ class UnitManager:
 
     def add_units_to_coalition(self, tasks, groups):
         """
-
+        :param: groups, a list of all groups of units
         :return: tuple (task, unit) for every unit that is not in a group
         """
         units_to_add = []
@@ -262,13 +262,11 @@ class UnitManager:
         for group in groups:
             units_in_groups += group
 
-        # contains tuples (task, unit)
         return_list = []
         for unit in self.military_units:
             if unit not in units_in_groups:
-                return_list.append((tasks[self.csg.find_best_group(unit, groups)], unit))
+                return_list.append((random.choice(tasks), unit))
         return return_list
-
 
     def is_military_type(self, unit):
         '''
@@ -307,7 +305,7 @@ class UnitManager:
                                               len(self.scout_units)))
 
         elif task.task_type is TaskType.MINING:
-            minerals = self.idabot.get_mineral_fields(task.base_location)
+            minerals = self.idabot.minerals_in_base[task.base_location]
             unit.set_mining(minerals[random.randint(0, len(minerals)-1)])
 
         elif task.task_type is TaskType.GAS:

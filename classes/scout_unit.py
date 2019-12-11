@@ -42,7 +42,7 @@ class ScoutUnit:
             if self.unit.position.distance(self.goal) < 5:
                 self.manager.visited.append(self.goal)
                 self.manager.frame_stamps.append(current_frame)
-                if self.manager.scouts_requested < 2 and len(self.manager.bot.unit_manager.scout_units) < 2:
+                if self.manager.scouts_requested < 1 and len(self.manager.bot.unit_manager.scout_units) < 2:
                     task_scout = Task(TaskType.SCOUT,
                                       pos=self.manager.bot.base_location_manager.get_player_starting_base_location(
                                           PLAYER_SELF).position)
@@ -57,14 +57,15 @@ class ScoutUnit:
                 return False
 
     def set_goal(self, goal):
-        self.unit.move(goal)
-        self.goal = goal
-        self.manager.goals.append(goal)
+        if self.reached_goal(self.manager.bot.current_frame):
+            self.unit.move(goal)
+            self.goal = goal
+            self.manager.goals.append(goal)
 
     def check_if_visited(self, goals, current_frame, width_ratio, height_ratio):
         for point in goals:
             if not self.check_in_visited(point) and (len(self.manager.bot.unit_manager.scout_units) > 1 or
-                                                     self.strategy_manager.get_strategy() is StrategyName.OFFENSIVE):
+                                                     self.strategy_manager.actual_strategy is StrategyName.OFFENSIVE):
                 self.check_if_goal_is_active(point, width_ratio, height_ratio)
                 self.set_goal(point)
             else:
@@ -77,8 +78,13 @@ class ScoutUnit:
                         self.check_in_visited(point, True)
                         self.check_if_goal_is_active(point, width_ratio, height_ratio)
                         self.set_goal(first_visited)
+                    else:
+                        # If we just spotted our first discover recently, go random.
+                        goal = self.set_goal_strategy(width_ratio, height_ratio)
+                        self.check_if_goal_is_active(goal, width_ratio, height_ratio)
+                        self.set_goal(goal)
                 else:
-                    # If we just spotted our first discover recently, go random.
+                    # If HMM is not updated, go random (Beginning of game)
                     goal = self.set_goal_strategy(width_ratio, height_ratio)
                     self.check_if_goal_is_active(goal, width_ratio, height_ratio)
                     self.set_goal(goal)
@@ -107,7 +113,7 @@ class ScoutUnit:
         """
         y_base_cell = math.floor(self.manager.bot.base_location_manager.get_player_starting_base_location(
             player_constant=PLAYER_SELF).position.y / height_ratio)
-        strategy = self.strategy_manager.get_strategy()
+        strategy = self.strategy_manager.actual_strategy
         goal = None
         if strategy is StrategyName.DEFENSIVE:
             # Top corner base

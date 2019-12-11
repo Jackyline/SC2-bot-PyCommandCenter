@@ -47,6 +47,7 @@ class BuildingStrategy:
         for key, value in action_id.items():
             self.actions[value] = key
 
+
     def update_obs(self, observations):
         pass
 
@@ -57,38 +58,44 @@ class BuildingStrategy:
 
         gas = self.resource_manager.get_gas()
         minerals = self.resource_manager.get_minerals()
-
         # If we have enough resources, produce some important tasks that our network won't predict too often
-        if self.idabot.current_frame % 100 == 0 and minerals > 300 and gas > 100:
+        if self.idabot.current_frame % 100 == 0 and minerals > 400 and gas > 100:
 
             # Marauder, siege tank, hellion, techlab
             wanted_units = []
 
             curr_seconds = self.idabot.current_frame // 24
             if curr_seconds > 30:
-                wanted_units.append(
-                    self.name_to_type("Marauder")
-                )
+                wanted_units = [*wanted_units,
+                                self.name_to_type("Marauder"),
+                                self.name_to_type("Marauder"),
+                                self.name_to_type("Marauder"),
+                                self.name_to_type("Marauder"),
+                                self.name_to_type("Marauder"),
+                ]
+            if curr_seconds > 30 and len(self.idabot.building_manager.get_buildings_of_type(self.name_to_type("CommandCenter"))) <= 3:
+                wanted_units = [*wanted_units,
+                    self.name_to_type("CommandCenter"),
+                    self.name_to_type("CommandCenter"),
+                    self.name_to_type("CommandCenter"),
+                    self.name_to_type("CommandCenter"),
+                    self.name_to_type("CommandCenter"),
+                    self.name_to_type("CommandCenter")
+                ]
+
             if curr_seconds > 180:  # After 3 mins, can predict to build any of these
                 wanted_units = [*wanted_units,
                                 self.name_to_type("SiegeTank"),
+                                self.name_to_type("SiegeTank"),
+                                self.name_to_type("SiegeTank"),
+                                self.name_to_type("Hellion"),
+                                self.name_to_type("Hellion"),
                                 self.name_to_type("Hellion"),
                                 self.name_to_type("TechLab")
                                 ]
 
             if wanted_units:
-                if len(wanted_units) == 4: # If we have all the four tasks
-                    rndm = random.randint(0, 100)
-                    if rndm > 60:  # Marauder
-                        index = 0
-                    elif rndm > 40:  # SiegeTank
-                        index = 1
-                    elif rndm >= 15:  # Hellion
-                        index = 2
-                    else:  # TechLab
-                        index = 3
-                else:
-                    index = random.randint(0, len(wanted_units) - 1)
+                index = random.randint(0, len(wanted_units) - 1)
 
                 task = wanted_units[index]
                 self.add_task(task)
@@ -134,6 +141,9 @@ class BuildingStrategy:
         return action
 
     def add_task(self, action_type):
+        built_prerequisites = self.get_built_prerequisites(action_type)
+        if built_prerequisites is not None:
+            self.add_task(built_prerequisites)
         if self.resource_manager.can_afford(action_type):
             location_near = self.idabot.base_location_manager.get_player_starting_base_location(
                 PLAYER_SELF).depot_position
@@ -148,13 +158,7 @@ class BuildingStrategy:
             if action_type.is_worker or action_type.is_combat_unit:
                 task = Task(TaskType.TRAIN, produce_unit=action_type)
             elif action_type.is_addon:
-                random_choice = random.randrange(1, 100)
-                if random_choice <= 70:
-                    action_type = UnitType(UNIT_TYPEID.TERRAN_BARRACKSTECHLAB, self.idabot)
-                elif random_choice <= 90:
-                    action_type = UnitType(UNIT_TYPEID.TERRAN_FACTORYTECHLAB, self.idabot)
-                else:
-                    action_type = UnitType(UNIT_TYPEID.TERRAN_STARPORTTECHLAB, self.idabot)
+                action_type = self.get_random_techlab()
                 task = Task(TaskType.ADD_ON, construct_building=action_type)
             elif action_type.is_refinery:
                 for manager in self.idabot.base_location_manager.get_occupied_base_locations(PLAYER_SELF):
@@ -172,6 +176,39 @@ class BuildingStrategy:
 
             print("Adding Task: ", task.task_type, "Action_type: ", action_type)
             self.assignment_manager.add_task(task)
+
+    def get_random_techlab(self):
+        random_choice = random.randrange(1, 100)
+        if random_choice <= 70:
+            return UnitType(UNIT_TYPEID.TERRAN_BARRACKSTECHLAB, self.idabot)
+        elif random_choice <= 90:
+            return UnitType(UNIT_TYPEID.TERRAN_FACTORYTECHLAB, self.idabot)
+        return UnitType(UNIT_TYPEID.TERRAN_STARPORTTECHLAB, self.idabot)
+
+    def get_built_prerequisites(self, action_type):
+
+        # Special case, sometimes get unknown action_types
+        if action_type.unit_typeid == UNIT_TYPEID.INVALID:
+            return None
+
+        requirement_building_type = UnitType(action_type.required_structure, self.idabot)
+        buildings = self.idabot.building_manager.buildings
+        our_building_types = [building.get_unit_type() for building in buildings]
+
+        if action_type.unit_typeid == UNIT_TYPEID.TERRAN_TECHLAB:
+            action_type = self.get_random_techlab()
+
+        if action_type.is_building or action_type.is_addon:
+            return requirement_building_type if requirement_building_type not in our_building_types else None
+        elif action_type.is_worker or action_type.is_combat_unit:
+            type_data = self.idabot.tech_tree.get_data(action_type)
+            what_builds = type_data.what_builds
+            if any(building_type in our_building_types for building_type in what_builds):
+                return what_builds[0]
+            if not any(type in self.idabot.building_manager.buildings for type in type_data.required_addons):
+                return random.choice(type_data.required_addons)
+
+        return None
 
     def get_refinery(self, geyser: Unit):
         """ Returns: A refinery which is on top of unit `geyser` if any, None otherwise """
@@ -203,7 +240,7 @@ class BuildingStrategy:
             "FactoryReactor": UnitType(UNIT_TYPEID.TERRAN_FACTORYREACTOR, self.idabot),
             "Armory": UnitType(UNIT_TYPEID.TERRAN_ARMORY, self.idabot),
             "BarracksFlying": UnitType(UNIT_TYPEID.TERRAN_BARRACKSFLYING, self.idabot),
-            "TechLab": UnitType(UNIT_TYPEID.TERRAN_TECHLAB, self.idabot),
+            "TechLab": UnitType(UNIT_TYPEID.TERRAN_BARRACKSTECHLAB, self.idabot),
             "OrbitalCommandFlying": UnitType(UNIT_TYPEID.TERRAN_ORBITALCOMMANDFLYING, self.idabot),
             "FactoryTechLab": UnitType(UNIT_TYPEID.TERRAN_FACTORYTECHLAB, self.idabot),
             "SensorTower": UnitType(UNIT_TYPEID.TERRAN_SENSORTOWER, self.idabot),
