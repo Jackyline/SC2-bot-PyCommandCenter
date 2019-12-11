@@ -9,6 +9,7 @@ from classes.task import Task
 from classes.task_type import TaskType
 from classes.resource_manager import ResourceManager
 
+
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
@@ -28,6 +29,7 @@ class Net(nn.Module):
         x = self.fc6(x)
         return x
 
+
 class BuildingStrategy:
     def __init__(self, idabot, resource_manager: ResourceManager, assignment_manager: AssignmentManager):
         self.idabot = idabot
@@ -40,11 +42,10 @@ class BuildingStrategy:
         self.model.load_state_dict(torch.load('./buildingstrategy/model_final.pth'))
         self.model.eval()
         self.last_action = ""
-        #TODO fix this in other file
+        # TODO fix this in other file
         self.actions = {}
         for key, value in action_id.items():
             self.actions[value] = key
-
 
     def update_obs(self, observations):
         pass
@@ -53,31 +54,70 @@ class BuildingStrategy:
         pass
 
     def action(self):
+
+        gas = self.resource_manager.get_gas()
+        minerals = self.resource_manager.get_minerals()
+
+        # If we have enough resources, produce some important tasks that our network won't predict too often
+        if minerals > 300 and gas > 100:
+
+            # Marauder, siege tank, hellion, techlab
+            wanted_units = []
+
+            curr_seconds = self.idabot.current_frame // 24
+            if curr_seconds > 30:
+                wanted_units.append(
+                    Task(task_type=TaskType.TRAIN, produce_unit=self.name_to_type("Marauder"))
+                )
+            if curr_seconds > 180:  # After 3 mins, can predict to build any of these
+                wanted_units = [*wanted_units,
+                                Task(task_type=TaskType.TRAIN, produce_unit=self.name_to_type("SiegeTank")),
+                                Task(task_type=TaskType.TRAIN, produce_unit=self.name_to_type("Hellion")),
+                                Task(task_type=TaskType.ADD_ON, construct_building=self.name_to_type("TechLab"))
+                                ]
+
+            if wanted_units:
+                if len(wanted_units) == 4: # If we have all the four tasks
+                    rndm = random.randint(0, 100)
+                    if rndm > 60:  # Marauder
+                        index = 0
+                    elif rndm > 40:  # SiegeTank
+                        index = 1
+                    elif rndm >= 15:  # Hellion
+                        index = 2
+                    else:  # TechLab
+                        index = 3
+                else:
+                    index = random.randint(0, len(wanted_units) - 1)
+
+                task = wanted_units[index]
+                self.add_task(task)
+                self.last_action = task
+                return task
+
         curr_seconds = self.idabot.current_frame // 24
         if curr_seconds - self.last_build < 2:
             return self.last_action
 
         self.last_build = curr_seconds
 
-        gas = self.resource_manager.get_gas()
-        minerals = self.resource_manager.get_minerals()
         supply = self.resource_manager.get_supply()
         max_supply = self.resource_manager.get_max_supply()
 
-        #normalize
+        # normalize
         food_cap = max_supply / 200
-        input_minerals = minerals/ 62500
+        input_minerals = minerals / 62500
         input_gas = gas / 62500
         food_used = supply / 200
         # TODO, fix this
-        food_army = (supply - supply/2) / 200
+        food_army = (supply - supply / 2) / 200
         food_workers = (supply / 2) / 200
 
         v = torch.Tensor([input_minerals, input_gas, food_cap, food_used, food_army, food_workers])
         # Hardcoded input atm
         predicted = self.model(v)
         predicted_top_three = np.argpartition(predicted.detach().numpy(), -3)[-3:]
-        random_choice = random.randrange(1,100)
+        random_choice = random.randrange(1, 100)
         if random_choice <= 70:
             action = predicted_top_three[2]
         elif random_choice <= 90:
@@ -123,7 +163,6 @@ class BuildingStrategy:
                 task = Task(TaskType.BUILD, pos=build_location, build_position=build_pos,
                             construct_building=action_type)
 
-
             print("Adding Task: ", task.task_type, "Action_type: ", action_type)
             self.assignment_manager.add_task(task)
 
@@ -138,7 +177,6 @@ class BuildingStrategy:
                 return unit
 
         return None
-
 
     def name_to_type(self, name):
         to_type = {
@@ -192,120 +230,121 @@ class BuildingStrategy:
 
         return to_type[name]
 
+
 # TODO fix this in other file
 action_id = {
-             '352': '58',
-             '353': '55',
-             '354': '57',
-             '355': '56',
-             '361': '61',
-             '362': '63',
-             '363': '65',
-             '369': '67',
-             '370': '70',
-             '371': '69',
-             '375': '72',
-             '378': '73',
-             '39': '10',
-             '402': '2',
-             '403': '3',
-             '405': '4',
-             '406': '5',
-             '410': '6',
-             '414': '7',
-             '418': '8',
-             '419': '9',
-             '42': '13',
-             '423': '12',
-             '43': '14',
-             '44': '15',
-             '453': '34',
-             '459': '39',
-             '460': '40',
-             '464': '42',
-             '468': '44',
-             '469': '45',
-             '470': '46',
-             '475': '54',
-             '476': '49',
-             '477': '51',
-             '478': '52',
-             '487': '59',
-             '488': '60',
-             '490': '62',
-             '492': '64',
-             '496': '66',
-             '498': '68',
-             '50': '20',
-             '502': '71',
-             '53': '21',
-             '56': '24',
-             '58': '25',
-             '64': '29',
-             '66': '32',
-             '71': '36',
-             '72': '37',
-             '79': '41',
-             '83': '43',
-             '89': '47',
-             '91': '48',
-             '92': '50',
-             '93': '53'}
+    '352': '58',
+    '353': '55',
+    '354': '57',
+    '355': '56',
+    '361': '61',
+    '362': '63',
+    '363': '65',
+    '369': '67',
+    '370': '70',
+    '371': '69',
+    '375': '72',
+    '378': '73',
+    '39': '10',
+    '402': '2',
+    '403': '3',
+    '405': '4',
+    '406': '5',
+    '410': '6',
+    '414': '7',
+    '418': '8',
+    '419': '9',
+    '42': '13',
+    '423': '12',
+    '43': '14',
+    '44': '15',
+    '453': '34',
+    '459': '39',
+    '460': '40',
+    '464': '42',
+    '468': '44',
+    '469': '45',
+    '470': '46',
+    '475': '54',
+    '476': '49',
+    '477': '51',
+    '478': '52',
+    '487': '59',
+    '488': '60',
+    '490': '62',
+    '492': '64',
+    '496': '66',
+    '498': '68',
+    '50': '20',
+    '502': '71',
+    '53': '21',
+    '56': '24',
+    '58': '25',
+    '64': '29',
+    '66': '32',
+    '71': '36',
+    '72': '37',
+    '79': '41',
+    '83': '43',
+    '89': '47',
+    '91': '48',
+    '92': '50',
+    '93': '53'}
 action_name = {
-               '352': 'Research_AdvancedBallistics',
-               '353': 'Research_BansheeCloakingField',
-               '354': 'Research_BansheeHyperflightRotors',
-               '355': 'Research_BattlecruiserWeaponRefit',
-               '361': 'Research_CombatShield',
-               '362': 'Research_ConcussiveShells',
-               '363': 'Research_DrillingClaws',
-               '369': 'Research_HiSecAutoTracking',
-               '370': 'Research_HighCapacityFuelTanks',
-               '371': 'Research_InfernalPreigniter',
-               '375': 'Research_NeosteelFrame',
-               '378': 'Research_PersonalCloaking',
-               '39': 'Armory',
-               '402': 'Research_RavenCorvidReactor',
-               '403': 'Research_RavenRecalibratedExplosives',
-               '405': 'Research_Stimpack',
-               '406': 'Research_TerranInfantryArmor',
-               '410': 'Research_TerranInfantryWeapons',
-               '414': 'Research_TerranShipWeapons',
-               '418': 'Research_TerranStructureArmorUpgrade',
-               '419': 'Research_TerranVehicleAndShipPlating',
-               '42': 'Barracks',
-               '423': 'Research_TerranVehicleWeapons',
-               '43': 'Bunker',
-               '44': 'CommandCenter',
-               '453': 'Stop',
-               '459': 'Banshee',
-               '460': 'Battlecruiser',
-               '464': 'Cyclone',
-               '468': 'Ghost',
-               '469': 'Hellbat',
-               '470': 'Hellion',
-               '475': 'Liberator',
-               '476': 'Marauder',
-               '477': 'Marine',
-               '478': 'Medivac',
-               '487': 'Raven',
-               '488': 'Reaper',
-               '490': 'SCV',
-               '492': 'SiegeTank',
-               '496': 'Thor',
-               '498': 'VikingFighter',
-               '50': 'EngineeringBay',
-               '502': 'WidowMine',
-               '53': 'Factory',
-               '56': 'FusionCore',
-               '58': 'GhostAcademy',
-               '64': 'MissileTurret',
-               '66': 'Nuke',
-               '71': 'Reactor',
-               '72': 'Reactor',
-               '79': 'Refinery',
-               '83': 'SensorTower',
-               '89': 'Starport',
-               '91': 'SupplyDepot',
-               '92': 'TechLab',
-               '93': 'TechLab'}
+    '352': 'Research_AdvancedBallistics',
+    '353': 'Research_BansheeCloakingField',
+    '354': 'Research_BansheeHyperflightRotors',
+    '355': 'Research_BattlecruiserWeaponRefit',
+    '361': 'Research_CombatShield',
+    '362': 'Research_ConcussiveShells',
+    '363': 'Research_DrillingClaws',
+    '369': 'Research_HiSecAutoTracking',
+    '370': 'Research_HighCapacityFuelTanks',
+    '371': 'Research_InfernalPreigniter',
+    '375': 'Research_NeosteelFrame',
+    '378': 'Research_PersonalCloaking',
+    '39': 'Armory',
+    '402': 'Research_RavenCorvidReactor',
+    '403': 'Research_RavenRecalibratedExplosives',
+    '405': 'Research_Stimpack',
+    '406': 'Research_TerranInfantryArmor',
+    '410': 'Research_TerranInfantryWeapons',
+    '414': 'Research_TerranShipWeapons',
+    '418': 'Research_TerranStructureArmorUpgrade',
+    '419': 'Research_TerranVehicleAndShipPlating',
+    '42': 'Barracks',
+    '423': 'Research_TerranVehicleWeapons',
+    '43': 'Bunker',
+    '44': 'CommandCenter',
+    '453': 'Stop',
+    '459': 'Banshee',
+    '460': 'Battlecruiser',
+    '464': 'Cyclone',
+    '468': 'Ghost',
+    '469': 'Hellbat',
+    '470': 'Hellion',
+    '475': 'Liberator',
+    '476': 'Marauder',
+    '477': 'Marine',
+    '478': 'Medivac',
+    '487': 'Raven',
+    '488': 'Reaper',
+    '490': 'SCV',
+    '492': 'SiegeTank',
+    '496': 'Thor',
+    '498': 'VikingFighter',
+    '50': 'EngineeringBay',
+    '502': 'WidowMine',
+    '53': 'Factory',
+    '56': 'FusionCore',
+    '58': 'GhostAcademy',
+    '64': 'MissileTurret',
+    '66': 'Nuke',
+    '71': 'Reactor',
+    '72': 'Reactor',
+    '79': 'Refinery',
+    '83': 'SensorTower',
+    '89': 'Starport',
+    '91': 'SupplyDepot',
+    '92': 'TechLab',
+    '93': 'TechLab'}
