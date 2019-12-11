@@ -175,7 +175,7 @@ class CoalitionstructureGenerator:
         :param coalition: coalition type to be evaluated
         :return: int
         """
-
+    
         if coalition[self.task_index] != 1:
             return 0
 
