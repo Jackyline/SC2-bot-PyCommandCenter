@@ -207,7 +207,7 @@ class BuildingStrategy:
                 return what_builds[0]
             if not any(type in self.idabot.building_manager.buildings for type in type_data.required_addons):
                 return random.choice(type_data.required_addons)
-            
+
         return None
 
     def get_refinery(self, geyser: Unit):

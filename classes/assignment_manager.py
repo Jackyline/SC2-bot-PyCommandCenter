@@ -21,7 +21,6 @@ class AssignmentManager:
         self.military_assignments = MilitaryAssignments(self.ida_bot)
         self.building_assignments = BuildingAssignments(self.building_manager)
         self.hungarian = Hungarian()
-
         self.last_tick_mining_tasks = 0
         self.last_tick_gas_tasks = 0
 
@@ -135,24 +134,25 @@ class AssignmentManager:
 
     def on_step(self):
         # Add recommended nr of gas and mining tasks
-        self.generate_gas_tasks()
-        self.generate_mining_tasks()
+        if self.ida_bot.current_frame % 100 == 0:
+            self.generate_gas_tasks()
+            self.generate_mining_tasks()
 
-        # Update worker assignments
-        self.update_assignments(self.worker_assignments)
+            # Update worker assignments
+            self.update_assignments(self.worker_assignments)
 
-        # Update military assignments
-        self.update_assignments(self.military_assignments)
+            # Update military assignments
+            self.update_assignments(self.military_assignments)
 
-        # Update building assignments
-        self.update_assignments(self.building_assignments)
+            # Update building assignments
+            self.update_assignments(self.building_assignments)
 
 
     def generate_mining_tasks(self):
         nr_mining_jobs = len(self.worker_assignments.get_available_units())
         if self.worker_assignments.get_available_units():  # Only generate if there are available workers
-            for base in sorted(self.ida_bot.base_location_manager.get_occupied_base_locations(PLAYER_SELF),key= lambda x: x.is_start_location, reverse=True):
-                for i in range(2*len(self.ida_bot.get_mineral_fields(base))):
+            for base in self.ida_bot.minerals_in_base:
+                for i in range(2*len(self.ida_bot.minerals_in_base[base])):
                     self.worker_assignments.add_task(Task(task_type=TaskType.MINING,
                                                           pos=Point2D(base.depot_position.x, base.depot_position.y),
                                                           base_location=base))

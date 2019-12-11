@@ -305,7 +305,7 @@ class UnitManager:
                                               len(self.scout_units)))
 
         elif task.task_type is TaskType.MINING:
-            minerals = self.idabot.get_mineral_fields(task.base_location)
+            minerals = self.idabot.minerals_in_base[task.base_location]
             unit.set_mining(minerals[random.randint(0, len(minerals)-1)])
 
         elif task.task_type is TaskType.GAS:
