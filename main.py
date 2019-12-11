@@ -14,7 +14,7 @@ from classes.building_strategy import BuildingStrategy
 from strategy.training_data import ALL_BUILDINGS, UNIT_TYPES
 from strategy.strategy import StrategyName
 from classes.task import Task, TaskType
-
+import random
 # Only handle the predicted strategy this often (seconds)
 HANDLE_STRATEGY_DELAY = 5
 
@@ -34,12 +34,13 @@ class MyAgent(IDABot):
 
         # Last time that strategy was handled by generating tasks etc
         self.last_handled_strategy = 0
-
+        self.first_tick = True
     def on_game_start(self):
         IDABot.on_game_start(self)
 
     def on_step(self):
         IDABot.on_step(self)
+
 
         # first sync units, buildings and resources
         self.resource_manager.sync()
@@ -70,8 +71,6 @@ class MyAgent(IDABot):
         Generates jobs depending on our chosen strategy
         """
 
-
-
         curr_seconds = self.current_frame // 24
 
         # Only look at new strategy and generate new tasks every now and then
@@ -90,6 +89,7 @@ class MyAgent(IDABot):
         if strategy == StrategyName.OFFENSIVE:
             offensive_groups = 4
             defensive_groups = 1
+
             attack_pos = self.scout_manager.get_enemy_target()
         else:  # strategy == StrategyName.DEFENSIVE
             offensive_groups = 0
@@ -112,7 +112,7 @@ class MyAgent(IDABot):
 
 
 def main():
-    coordinator = Coordinator(r"C:\Users\Dylan\Desktop\StarCraft II\Versions\Base69232\SC2_x64.exe")
+    coordinator = Coordinator(r"D:\StarCraft II\Versions\Base69232\SC2_x64.exe")
 
     bot1 = MyAgent()
     # bot2 = MyAgent()
