@@ -70,10 +70,10 @@ class ScoutingManager:
     def on_step(self):
 
 
-        curr_seconds = self.bot.current_frame // 24
+        curr_seconds = self.bot.current_frame // 10
 
-        # Only run every 2 seconds
-        if curr_seconds - self.last_run < 2:
+        # Only run every 1 seconds
+        if curr_seconds - self.last_run < 1:
             return
 
         self.last_run = curr_seconds
