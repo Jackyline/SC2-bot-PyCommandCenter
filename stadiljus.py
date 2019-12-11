@@ -1,5 +1,6 @@
 import math
 import os
+import vlc
 
 from typing import Optional
 from library import *
@@ -40,6 +41,8 @@ class MyAgent(IDABot):
         self.dance = 0
         # Last time that strategy was handled by generating tasks etc
         self.last_handled_strategy = 0
+        p = vlc.MediaPlayer("file:///path/to/track.mp3")
+        p.play()
 
     def on_game_start(self):
         IDABot.on_game_start(self)
