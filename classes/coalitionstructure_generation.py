@@ -179,7 +179,7 @@ class CoalitionstructureGenerator:
         if coalition[self.task_index] != 1:
             return 0
 
-        value = self.total_agent_count
+        value = self.total_agent_count*(len(coalition) - coalition.count(0))
         for i, agent_count in enumerate(coalition):
             value -= abs(self.total_coal[i] / self.total_coal[self.task_index] - agent_count)
 
@@ -242,6 +242,9 @@ class CoalitionstructureGenerator:
         coalition[index] = start_value
 
     def find_best_group(self, unit, cs):
+        #TODO: kom på ngt sätt att kunna använda detta när vi redan har grupper och vill lägga till enheter
+        self.task_index = len(cs)
+        map(lambda x: x.append(1))
         max_value = 0
         best_group = -1
         for i, coalition in enumerate(cs):
