@@ -38,7 +38,7 @@ class MilitaryUnit:
 
 
         self.action_end_frame = idabot.current_frame # Used to set how long until the action should be updated
-        self.concussive_shells = False  # The marauder ability "concussive shells", #TODO: se till att detta sätts när den är gäller, fråga dylan?
+        self.concussive_shells = True  # The marauder ability "concussive shells", #TODO: se till att detta sätts när den är gäller, fråga dylan?
 
         self.attack_range = self.get_unit_type().attack_range
         self.movement_speed = self.get_unit_type().movement_speed
