@@ -42,7 +42,7 @@ class Strategy():
 
         # Update our strategy to OFFENSIVE, if network predicts so and we have enough military units.
         if new_strategy == StrategyName.OFFENSIVE and \
-                len(self.idabot.unit_manager.military.military_units) > MILITARY_REQUIRED_TO_ATTACK:
+                len(self.idabot.unit_manager.military_units) > MILITARY_REQUIRED_TO_ATTACK:
             self.actual_strategy = StrategyName.OFFENSIVE
             self.last_updated_strategy = curr_seconds
         # If last strategy was OFFENSIVE, we want to wait STRATEGY_DELAY seconds before changing it to DEFENSIVE
