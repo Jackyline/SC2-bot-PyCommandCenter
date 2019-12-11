@@ -22,9 +22,6 @@ class AssignmentManager:
         self.building_assignments = BuildingAssignments(self.building_manager)
         self.hungarian = Hungarian()
 
-        self.last_tick_mining_tasks = 0
-        self.last_tick_gas_tasks = 0
-
 
     def generate_matrix(self, utility_func, units, tasks):
         """
@@ -118,7 +115,6 @@ class AssignmentManager:
         if self.worker_assignments.get_available_units(): # Only generate if there are available workers
             for refinary in self.building_manager.get_buildings_of_type(UnitType(UNIT_TYPEID.TERRAN_REFINERY, self.ida_bot)):
                 for i in range(2):
-                    self.last_tick_mining_tasks += 1
                     self.worker_assignments.add_task(Task(task_type=TaskType.GAS, pos=refinary.get_unit().position))
 
     def add_task(self, task):

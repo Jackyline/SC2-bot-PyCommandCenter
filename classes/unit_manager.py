@@ -311,8 +311,4 @@ class UnitManager:
             else:
                 self.idabot.resource_manager.use(task.construct_building)
                 unit.get_unit().stop()
-
                 unit.build(task.construct_building, task.build_position)
-
-
-            # TODO: required structures
