@@ -13,8 +13,6 @@ class StrategyName(Enum):
 # takes some time to actually perform, and we don't want to walk back and forth all the time.
 STRATEGY_DELAY = 20
 
-# We won't attack unless we have this many military units
-MILITARY_REQUIRED_TO_ATTACK = 7
 
 class Strategy():
     def __init__(self, idabot):
@@ -40,9 +38,16 @@ class Strategy():
         # Current game seconds
         curr_seconds = self.idabot.current_frame // 24
 
+        # Requires between 10 and 40 military units to attack
+        military_required_to_attack = min(max((curr_seconds * 2) // 60, 10), 40)
+
+        # Should not be allowed to be offensive if not enough military units
+        if not len(self.idabot.unit_manager.military_units) > military_required_to_attack:
+            new_strategy = StrategyName.DEFENSIVE
+
+
         # Update our strategy to OFFENSIVE, if network predicts so and we have enough military units.
-        if new_strategy == StrategyName.OFFENSIVE and \
-                len(self.idabot.unit_manager.military_units) > MILITARY_REQUIRED_TO_ATTACK:
+        if new_strategy == StrategyName.OFFENSIVE:
             self.actual_strategy = StrategyName.OFFENSIVE
             self.last_updated_strategy = curr_seconds
 
