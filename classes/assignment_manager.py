@@ -107,7 +107,8 @@ class AssignmentManager:
                         for task in assignment_type.assignments:
                             if task.task_type is TaskType.DEFEND:
                                 defend_group = assignment_type.assignments[task]
-                                attack_groups = assignment_type.assignments.values().remove(defend_group)
+                                attack_groups = list(assignment_type.assignments.values())
+                                attack_groups.remove(defend_group)
                                 break
 
                         # Assign the previous defend group to defend and previous attack groups to attack
