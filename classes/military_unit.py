@@ -33,7 +33,7 @@ class MilitaryUnit:
         self.state = ""
         self.learning_rate = 0.1
         self.discount_factor = 0.9 #TODO: ändra
-        self.exploration = 0.2 # Set this to 0 to use the learned policy
+        self.exploration = 0.0 # Set this to 0 to use the learned policy
         self.total_reward = 0
 
 
