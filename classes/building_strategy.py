@@ -59,8 +59,9 @@ class BuildingStrategy:
         gas = self.resource_manager.get_gas()
         minerals = self.resource_manager.get_minerals()
         # If we have enough resources, produce some important tasks that our network won't predict too often
-        if self.idabot.current_frame % 100 == 0 and minerals > 400 and gas > 100:
 
+        required_minerals = 400 if len(self.idabot.building_manager.get_buildings_of_type(self.name_to_type("CommandCenter"))) < 3 else 200
+        if self.idabot.current_frame % 100 == 0 and minerals > required_minerals and gas > 100:
             # Marauder, siege tank, hellion, techlab
             wanted_units = []
 
@@ -72,16 +73,16 @@ class BuildingStrategy:
                                 self.name_to_type("Marauder"),
                                 self.name_to_type("Marauder"),
                                 self.name_to_type("Marauder"),
-                ]
+                                ]
             if curr_seconds > 30 and len(self.idabot.building_manager.get_buildings_of_type(self.name_to_type("CommandCenter"))) <= 3:
                 wanted_units = [*wanted_units,
-                    self.name_to_type("CommandCenter"),
-                    self.name_to_type("CommandCenter"),
-                    self.name_to_type("CommandCenter"),
-                    self.name_to_type("CommandCenter"),
-                    self.name_to_type("CommandCenter"),
-                    self.name_to_type("CommandCenter")
-                ]
+                                self.name_to_type("CommandCenter"),
+                                self.name_to_type("CommandCenter"),
+                                self.name_to_type("CommandCenter"),
+                                self.name_to_type("CommandCenter"),
+                                self.name_to_type("CommandCenter"),
+                                self.name_to_type("CommandCenter")
+                                ]
 
             if curr_seconds > 180:  # After 3 mins, can predict to build any of these
                 wanted_units = [*wanted_units,

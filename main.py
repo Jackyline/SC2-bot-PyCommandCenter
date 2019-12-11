@@ -94,7 +94,7 @@ class MyAgent(IDABot):
 
         # Get all of our command centers
         command_centers = self.building_manager.get_buildings_of_type(UnitType(UNIT_TYPEID.TERRAN_COMMANDCENTER, self))
-        """
+
         if strategy == StrategyName.OFFENSIVE:
             offensive_groups = 4
             defensive_groups = 1
@@ -119,7 +119,7 @@ class MyAgent(IDABot):
         for task in [*offensive_tasks, *defensive_tasks]:
             self.assignment_manager.add_task(task)
 
-        """
+
 def main():
     coordinator = Coordinator(r"D:\StarCraft II\Versions\Base69232\SC2_x64.exe")
 
