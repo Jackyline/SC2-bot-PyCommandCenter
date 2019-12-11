@@ -67,13 +67,13 @@ class BuildingStrategy:
             curr_seconds = self.idabot.current_frame // 24
             if curr_seconds > 30:
                 wanted_units.append(
-                    Task(task_type=TaskType.TRAIN, produce_unit=self.name_to_type("Marauder"))
+                    self.name_to_type("Marauder")
                 )
             if curr_seconds > 180:  # After 3 mins, can predict to build any of these
                 wanted_units = [*wanted_units,
-                                Task(task_type=TaskType.TRAIN, produce_unit=self.name_to_type("SiegeTank")),
-                                Task(task_type=TaskType.TRAIN, produce_unit=self.name_to_type("Hellion")),
-                                Task(task_type=TaskType.ADD_ON, construct_building=self.name_to_type("TechLab"))
+                                self.name_to_type("SiegeTank"),
+                                self.name_to_type("Hellion"),
+                                self.name_to_type("TechLab")
                                 ]
 
             if wanted_units:
