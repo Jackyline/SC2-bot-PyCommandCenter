@@ -30,6 +30,13 @@ class BuildingManager:
                     self.under_construction.append(building_unit)
                 else:
                     self.buildings.append(building_unit)
+            if building.unit_type.unit_typeid == UNIT_TYPEID.TERRAN_BARRACKSTECHLAB and not building.is_being_constructed:
+                if not self.ida_bot.unit_manager.concussive_shells:
+                    building.ability(ABILITY_ID.RESEARCH_CONCUSSIVESHELLS)
+                    self.ida_bot.unit_manager.concussive_shells = True
+                elif not self.ida_bot.unit_manager.combat_shield:
+                    building.ability(ABILITY_ID.RESEARCH_COMBATSHIELD)
+                    self.ida_bot.unit_manager.combat_shield = True
 
         # Remove buildings that no longer exists i.e. are destroyed
         if len(buildings) != len(self.buildings) + len(self.under_construction):

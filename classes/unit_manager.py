@@ -58,6 +58,9 @@ class UnitManager:
         # Keeps track of current coalition structure, structured as [[id1, id2, ...], [id1, id2...], ...]
         self.csg = CoalitionstructureGenerator()
 
+        self.concussive_shells = False
+        self.combat_shield = False
+
     def get_info(self):
         '''
         :return: Info about all units and their type/workstation

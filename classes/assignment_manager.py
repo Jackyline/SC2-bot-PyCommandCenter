@@ -153,7 +153,7 @@ class AssignmentManager:
         min_distance = sys.maxsize
         Point2DI.distance = lambda self, other: math.sqrt((self.x - other.x) ** 2 + (self.y - other.y) ** 2)
         for base in bases:
-            print(base.depot_position)
+            #print(base.depot_position)
             distance = base.depot_position.distance(self.ida_bot.base_location_manager.get_player_starting_base_location(PLAYER_SELF).depot_position)
             if distance < min_distance:
                 min_distance = distance
