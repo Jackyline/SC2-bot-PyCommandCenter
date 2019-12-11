@@ -113,7 +113,7 @@ class ScoutingManager:
         for scout in self.bot.unit_manager.scout_units:
 
             # Nothing has been spotted
-            if self.hmm.get_most_likely()[0] == 0.0 and (scout.num % 2 == 0 or self.bot.strategy_network.get_strategy()
+            if self.hmm.get_most_likely()[0] == 0.0 and (scout.num % 2 == 0 or self.bot.strategy_network.actual_strategy
                                                          is strategy.strategy.StrategyName.OFFENSIVE):
                 if self.bot.unit_manager.scout_units[0].goal is None or self.enemy_base.position not in self.goals:
                     self.send_away_one_scout_to_enemy()

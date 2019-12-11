@@ -159,13 +159,7 @@ class BuildingStrategy:
             if action_type.is_worker or action_type.is_combat_unit:
                 task = Task(TaskType.TRAIN, produce_unit=action_type)
             elif action_type.is_addon:
-                random_choice = random.randrange(1, 100)
-                if random_choice <= 70:
-                    action_type = UnitType(UNIT_TYPEID.TERRAN_BARRACKSTECHLAB, self.idabot)
-                elif random_choice <= 90:
-                    action_type = UnitType(UNIT_TYPEID.TERRAN_FACTORYTECHLAB, self.idabot)
-                else:
-                    action_type = UnitType(UNIT_TYPEID.TERRAN_STARPORTTECHLAB, self.idabot)
+                action_type = self.get_random_techlab()
                 task = Task(TaskType.ADD_ON, construct_building=action_type)
             elif action_type.is_refinery:
                 for manager in self.idabot.base_location_manager.get_occupied_base_locations(PLAYER_SELF):
@@ -184,6 +178,14 @@ class BuildingStrategy:
             print("Adding Task: ", task.task_type, "Action_type: ", action_type)
             self.assignment_manager.add_task(task)
 
+    def get_random_techlab(self):
+        random_choice = random.randrange(1, 100)
+        if random_choice <= 70:
+            return UnitType(UNIT_TYPEID.TERRAN_BARRACKSTECHLAB, self.idabot)
+        elif random_choice <= 90:
+            return UnitType(UNIT_TYPEID.TERRAN_FACTORYTECHLAB, self.idabot)
+        return UnitType(UNIT_TYPEID.TERRAN_STARPORTTECHLAB, self.idabot)
+
     def get_built_prerequisites(self, action_type):
 
         # Special case, sometimes get unknown action_types
@@ -193,13 +195,18 @@ class BuildingStrategy:
         requirement_building_type = UnitType(action_type.required_structure, self.idabot)
         buildings = self.idabot.building_manager.buildings
         our_building_types = [building.get_unit_type() for building in buildings]
+
+        if action_type.unit_typeid == UNIT_TYPEID.TERRAN_TECHLAB:
+            action_type = self.get_random_techlab()
+
         if action_type.is_building or action_type.is_addon:
             return requirement_building_type if requirement_building_type not in our_building_types else None
-        else:
+        elif action_type.is_worker or action_type.is_combat_unit:
             type_data = self.idabot.tech_tree.get_data(action_type)
             what_builds = type_data.what_builds
             return what_builds[0] if not any(
                 building_type in our_building_types for building_type in what_builds) else None
+        return None
 
     def get_refinery(self, geyser: Unit):
         """ Returns: A refinery which is on top of unit `geyser` if any, None otherwise """
