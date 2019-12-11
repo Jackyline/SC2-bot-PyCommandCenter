@@ -22,6 +22,9 @@ class AssignmentManager:
         self.building_assignments = BuildingAssignments(self.building_manager)
         self.hungarian = Hungarian()
 
+        self.last_tick_mining_tasks = 0
+        self.last_tick_gas_tasks = 0
+
 
     def generate_matrix(self, utility_func, units, tasks):
         """
@@ -101,8 +104,7 @@ class AssignmentManager:
         nr_mining_jobs = len(self.worker_assignments.get_available_units())
         if self.worker_assignments.get_available_units():  # Only generate if there are available workers
             for base in sorted(self.ida_bot.base_location_manager.get_occupied_base_locations(PLAYER_SELF),key= lambda x: x.is_start_location, reverse=True):
-                tasks_in_base = len([task for task in self.worker_assignments.assignments if task.base_location == base])
-                for i in range(2*len(self.ida_bot.get_mineral_fields(base)) - tasks_in_base):
+                for i in range(2*len(self.ida_bot.get_mineral_fields(base))):
                     self.worker_assignments.add_task(Task(task_type=TaskType.MINING,
                                                           pos=Point2D(base.depot_position.x, base.depot_position.y),
                                                           base_location=base))
@@ -114,6 +116,7 @@ class AssignmentManager:
         if self.worker_assignments.get_available_units(): # Only generate if there are available workers
             for refinary in self.building_manager.get_buildings_of_type(UnitType(UNIT_TYPEID.TERRAN_REFINERY, self.ida_bot)):
                 for i in range(2):
+                    self.last_tick_mining_tasks += 1
                     self.worker_assignments.add_task(Task(task_type=TaskType.GAS, pos=refinary.get_unit().position))
 
     def add_task(self, task):
@@ -147,9 +150,8 @@ class WorkerAssignments:
         distance = int(task.pos.distance(worker.get_unit().position))
         idle = worker.is_idle()
 
-        profit = 1000
-        if worker.task is None:
-            profit += 1000
+        profit = 0
+
         if not worker.task is None and worker.task == task: # valuable to do the same task as before
             profit += 1000
         if task.task_type == TaskType.SCOUT:
@@ -172,15 +174,12 @@ class WorkerAssignments:
 
     def get_available_units(self):
         available_units = []
-        max_units = 10
         for worker in self.unit_manager.worker_units:
             task = worker.get_task()
             if task is None:
                 available_units.append(worker) # worker is available
-                max_units -= 1
-            elif max_units > 0 and (task.task_type is TaskType.MINING or task.task_type is TaskType.GAS): # also add those who are mining or collecting gas
+            elif task.task_type is TaskType.MINING or task.task_type is TaskType.GAS: # also add those who are mining or collecting gas
                 available_units.append(worker)
-                max_units -= 1
         return available_units
 
     def toString(self):
@@ -196,10 +195,8 @@ class WorkerAssignments:
 
         for worker in workers_that_previusly_were_mining_or_gassing_but_no_longor_will:
             if not worker in new_assignments.values():
-                new_assignments[task] = worker
-                #worker.set_task(None)
-                #worker.set_idle()
-                pass
+                worker.set_task(None)
+                worker.set_idle()
 
         self.assignments = new_assignments
         for worker_unit in self.get_available_units():

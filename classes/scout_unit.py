@@ -64,7 +64,7 @@ class ScoutUnit:
     def check_if_visited(self, goals, current_frame, width_ratio, height_ratio):
         for point in goals:
             if not self.check_in_visited(point) and (len(self.manager.bot.unit_manager.scout_units) > 1 or
-                                                     self.strategy_manager.get_strategy() is StrategyName.OFFENSIVE):
+                                                     self.strategy_manager.actual_strategy is StrategyName.OFFENSIVE):
                 self.check_if_goal_is_active(point, width_ratio, height_ratio)
                 self.set_goal(point)
             else:
@@ -107,7 +107,7 @@ class ScoutUnit:
         """
         y_base_cell = math.floor(self.manager.bot.base_location_manager.get_player_starting_base_location(
             player_constant=PLAYER_SELF).position.y / height_ratio)
-        strategy = self.strategy_manager.get_strategy()
+        strategy = self.strategy_manager.actual_strategy
         goal = None
         if strategy is StrategyName.DEFENSIVE:
             # Top corner base
