@@ -38,7 +38,7 @@ class PrintDebug:
 
 
         # Building strategy prints:
-        build_strat_text = "Building_Strategy: {}".format(self.building_strategy.action())
+        build_strat_text = "Building_Strategy: {}".format(self.building_strategy.last_action)
         self.ida_bot.map_tools.draw_text_screen(0.01, 0.25, build_strat_text)
 
         # Game strategy prints:

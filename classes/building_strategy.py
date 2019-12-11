@@ -203,8 +203,11 @@ class BuildingStrategy:
         elif action_type.is_worker or action_type.is_combat_unit:
             type_data = self.idabot.tech_tree.get_data(action_type)
             what_builds = type_data.what_builds
-            return what_builds[0] if not any(
-                building_type in our_building_types for building_type in what_builds) else None
+            if any(building_type in our_building_types for building_type in what_builds):
+                return what_builds[0]
+            if not any(type in self.idabot.building_manager.buildings for type in type_data.required_addons):
+                return random.choice(type_data.required_addons)
+            
         return None
 
     def get_refinery(self, geyser: Unit):
@@ -237,7 +240,7 @@ class BuildingStrategy:
             "FactoryReactor": UnitType(UNIT_TYPEID.TERRAN_FACTORYREACTOR, self.idabot),
             "Armory": UnitType(UNIT_TYPEID.TERRAN_ARMORY, self.idabot),
             "BarracksFlying": UnitType(UNIT_TYPEID.TERRAN_BARRACKSFLYING, self.idabot),
-            "TechLab": UnitType(UNIT_TYPEID.TERRAN_TECHLAB, self.idabot),
+            "TechLab": UnitType(UNIT_TYPEID.TERRAN_BARRACKSTECHLAB, self.idabot),
             "OrbitalCommandFlying": UnitType(UNIT_TYPEID.TERRAN_ORBITALCOMMANDFLYING, self.idabot),
             "FactoryTechLab": UnitType(UNIT_TYPEID.TERRAN_FACTORYTECHLAB, self.idabot),
             "SensorTower": UnitType(UNIT_TYPEID.TERRAN_SENSORTOWER, self.idabot),

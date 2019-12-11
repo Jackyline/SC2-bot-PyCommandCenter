@@ -46,6 +46,7 @@ class MyAgent(IDABot):
         self.resource_manager.sync()
         self.unit_manager.on_step(self.get_all_units())
         self.building_manager.on_step(self.get_my_units())
+        self.building_strategy.action()
 
         # then run specific AI parts
         self.scout_manager.on_step()

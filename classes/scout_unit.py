@@ -42,7 +42,7 @@ class ScoutUnit:
             if self.unit.position.distance(self.goal) < 5:
                 self.manager.visited.append(self.goal)
                 self.manager.frame_stamps.append(current_frame)
-                if self.manager.scouts_requested < 2 and len(self.manager.bot.unit_manager.scout_units) < 2:
+                if self.manager.scouts_requested < 1 and len(self.manager.bot.unit_manager.scout_units) < 2:
                     task_scout = Task(TaskType.SCOUT,
                                       pos=self.manager.bot.base_location_manager.get_player_starting_base_location(
                                           PLAYER_SELF).position)
@@ -57,9 +57,10 @@ class ScoutUnit:
                 return False
 
     def set_goal(self, goal):
-        self.unit.move(goal)
-        self.goal = goal
-        self.manager.goals.append(goal)
+        if self.reached_goal(self.manager.bot.current_frame):
+            self.unit.move(goal)
+            self.goal = goal
+            self.manager.goals.append(goal)
 
     def check_if_visited(self, goals, current_frame, width_ratio, height_ratio):
         for point in goals:
