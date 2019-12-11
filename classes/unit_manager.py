@@ -57,7 +57,6 @@ class UnitManager:
 
         # Keeps track of current coalition structure, structured as [[id1, id2, ...], [id1, id2...], ...]
         self.csg = CoalitionstructureGenerator()
-        self.groups = []
 
     def get_info(self):
         '''
@@ -231,7 +230,7 @@ class UnitManager:
                     print("TOTAL REWARD:", current_unit.total_reward)
                 unit_list.remove(current_unit)
 
-    def create_coalition(self, nr_coalitions):
+    def create_coalition(self, tasks):
         '''
         Tell csg to generate new coalitions from scratch.
         :param nr_coalitions: How many coalitions to divide units into
@@ -244,18 +243,31 @@ class UnitManager:
             if "militaryUnits" not in info
                or military_type.get_unit_type() not in info["militaryUnits"]
         }
+        # Add tasks as "fake" units of that are of type type(Task(...))
+        info["militaryUnits"][type(tasks[0])] = tasks
 
-        self.groups = self.csg.create_coalition(info["militaryUnits"], nr_coalitions)
+        assignments = self.csg.create_coalition(info["militaryUnits"])
+        for task, group in assignments.items():
+            self.command_group(task, group)
+        return assignments
 
-    def add_units_to_coalition(self):
+
+    def add_units_to_coalition(self, tasks, groups):
+        """
+
+        :return: tuple (task, unit) for every unit that is not in a group
+        """
         units_to_add = []
         units_in_groups = []
-        for group in self.groups:
+        for group in groups:
             units_in_groups += group
 
+        # contains tuples (task, unit)
+        return_list = []
         for unit in self.military_units:
             if unit not in units_in_groups:
-                self.groups[self.csg.find_best_group(unit, self.groups)].append(unit)
+                return_list.append((tasks[self.csg.find_best_group(unit, groups)], unit))
+        return return_list
 
 
     def is_military_type(self, unit):

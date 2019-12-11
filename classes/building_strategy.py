@@ -47,6 +47,7 @@ class BuildingStrategy:
         for key, value in action_id.items():
             self.actions[value] = key
 
+
     def update_obs(self, observations):
         pass
 
@@ -59,7 +60,7 @@ class BuildingStrategy:
         minerals = self.resource_manager.get_minerals()
 
         # If we have enough resources, produce some important tasks that our network won't predict too often
-        if minerals > 300 and gas > 100:
+        if self.idabot.current_frame % 100 == 0 and minerals > 300 and gas > 100:
 
             # Marauder, siege tank, hellion, techlab
             wanted_units = []
@@ -134,6 +135,9 @@ class BuildingStrategy:
         return action
 
     def add_task(self, action_type):
+        built_prerequisites = self.get_built_prerequisites(action_type)
+        if built_prerequisites is not None:
+            self.add_task(built_prerequisites)
         if self.resource_manager.can_afford(action_type):
             location_near = self.idabot.base_location_manager.get_player_starting_base_location(
                 PLAYER_SELF).depot_position
@@ -172,6 +176,23 @@ class BuildingStrategy:
 
             print("Adding Task: ", task.task_type, "Action_type: ", action_type)
             self.assignment_manager.add_task(task)
+
+    def get_built_prerequisites(self, action_type):
+
+        # Special case, sometimes get unknown action_types
+        if action_type.unit_typeid == UNIT_TYPEID.INVALID:
+            return None
+
+        requirement_building_type = UnitType(action_type.required_structure, self.idabot)
+        buildings = self.idabot.building_manager.buildings
+        our_building_types = [building.get_unit_type() for building in buildings]
+        if action_type.is_building or action_type.is_addon:
+            return requirement_building_type if requirement_building_type not in our_building_types else None
+        else:
+            type_data = self.idabot.tech_tree.get_data(action_type)
+            what_builds = type_data.what_builds
+            return what_builds[0] if not any(
+                building_type in our_building_types for building_type in what_builds) else None
 
     def get_refinery(self, geyser: Unit):
         """ Returns: A refinery which is on top of unit `geyser` if any, None otherwise """

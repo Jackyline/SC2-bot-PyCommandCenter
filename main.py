@@ -102,7 +102,7 @@ class MyAgent(IDABot):
 
         # Generate all defensive tasks
         defensive_tasks = [Task(task_type=TaskType.DEFEND,
-                                pos=command_centers[i % len(command_centers)])
+                                pos=command_centers[i % len(command_centers)].get_pos())
                            # Loop through all bases we have and
                            for i in range(defensive_groups) if command_centers]
 
