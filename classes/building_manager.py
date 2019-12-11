@@ -67,13 +67,27 @@ class BuildingManager:
 
         return producers
 
-    def command_building(self, building : BuildingUnit, task):
 
+    def get_refinery(self, geyser: Unit):
+        """ Returns: A refinery which is on top of unit `geyser` if any, None otherwise """
+
+        def squared_distance(p1: Point2D, p2: Point2D) -> float:
+            return (p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2
+
+        for unit in self.idabot.get_my_units():
+            if unit.unit_type.is_refinery and squared_distance(unit.position, geyser.position) < 1:
+                return unit
+
+        return None
+
+    def command_building(self, building : BuildingUnit, task):
         if task.task_type is TaskType.ADD_ON:
-            if building in self.get_my_producers(task.construct_building):
-                self.ida_bot.resource_manager.use(task.construct_building)
-                building.build_addon(task.construct_building)
-                building.set_task(task)
+            for building in self.get_my_producers(task.construct_building):
+                if building.is_completed:
+                    building_tmp = BuildingUnit(building)
+                    self.ida_bot.resource_manager.use(task.construct_building)
+                    building_tmp.train(task.construct_building)
+                    building_tmp.set_task(task)
 
         elif task.task_type is TaskType.TRAIN:
             if building.get_unit() in self.get_my_producers(task.produce_unit):

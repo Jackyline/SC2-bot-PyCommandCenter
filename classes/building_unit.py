@@ -40,8 +40,5 @@ class BuildingUnit:
     def get_task(self):
         return self.task
 
-    def build_addon(self, unit_type):
-        self.get_unit().build_target(unit_type, self.get_unit())
-
     def train(self, unit_type):
         self.get_unit().train(unit_type)
