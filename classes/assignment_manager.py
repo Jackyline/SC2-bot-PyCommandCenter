@@ -7,6 +7,7 @@ from classes.task_type import TaskType
 from classes.unit_manager import UnitManager
 from library import *
 from classes.task import Task
+import sys
 
 from munkres import print_matrix
 
@@ -147,10 +148,34 @@ class AssignmentManager:
             # Update building assignments
             self.update_assignments(self.building_assignments)
 
+    def get_closest_base(self, bases):
+        closest_base = None
+        min_distance = sys.maxsize
+        Point2DI.distance = lambda self, other: math.sqrt((self.x - other.x) ** 2 + (self.y - other.y) ** 2)
+        for base in bases:
+            print(base.depot_position)
+            distance = base.depot_position.distance(self.ida_bot.base_location_manager.get_player_starting_base_location(PLAYER_SELF).depot_position)
+            if distance < min_distance:
+                min_distance = distance
+                closest_base = base
+        return closest_base
+
 
     def generate_mining_tasks(self):
         nr_mining_jobs = len(self.worker_assignments.get_available_units())
         if self.worker_assignments.get_available_units():  # Only generate if there are available workers
+            base_camps = [base for base in self.ida_bot.minerals_in_base]
+            while base_camps:
+                closest_base = self.get_closest_base(base_camps)
+                base_camps.remove(closest_base)
+                for i in range(2*len(self.ida_bot.minerals_in_base[closest_base])):
+                    self.worker_assignments.add_task(Task(task_type=TaskType.MINING,
+                                                          pos=Point2D(closest_base.depot_position.x, closest_base.depot_position.y),
+                                                          base_location=closest_base))
+                    nr_mining_jobs -= 1
+                    if nr_mining_jobs == 0:
+                        return
+            """
             for base in self.ida_bot.minerals_in_base:
                 for i in range(2*len(self.ida_bot.minerals_in_base[base])):
                     self.worker_assignments.add_task(Task(task_type=TaskType.MINING,
@@ -159,6 +184,7 @@ class AssignmentManager:
                     nr_mining_jobs -= 1
                     if nr_mining_jobs == 0:
                         return
+            """
 
     def generate_gas_tasks(self):
         if self.worker_assignments.get_available_units(): # Only generate if there are available workers
