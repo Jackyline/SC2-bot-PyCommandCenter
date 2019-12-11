@@ -47,6 +47,7 @@ class BuildingStrategy:
         for key, value in action_id.items():
             self.actions[value] = key
 
+
     def update_obs(self, observations):
         pass
 
@@ -54,14 +55,54 @@ class BuildingStrategy:
         pass
 
     def action(self):
+
+        gas = self.resource_manager.get_gas()
+        minerals = self.resource_manager.get_minerals()
+
+        # If we have enough resources, produce some important tasks that our network won't predict too often
+        if minerals > 300 and gas > 100:
+
+            # Marauder, siege tank, hellion, techlab
+            wanted_units = []
+
+            curr_seconds = self.idabot.current_frame // 24
+            if curr_seconds > 30:
+                wanted_units.append(
+                    self.name_to_type("Marauder")
+                )
+            if curr_seconds > 180:  # After 3 mins, can predict to build any of these
+                wanted_units = [*wanted_units,
+                                self.name_to_type("SiegeTank"),
+                                self.name_to_type("Hellion"),
+                                self.name_to_type("TechLab")
+                                ]
+
+            if wanted_units:
+                if len(wanted_units) == 4: # If we have all the four tasks
+                    rndm = random.randint(0, 100)
+                    if rndm > 60:  # Marauder
+                        index = 0
+                    elif rndm > 40:  # SiegeTank
+                        index = 1
+                    elif rndm >= 15:  # Hellion
+                        index = 2
+                    else:  # TechLab
+                        index = 3
+                else:
+                    index = random.randint(0, len(wanted_units) - 1)
+
+                task = wanted_units[index]
+                self.add_task(task)
+                self.last_action = task
+                return task
+
+
         curr_seconds = self.idabot.current_frame // 24
         if curr_seconds - self.last_build < 2:
             return self.last_action
 
         self.last_build = curr_seconds
 
-        gas = self.resource_manager.get_gas()
-        minerals = self.resource_manager.get_minerals()
         supply = self.resource_manager.get_supply()
         max_supply = self.resource_manager.get_max_supply()
 
@@ -71,8 +112,8 @@ class BuildingStrategy:
         input_gas = gas / 62500
         food_used = supply / 200
         # TODO, fix this
-        food_army = (supply - supply / 2) / 200
-        food_workers = (supply / 2) / 200
+        food_army = len(self.idabot.unit_manager.military_units) / 200
+        food_workers = len(self.idabot.unit_manager.worker_units) / 200
 
         v = torch.Tensor([input_minerals, input_gas, food_cap, food_used, food_army, food_workers])
         # Hardcoded input atm
@@ -94,7 +135,6 @@ class BuildingStrategy:
         return action
 
     def add_task(self, action_type):
-        # self.idabot.send_chat("SASD")
         built_prerequisites = self.get_built_prerequisites(action_type)
         if built_prerequisites is not None:
             self.add_task(built_prerequisites)
@@ -109,10 +149,16 @@ class BuildingStrategy:
                 build_location = Point2D(build_pos.x, build_pos.y)
             task = None
 
-            # TODO: FIXXA REFINERY
             if action_type.is_worker or action_type.is_combat_unit:
                 task = Task(TaskType.TRAIN, produce_unit=action_type)
             elif action_type.is_addon:
+                random_choice = random.randrange(1, 100)
+                if random_choice <= 70:
+                    action_type = UnitType(UNIT_TYPEID.TERRAN_BARRACKSTECHLAB, self.idabot)
+                elif random_choice <= 90:
+                    action_type = UnitType(UNIT_TYPEID.TERRAN_FACTORYTECHLAB, self.idabot)
+                else:
+                    action_type = UnitType(UNIT_TYPEID.TERRAN_STARPORTTECHLAB, self.idabot)
                 task = Task(TaskType.ADD_ON, construct_building=action_type)
             elif action_type.is_refinery:
                 for manager in self.idabot.base_location_manager.get_occupied_base_locations(PLAYER_SELF):

@@ -13,6 +13,9 @@ class StrategyName(Enum):
 # takes some time to actually perform, and we don't want to walk back and forth all the time.
 STRATEGY_DELAY = 20
 
+# We won't attack unless we have this many military units
+MILITARY_REQUIRED_TO_ATTACK = 7
+
 class Strategy():
     def __init__(self, idabot):
         self.model = strategy_model.get_trained_network()
@@ -37,8 +40,9 @@ class Strategy():
         # Current game seconds
         curr_seconds = self.idabot.current_frame // 24
 
-        # Update our strategy immediately if OFFENSIVE, since it doesn't happen too often.
-        if new_strategy == StrategyName.OFFENSIVE:
+        # Update our strategy to OFFENSIVE, if network predicts so and we have enough military units.
+        if new_strategy == StrategyName.OFFENSIVE and \
+                len(self.idabot.unit_manager.military_units) > MILITARY_REQUIRED_TO_ATTACK:
             self.actual_strategy = StrategyName.OFFENSIVE
             self.last_updated_strategy = curr_seconds
         # If last strategy was OFFENSIVE, we want to wait STRATEGY_DELAY seconds before changing it to DEFENSIVE

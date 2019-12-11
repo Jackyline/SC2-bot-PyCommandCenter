@@ -102,7 +102,7 @@ class MyAgent(IDABot):
 
         # Generate all defensive tasks
         defensive_tasks = [Task(task_type=TaskType.DEFEND,
-                                pos=command_centers[i % len(command_centers)])
+                                pos=command_centers[i % len(command_centers)].get_pos())
                            # Loop through all bases we have and
                            for i in range(defensive_groups) if command_centers]
 
@@ -112,7 +112,7 @@ class MyAgent(IDABot):
 
 
 def main():
-    coordinator = Coordinator(r"C:\Users\Dylan\Desktop\StarCraft II\Versions\Base69232\SC2_x64.exe")
+    coordinator = Coordinator(r"D:\StarCraft II\Versions\Base69232\SC2_x64.exe")
 
     bot1 = MyAgent()
     # bot2 = MyAgent()

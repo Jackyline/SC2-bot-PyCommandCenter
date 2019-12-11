@@ -245,7 +245,7 @@ class CoalitionstructureGenerator:
         max_value = 0
         best_group = -1
         for i, coalition in enumerate(cs):
-            value = self.v(coalition)
+            value = self.v(coalition) - self.v(coalition + [unit])
             if value > max_value:
                 max_value = value
                 best_group = i
