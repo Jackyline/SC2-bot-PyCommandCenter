@@ -37,6 +37,25 @@ class MyAgent(IDABot):
         self.last_handled_strategy = 0
         self.first_tick = True
 
+        self.base_right = None
+        self.choke_points_right = {(24.25, 28.5): Point2D(30, 60), (56.25, 130.5): Point2D(53, 118),
+                                   (58.75, 99.0): Point2D(47, 92), (129.25, 54.5): Point2D(107, 64),
+                                   (63.75, 51.0): Point2D(57, 73), (93.25, 69.0): Point2D(80, 81),
+                                   (88.25, 117.0): Point2D(73, 115), (92.5, 143.5): Point2D(77, 134),
+                                   (26.5, 137.5): Point2D(30, 133), (22.75, 113.5): Point2D(31, 118),
+                                   (59.5, 24.5): Point2D(51, 36), (95.75, 37.5): Point2D(88, 49),
+                                   (24.25, 83.5): Point2D(44, 95), (127.75, 139.5): Point2D(115, 135),
+                                   (127.75, 84.5): Point2D(123, 98), (127.75, 28.5): Point2D(119, 47)}
+
+        self.choke_points_left = {(58.75, 99.0): Point2D(58, 80), (24.25, 139.5): Point2D(33, 121),
+                                  (127.75, 139.5): Point2D(124, 106), (92.5, 143.5): Point2D(100, 128),
+                                  (56.25, 130.5): Point2D(64, 120), (22.75, 113.5): Point2D(45, 104),
+                                  (127.75, 84.5): Point2D(113, 77), (24.25, 28.5): Point2D(37, 32),
+                                  (24.25, 83.5): Point2D(29, 72), (88.25, 117.0): Point2D(96, 92),
+                                  (93.25, 69.0): Point2D(108, 71), (59.5, 24.5): Point2D(71, 31),
+                                  (95.75, 37.5): Point2D(98, 49), (63.75, 51.0): Point2D(79, 53),
+                                  (129.25, 54.5): Point2D(121, 50), (127.75, 28.5): Point2D(117, 37)}
+
     def on_game_start(self):
 
         IDABot.on_game_start(self)
@@ -111,7 +130,7 @@ class MyAgent(IDABot):
 
         # Generate all defensive tasks
         defensive_tasks = [Task(task_type=TaskType.DEFEND,
-                                pos=command_centers[i % len(command_centers)].get_pos())
+                                pos=self.get_choke_point(command_centers[i % len(command_centers)].get_pos()))
                            # Loop through all bases we have and
                            for i in range(defensive_groups) if command_centers]
 
@@ -119,7 +138,25 @@ class MyAgent(IDABot):
         for task in [*offensive_tasks, *defensive_tasks]:
             self.assignment_manager.add_task(task)
 
-        """
+    def get_choke_point(self, position : Point2D):
+        if self.base_right is None:
+            self.base_right = self.base_location_manager.get_player_starting_base_location(PLAYER_SELF).position.x > 50
+
+        # Choke points are based on base_location.position and :param: position is the command center position so
+        # we choose the base_location position that is closest to our command center
+        locations = list(map(lambda x: x.position, self.base_location_manager.get_occupied_base_locations(PLAYER_SELF)))
+        closes_pos = None
+        shortest_distance = 9999
+        for loc in locations:
+            dist = ((position.x - loc.x)**2 + (position.y - loc.y)**2)**0.5
+            if dist < shortest_distance:
+                closes_pos = loc
+                shortest_distance = dist
+
+        tPos = (closes_pos.x, closes_pos.y)
+        return self.choke_points_right[tPos] if self.base_right else self.choke_points_left[tPos]
+
+
 def main():
     coordinator = Coordinator(r"D:\StarCraft II\Versions\Base69232\SC2_x64.exe")
 
