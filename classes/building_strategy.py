@@ -203,9 +203,9 @@ class BuildingStrategy:
         elif action_type.is_worker or action_type.is_combat_unit:
             type_data = self.idabot.tech_tree.get_data(action_type)
             what_builds = type_data.what_builds
-            if any(building_type in our_building_types for building_type in what_builds):
+            if not any(building_type in our_building_types for building_type in what_builds):
                 return what_builds[0]
-            if not any(type in self.idabot.building_manager.buildings for type in type_data.required_addons):
+            if type_data.required_addons and not any(type in self.idabot.building_manager.buildings for type in type_data.required_addons):
                 return random.choice(type_data.required_addons)
 
         return None
