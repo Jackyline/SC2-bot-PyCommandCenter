@@ -22,6 +22,9 @@ class AssignmentManager:
         self.building_assignments = BuildingAssignments(self.building_manager)
         self.hungarian = Hungarian()
 
+        self.last_tick_mining_tasks = 0
+        self.last_tick_gas_tasks = 0
+
 
     def generate_matrix(self, utility_func, units, tasks):
         """
@@ -130,8 +133,6 @@ class AssignmentManager:
             assignment_type.tasks.clear()
 
     def on_step(self):
-        if self.ida_bot.current_frame % 10 == 0:
-            return
         # Add recommended nr of gas and mining tasks
         self.generate_gas_tasks()
         self.generate_mining_tasks()
@@ -147,7 +148,7 @@ class AssignmentManager:
 
 
     def generate_mining_tasks(self):
-        nr_mining_jobs = len(self.unit_manager.worker_units)
+        nr_mining_jobs = len(self.worker_assignments.get_available_units())
         if self.worker_assignments.get_available_units():  # Only generate if there are available workers
             for base in sorted(self.ida_bot.base_location_manager.get_occupied_base_locations(PLAYER_SELF),key= lambda x: x.is_start_location, reverse=True):
                 for i in range(2*len(self.ida_bot.get_mineral_fields(base))):
@@ -162,6 +163,7 @@ class AssignmentManager:
         if self.worker_assignments.get_available_units(): # Only generate if there are available workers
             for refinary in self.building_manager.get_buildings_of_type(UnitType(UNIT_TYPEID.TERRAN_REFINERY, self.ida_bot)):
                 for i in range(2):
+                    self.last_tick_mining_tasks += 1
                     self.worker_assignments.add_task(Task(task_type=TaskType.GAS, pos=refinary.get_unit().position))
 
     def add_task(self, task):
@@ -196,6 +198,7 @@ class WorkerAssignments:
         idle = worker.is_idle()
 
         profit = 0
+
         if not worker.task is None and worker.task == task: # valuable to do the same task as before
             profit += 1000
         if task.task_type == TaskType.SCOUT:
