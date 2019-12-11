@@ -60,16 +60,16 @@ class AssignmentManager:
             assignments[tasks[task_nr]] = units[worker_nr]
         return assignments
 
-    def calc_assignments(self, task_type):
-        all_tasks = task_type.get_tasks()
-        available_units = task_type.get_available_units()
-        matrix = self.generate_matrix(task_type.utility_func, available_units, all_tasks)
+    def calc_assignments(self, assignment_type):
+        all_tasks = assignment_type.get_tasks()
+        available_units = assignment_type.get_available_units()
+        matrix = self.generate_matrix(assignment_type.utility_func, available_units, all_tasks)
         #print_matrix(matrix, msg="Matrix generated for: " + task_type.toString())
         #print("### CALCULATING ASSIGNMENTS ### \n Nr tasks: ", len(all_tasks), "\n Nr units: ", len(available_units))
         matching = self.hungarian.compute_assignments(matrix)
         #self.hungarian.pretty_print_assignments()
         assignments = self.convert_matching_to_assignments(matching, available_units, all_tasks)
-        task_type.tasks.clear()
+        assignment_type.tasks.clear()
         return assignments
 
     def update_assignments(self, assignment_type):
@@ -80,8 +80,55 @@ class AssignmentManager:
         """
 
         if assignment_type.tasks and len(assignment_type.get_available_units()) > 0:  # Make sure there are new tasks and units that can do them
-            assignments = self.calc_assignments(assignment_type)
-            assignment_type.update(assignments)
+
+            # Special case for military assignments as all groups already got tasks when they were created
+            if type(assignment_type) is MilitaryAssignments:
+                checked_old_tasks = list(map(lambda x: x.task_type == TaskType.ATTACK, assignment_type.assignments.keys()))
+                checked_new_tasks = list(map(lambda x: x.task_type == TaskType.ATTACK, assignment_type.tasks))
+
+                # If the number of tasks is the same for both types of tasks we dont need to create new groups
+                if checked_old_tasks.count(True) == checked_new_tasks.count(True) and checked_old_tasks.count(False) == checked_new_tasks.count(False):
+                    # Get tuples (task, unit)
+                    items = assignment_type.assignments.items()
+                    tasks = list(map(lambda x: x[0], items))
+                    groups = list(map(lambda x: x[1], items))
+                    new_additions = self.unit_manager.add_units_to_coalition(tasks, groups)
+                    for task, unit in new_additions:
+                        assignment_type.assignments[task].append(unit)
+
+                    # All this is based on the special case that defend strategy doesn't move groups around unless a new
+                    # base is built and that attack strategy always has 4 attack groups and one defend group that moves
+                    # Assign tasks such that the group that is already defending keeps the defending task and the attack
+                    # groups gets a attack task
+                    if checked_new_tasks.count(True) == 4: # Attack strategy
+                        defend_group = None
+                        attack_groups = None
+
+                        # Find the group that is assigned defend to use later
+                        for task in assignment_type.assignments:
+                            if task.task_type is TaskType.DEFEND:
+                                defend_group = assignment_type.assignments[task]
+                                attack_groups = assignment_type.assignments.values().remove(defend_group)
+                                break
+
+                        # Assign the previous defend group to defend and previous attack groups to attack
+                        new_assignments = {}
+                        for i, task in enumerate(assignment_type.tasks):
+                            if task.task_type is TaskType.DEFEND:
+                                new_assignments[task] = defend_group
+                            else:
+                                new_assignments[task] = attack_groups.pop(0)
+
+                        assignment_type.assignments = new_assignments
+
+                    # Re-command all groups to their tasks, they might either have new units or new tasks
+                    for task, group in assignment_type.assignments.items():
+                        self.unit_manager.command_group(task, group)
+                else:
+                    assignment_type.assignments = self.unit_manager.create_coalition(assignment_type.tasks)
+            else:
+                assignments = self.calc_assignments(assignment_type)
+                assignment_type.update(assignments)
         else:
             assignment_type.tasks.clear()
 
@@ -254,15 +301,16 @@ class MilitaryAssignments:
         self.tasks = []
 
     def utility_func(self, group, task):
-        #TODO: här måste vi kolla att det är mkt reward om den kan bygga, lite annars
-        return 5
+        """
+        Not used.
+        """
+        pass
 
     def get_available_units(self):
-        #if not len(self.tasks) == len() # If strategy has changed, or number of base locations has changed and we are in defensive strategy, create new groups
-        #self.unit_manager.create_coalition()
-        #else:
-            #self.unit_manager.add_units_to_coalition()
-        return self.unit_manager.groups
+        """
+
+        """
+        return self.unit_manager.military_units
 
     def toString(self):
         return "military assignments"
