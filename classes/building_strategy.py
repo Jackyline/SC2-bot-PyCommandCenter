@@ -61,7 +61,10 @@ class BuildingStrategy:
         # If we have enough resources, produce some important tasks that our network won't predict too often
 
         required_minerals = 400 if len(self.idabot.building_manager.get_buildings_of_type(self.name_to_type("CommandCenter"))) < 3 else 200
-        if self.idabot.current_frame % 100 == 0 and minerals > required_minerals and gas > 100:
+
+        count = 100 if minerals < 1000 else 50
+
+        if self.idabot.current_frame % count == 0 and minerals > required_minerals and gas > 100:
             # Marauder, siege tank, hellion, techlab
             wanted_units = []
 
@@ -83,7 +86,35 @@ class BuildingStrategy:
                                 self.name_to_type("CommandCenter"),
                                 self.name_to_type("CommandCenter")
                                 ]
-
+            else:
+                wanted_units = [*wanted_units,
+                                self.name_to_type("Barracks"),
+                                self.name_to_type("Factory"),
+                                self.name_to_type("Starport"),
+                                self.name_to_type("Medivac"),
+                                self.name_to_type("Medivac"),
+                                self.name_to_type("Battlecruiser"),
+                                self.name_to_type("Battlecruiser"),
+                                self.name_to_type("SiegeTank"),
+                                self.name_to_type("SiegeTank"),
+                                self.name_to_type("SiegeTank"),
+                                self.name_to_type("SiegeTank"),
+                                self.name_to_type("SiegeTank"),
+                                self.name_to_type("Cyclone"),
+                                self.name_to_type("Cyclone"),
+                                self.name_to_type("Cyclone"),
+                                self.name_to_type("Cyclone"),
+                                self.name_to_type("Banshee"),
+                                self.name_to_type("Banshee"),
+                                self.name_to_type("Liberator"),
+                                self.name_to_type("Liberator"),
+                                self.name_to_type("Liberator"),
+                                self.name_to_type("Marauder"),
+                                self.name_to_type("Marauder"),
+                                self.name_to_type("Marauder"),
+                                self.name_to_type("Marauder"),
+                                self.name_to_type("Marauder")
+                                ]
             if curr_seconds > 180:  # After 3 mins, can predict to build any of these
                 wanted_units = [*wanted_units,
                                 self.name_to_type("SiegeTank"),
@@ -137,8 +168,14 @@ class BuildingStrategy:
         action = action_name[self.actions[str(action)]]
         action_type = self.name_to_type(action)
 
+        if len(self.idabot.building_manager.get_buildings_of_type(self.name_to_type("CommandCenter"))) >= 3 \
+                and action == "CommandCenter":
+            action_type = self.name_to_type("Marauder")
+            action = "Marauder"
+
         self.add_task(action_type)
         self.last_action = action
+
         return action
 
     def add_task(self, action_type):
@@ -159,7 +196,7 @@ class BuildingStrategy:
             if action_type.is_worker or action_type.is_combat_unit:
                 task = Task(TaskType.TRAIN, produce_unit=action_type)
             elif action_type.is_addon:
-                action_type = self.get_random_techlab()
+                #action_type = self.get_random_techlab()
                 task = Task(TaskType.ADD_ON, construct_building=action_type)
             elif action_type.is_refinery:
                 for manager in self.idabot.base_location_manager.get_occupied_base_locations(PLAYER_SELF):
@@ -206,7 +243,7 @@ class BuildingStrategy:
             what_builds = type_data.what_builds
             if not any(building_type in our_building_types for building_type in what_builds):
                 return what_builds[0]
-            if type_data.required_addons and not any(type in self.idabot.building_manager.buildings for type in type_data.required_addons):
+            if type_data.required_addons and not any(type in our_building_types for type in type_data.required_addons):
                 return random.choice(type_data.required_addons)
 
         return None

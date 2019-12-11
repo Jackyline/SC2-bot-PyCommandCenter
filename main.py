@@ -59,7 +59,7 @@ class MyAgent(IDABot):
         # then run specific AI parts
         self.scout_manager.on_step()
         self.assignment_manager.on_step()
-        self.print_debug.on_step()
+        #self.print_debug.on_step()
 
         # Generate jobs depending on strategy
         self.handle_strategy()
@@ -124,11 +124,11 @@ def main():
     coordinator = Coordinator(r"D:\StarCraft II\Versions\Base69232\SC2_x64.exe")
 
     bot1 = MyAgent()
-    # bot2 = MyAgent()
+    #bot2 = MyAgent()
 
     participant_1 = create_participants(Race.Terran, bot1)
-    # participant_2 = create_participants(Race.Terran, bot2)
-    participant_2 = create_computer(Race.Random, Difficulty.Easy)
+    #participant_2 = create_participants(Race.Terran, bot2)
+    participant_2 = create_computer(Race.Terran, Difficulty.Easy)
 
     coordinator.set_real_time(False)
     coordinator.set_participants([participant_1, participant_2])
