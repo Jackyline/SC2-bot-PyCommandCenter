@@ -14,46 +14,57 @@ class PrintDebug:
         self.on = on
         self.print_on_unit = True
 
+        # Strings saved so we dont need to update info every tick
+        self.building_worker_military_text = ""
+        self.build_strat_text = ""
+        self.game_strat_text = ""
+        self.last_guess = None
+        self.scout_manager_text = ""
+
     def on_step(self):
         if not self.on:
             return
 
-        # BuildingManager.print_debug returns a string in the format "type: nr\ntype: nr\n"
-        # UnitManager.get_info returns a dictionary with two keys, "workerUnits", "militaryUnits" each with a dict
-        # of the unit summary as its value.
-        building_str = self.building_manager.print_debug()
-        units = self.unit_manager.get_info()
-        worker_units = units["workerUnits"].items()
-        military_units = units["militaryUnits"].items() #TODO: this line crashes when we have multiple unit types
-        worker_str = ""
-        for type, count in worker_units:
-            worker_str += "{}: {}\n".format(type, count)
-        military_str = ""
-        for type, count in military_units:
-           military_str += "{}: {}\n".format(type, count)
+        if self.ida_bot.current_frame % 30 == 0:
+            building_str = self.building_manager.print_debug()
+            units = self.unit_manager.get_info()
+            worker_units = units["workerUnits"].items()
+            military_units = units["militaryUnits"].items() #TODO: this line crashes when we have multiple unit types
+            worker_str = ""
+            for type, count in worker_units:
+                worker_str += "{}: {}\n".format(type, count)
+            military_str = ""
+            for type, count in military_units:
+                military_str += "{}: {}\n".format(type, count)
 
-        text = "Buildings: \n_ _ _ _ _ _ _\n\n{}\n Workers: \n_ _ _ _ _ _ _\n\n{}\n Military: \n _ _ _ _ _ _ _\n\n{} \n".format(
-            building_str, worker_str, military_str)
-        self.ida_bot.map_tools.draw_text_screen(0.01, 0.01, text)
+            self.building_worker_military_text = "Buildings: \n_ _ _ _ _ _ _\n\n{}\n Workers: \n_ _ _ _ _ _ _\n\n{}\n Military: \n _ _ _ _ _ _ _\n\n{} \n".format(
+                building_str, worker_str, military_str)
 
+            # Building strategy prints:
+            self.build_strat_text = "Building_Strategy: {}".format(self.building_strategy.action())
 
-        # Building strategy prints:
-        build_strat_text = "Building_Strategy: {}".format(self.building_strategy.action())
-        self.ida_bot.map_tools.draw_text_screen(0.01, 0.25, build_strat_text)
+            # Game strategy prints:
+            strategy = self.ida_bot.strategy_network.actual_strategy
+            self.last_guess = self.ida_bot.strategy_network.last_res
+            self.game_strat_text = "Strategy: {}".format(strategy.name)
 
-        # Game strategy prints:
-        strategy = self.ida_bot.strategy_network.actual_strategy
-        last_guess = self.ida_bot.strategy_network.last_res
-        game_strat_text = "Strategy: {}".format(strategy.name)
-        self.ida_bot.map_tools.draw_text_screen(0.01, 0.30, game_strat_text)
-        self.ida_bot.map_tools.draw_text_screen(0.01, 0.35, str(last_guess))
+            # Player base location, used to retrieve mineral fields and geysers.
+            base_location = self.ida_bot.base_location_manager.get_player_starting_base_location(
+                player_constant=PLAYER_SELF)
 
+            self.scout_manager_text = self.scout_manager.print_debug()
 
-        # Player base location, used to retrieve mineral fields and geysers.
-        base_location = self.ida_bot.base_location_manager.get_player_starting_base_location(
-            player_constant=PLAYER_SELF)
+        self.ida_bot.map_tools.draw_text_screen(0.01, 0.01, self.building_worker_military_text)
+        self.ida_bot.map_tools.draw_text_screen(0.01, 0.25, self.build_strat_text)
+        self.ida_bot.map_tools.draw_text_screen(0.01, 0.30, self.game_strat_text)
+        self.ida_bot.map_tools.draw_text_screen(0.01, 0.35, str(self.last_guess))
+        self.ida_bot.map_tools.draw_text_screen(0.01, 0.40, self.scout_manager_text)
 
-        self.ida_bot.map_tools.draw_text_screen(0.01, 0.40, self.scout_manager.print_debug())
+        for worker in self.unit_manager.worker_units:
+            task = worker.get_task()
+            if task is not None:
+                task = task.task_type.name
+            self.ida_bot.map_tools.draw_text(position=worker.get_unit().position, text=str(task))
 
         if not self.print_on_unit:
             return
@@ -83,9 +94,3 @@ class PrintDebug:
         for geyser in geysers:
             self.ida_bot.map_tools.draw_text(geyser.position, " %s id: %d" % (str(geyser.unit_type), geyser.id))
         """
-
-        for worker in self.unit_manager.worker_units:
-            task = worker.get_task()
-            if task is not None:
-                task = task.task_type
-            self.ida_bot.map_tools.draw_text(position=worker.get_unit().position, text=str(task))
