@@ -59,7 +59,7 @@ class BuildingStrategy:
         minerals = self.resource_manager.get_minerals()
 
         # If we have enough resources, produce some important tasks that our network won't predict too often
-        if minerals > 300 and gas > 100:
+        if self.idabot.current_frame % 100 == 0 and minerals > 300 and gas > 100:
 
             # Marauder, siege tank, hellion, techlab
             wanted_units = []
