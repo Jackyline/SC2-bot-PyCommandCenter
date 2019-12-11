@@ -60,36 +60,43 @@ class BuildingStrategy:
         minerals = self.resource_manager.get_minerals()
 
         # If we have enough resources, produce some important tasks that our network won't predict too often
-        if self.idabot.current_frame % 100 == 0 and minerals > 300 and gas > 100:
+        if self.idabot.current_frame % 100 == 0 and minerals > 400 and gas > 100:
 
             # Marauder, siege tank, hellion, techlab
             wanted_units = []
 
             curr_seconds = self.idabot.current_frame // 24
             if curr_seconds > 30:
-                wanted_units.append(
-                    self.name_to_type("Marauder")
-                )
+                wanted_units = [*wanted_units,
+                                self.name_to_type("Marauder"),
+                                self.name_to_type("Marauder"),
+                                self.name_to_type("Marauder"),
+                                self.name_to_type("Marauder"),
+                                self.name_to_type("Marauder"),
+                ]
+            if curr_seconds > 30 and len(self.idabot.building_manager.get_buildings_of_type(self.name_to_type("CommandCenter"))) <= 3:
+                wanted_units = [*wanted_units,
+                    self.name_to_type("CommandCenter"),
+                    self.name_to_type("CommandCenter"),
+                    self.name_to_type("CommandCenter"),
+                    self.name_to_type("CommandCenter"),
+                    self.name_to_type("CommandCenter"),
+                    self.name_to_type("CommandCenter")
+                ]
+
             if curr_seconds > 180:  # After 3 mins, can predict to build any of these
                 wanted_units = [*wanted_units,
                                 self.name_to_type("SiegeTank"),
+                                self.name_to_type("SiegeTank"),
+                                self.name_to_type("SiegeTank"),
+                                self.name_to_type("Hellion"),
+                                self.name_to_type("Hellion"),
                                 self.name_to_type("Hellion"),
                                 self.name_to_type("TechLab")
                                 ]
 
             if wanted_units:
-                if len(wanted_units) == 4: # If we have all the four tasks
-                    rndm = random.randint(0, 100)
-                    if rndm > 60:  # Marauder
-                        index = 0
-                    elif rndm > 40:  # SiegeTank
-                        index = 1
-                    elif rndm >= 15:  # Hellion
-                        index = 2
-                    else:  # TechLab
-                        index = 3
-                else:
-                    index = random.randint(0, len(wanted_units) - 1)
+                index = random.randint(0, len(wanted_units) - 1)
 
                 task = wanted_units[index]
                 self.add_task(task)
