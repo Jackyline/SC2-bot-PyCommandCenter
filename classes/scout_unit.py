@@ -77,8 +77,13 @@ class ScoutUnit:
                         self.check_in_visited(point, True)
                         self.check_if_goal_is_active(point, width_ratio, height_ratio)
                         self.set_goal(first_visited)
+                    else:
+                        # If we just spotted our first discover recently, go random.
+                        goal = self.set_goal_strategy(width_ratio, height_ratio)
+                        self.check_if_goal_is_active(goal, width_ratio, height_ratio)
+                        self.set_goal(goal)
                 else:
-                    # If we just spotted our first discover recently, go random.
+                    # If HMM is not updated, go random (Beginning of game)
                     goal = self.set_goal_strategy(width_ratio, height_ratio)
                     self.check_if_goal_is_active(goal, width_ratio, height_ratio)
                     self.set_goal(goal)
