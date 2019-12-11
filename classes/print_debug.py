@@ -32,8 +32,8 @@ class PrintDebug:
         for type, count in military_units:
            military_str += "{}: {}\n".format(type, count)
 
-        text = "Buildings: \n_ _ _ _ _ _ _\n\n{}\n Workers: \n_ _ _ _ _ _ _\n\n{}\n Military: \n _ _ _ _ _ _ _\n\n{} \n\n{}".format(
-            building_str, worker_str, military_str, self.scout_manager.print_debug())
+        text = "Buildings: \n_ _ _ _ _ _ _\n\n{}\n Workers: \n_ _ _ _ _ _ _\n\n{}\n Military: \n _ _ _ _ _ _ _\n\n{} \n".format(
+            building_str, worker_str, military_str)
         self.ida_bot.map_tools.draw_text_screen(0.01, 0.01, text)
 
 
@@ -45,13 +45,15 @@ class PrintDebug:
         strategy = self.ida_bot.strategy_network.actual_strategy
         last_guess = self.ida_bot.strategy_network.last_res
         game_strat_text = "Strategy: {}".format(strategy.name)
-        self.ida_bot.map_tools.draw_text_screen(0.01, 0.40, game_strat_text)
-        self.ida_bot.map_tools.draw_text_screen(0.01, 0.43, str(last_guess))
+        self.ida_bot.map_tools.draw_text_screen(0.01, 0.30, game_strat_text)
+        self.ida_bot.map_tools.draw_text_screen(0.01, 0.35, str(last_guess))
 
 
         # Player base location, used to retrieve mineral fields and geysers.
         base_location = self.ida_bot.base_location_manager.get_player_starting_base_location(
             player_constant=PLAYER_SELF)
+
+        self.ida_bot.map_tools.draw_text_screen(0.01, 0.40, self.scout_manager.print_debug())
 
         if not self.print_on_unit:
             return
