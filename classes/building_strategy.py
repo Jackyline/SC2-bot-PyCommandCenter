@@ -95,6 +95,7 @@ class BuildingStrategy:
                 self.last_action = task
                 return task
 
+
         curr_seconds = self.idabot.current_frame // 24
         if curr_seconds - self.last_build < 2:
             return self.last_action
@@ -110,8 +111,8 @@ class BuildingStrategy:
         input_gas = gas / 62500
         food_used = supply / 200
         # TODO, fix this
-        food_army = (supply - supply / 2) / 200
-        food_workers = (supply / 2) / 200
+        food_army = len(self.idabot.unit_manager.military_units) / 200
+        food_workers = len(self.idabot.unit_manager.worker_units) / 200
 
         v = torch.Tensor([input_minerals, input_gas, food_cap, food_used, food_army, food_workers])
         # Hardcoded input atm
@@ -144,10 +145,16 @@ class BuildingStrategy:
                 build_location = Point2D(build_pos.x, build_pos.y)
             task = None
 
-            # TODO: FIXXA REFINERY
             if action_type.is_worker or action_type.is_combat_unit:
                 task = Task(TaskType.TRAIN, produce_unit=action_type)
             elif action_type.is_addon:
+                random_choice = random.randrange(1, 100)
+                if random_choice <= 70:
+                    action_type = UnitType(UNIT_TYPEID.TERRAN_BARRACKSTECHLAB, self.idabot)
+                elif random_choice <= 90:
+                    action_type = UnitType(UNIT_TYPEID.TERRAN_FACTORYTECHLAB, self.idabot)
+                else:
+                    action_type = UnitType(UNIT_TYPEID.TERRAN_STARPORTTECHLAB, self.idabot)
                 task = Task(TaskType.ADD_ON, construct_building=action_type)
             elif action_type.is_refinery:
                 for manager in self.idabot.base_location_manager.get_occupied_base_locations(PLAYER_SELF):
