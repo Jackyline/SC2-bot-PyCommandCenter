@@ -78,7 +78,7 @@ class MyAgent(IDABot):
         # then run specific AI parts
         self.scout_manager.on_step()
         self.assignment_manager.on_step()
-        self.print_debug.on_step()
+        #self.print_debug.on_step()
 
         # Generate jobs depending on strategy
         self.handle_strategy()
@@ -113,7 +113,7 @@ class MyAgent(IDABot):
 
         # Get all of our command centers
         command_centers = self.building_manager.get_buildings_of_type(UnitType(UNIT_TYPEID.TERRAN_COMMANDCENTER, self))
-        """
+
         if strategy == StrategyName.OFFENSIVE:
             offensive_groups = 4
             defensive_groups = 1
@@ -161,11 +161,11 @@ def main():
     coordinator = Coordinator(r"D:\StarCraft II\Versions\Base69232\SC2_x64.exe")
 
     bot1 = MyAgent()
-    # bot2 = MyAgent()
+    #bot2 = MyAgent()
 
     participant_1 = create_participants(Race.Terran, bot1)
-    # participant_2 = create_participants(Race.Terran, bot2)
-    participant_2 = create_computer(Race.Random, Difficulty.Easy)
+    #participant_2 = create_participants(Race.Terran, bot2)
+    participant_2 = create_computer(Race.Terran, Difficulty.Easy)
 
     coordinator.set_real_time(False)
     coordinator.set_participants([participant_1, participant_2])
