@@ -52,7 +52,7 @@ class MyAgent(IDABot):
                 if worker.unit_type.is_worker:
                     self.workers.append(worker)
                     worker.move(Point2D(31, 31))
-            winsound.PlaySound('stadiljus.wav', winsound.SND_ASYNC | winsound.SND_ALIAS)
+            winsound.PlaySound('stadiljus1.wav', winsound.SND_ASYNC | winsound.SND_ALIAS)
             self.first = False
         done = False
 
