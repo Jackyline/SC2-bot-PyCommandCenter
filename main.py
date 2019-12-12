@@ -14,6 +14,8 @@ from classes.building_strategy import BuildingStrategy
 from strategy.training_data import ALL_BUILDINGS, UNIT_TYPES
 from strategy.strategy import StrategyName
 from classes.task import Task, TaskType
+from classes.stupid_agent import StupidAgent, StupidAgent2
+from classes.building_placer import BuildingPlacer
 import random
 # Only handle the predicted strategy this often (seconds)
 HANDLE_STRATEGY_DELAY = 5
@@ -32,7 +34,7 @@ class MyAgent(IDABot):
         self.building_strategy = BuildingStrategy(self, self.resource_manager, self.assignment_manager)
         self.print_debug = PrintDebug(self, self.building_manager, self.unit_manager, self.scout_manager,
                                       self.building_strategy, True)
-
+        self.our_building_placer = None
         # Last time that strategy was handled by generating tasks etc
         self.last_handled_strategy = 0
         self.first_tick = True
@@ -57,7 +59,7 @@ class MyAgent(IDABot):
                                   (129.25, 54.5): Point2D(121, 50), (127.75, 28.5): Point2D(117, 37)}
 
     def on_game_start(self):
-
+        self.our_building_placer = BuildingPlacer(self.start_location, self)
         IDABot.on_game_start(self)
 
     def on_step(self):
@@ -112,11 +114,12 @@ class MyAgent(IDABot):
         self.last_handled_strategy = curr_seconds
 
         # Get all of our command centers
-        command_centers = self.building_manager.get_buildings_of_type(UnitType(UNIT_TYPEID.TERRAN_COMMANDCENTER, self))
+        command_centers = self.building_manager.get_buildings_of_type(UnitType(UNIT_TYPEID.TERRAN_COMMANDCENTER, self)) + \
+                          self.building_manager.get_under_construction_of_type(UnitType(UNIT_TYPEID.TERRAN_COMMANDCENTER, self))
 
         if strategy == StrategyName.OFFENSIVE:
-            offensive_groups = 4
-            defensive_groups = 1
+            offensive_groups = 1
+            defensive_groups = 0
 
             attack_pos = self.scout_manager.get_enemy_target()
         else:  # strategy == StrategyName.DEFENSIVE
@@ -158,10 +161,10 @@ class MyAgent(IDABot):
 
 
 def main():
-    coordinator = Coordinator(r"D:\StarCraft II\Versions\Base69232\SC2_x64.exe")
+    coordinator = Coordinator(r"C:\New starcraft\StarCraft II\Versions\Base69232\SC2_x64.exe")
 
     bot1 = MyAgent()
-    #bot2 = MyAgent()
+    #bot2 = StupidAgent2()
 
     participant_1 = create_participants(Race.Terran, bot1)
     #participant_2 = create_participants(Race.Terran, bot2)

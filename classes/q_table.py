@@ -1,6 +1,7 @@
 import numpy as np
 
 class QTable:
+
     def __init__(self, idabot,name):
         self.file = 'resources/'+ name +'.npy'
         self.idabot = idabot

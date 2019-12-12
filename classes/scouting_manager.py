@@ -100,7 +100,7 @@ class ScoutingManager:
                 player_constant=PLAYER_ENEMY)
             self.hmm = HiddenMarkovModel(self.columns, self.rows, self.bot.current_frame, map_height * map_width)
 
-        if self.bot.current_frame % 1000 == 0:
+        if self.bot.current_frame % 250 == 0:
             self.check_for_units(enemy_units)
             self.hmm.on_step(self.log, self.bot.current_frame)
             # Reset the log so it only contains the last spotted frame,

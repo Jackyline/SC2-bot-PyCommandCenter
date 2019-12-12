@@ -60,7 +60,7 @@ class BuildingStrategy:
         minerals = self.resource_manager.get_minerals()
         # If we have enough resources, produce some important tasks that our network won't predict too often
 
-        required_minerals = 400 if len(self.idabot.building_manager.get_buildings_of_type(self.name_to_type("CommandCenter"))) < 3 else 200
+        required_minerals = 500 if len(self.idabot.building_manager.get_buildings_of_type(self.name_to_type("CommandCenter"))) < 3 else 200
         if minerals < 400:
             count = 100
         elif minerals < 600:
@@ -83,6 +83,10 @@ class BuildingStrategy:
                                 ]
             if curr_seconds > 30 and len(self.idabot.building_manager.get_buildings_of_type(self.name_to_type("CommandCenter"))) < 3:
                 wanted_units = [*wanted_units,
+                                self.name_to_type("CommandCenter"),
+                                self.name_to_type("CommandCenter"),
+                                self.name_to_type("CommandCenter"),
+                                self.name_to_type("CommandCenter"),
                                 self.name_to_type("CommandCenter"),
                                 ]
             else:
@@ -192,8 +196,8 @@ class BuildingStrategy:
                 build_pos = self.idabot.base_location_manager.get_next_expansion(PLAYER_SELF).depot_position
                 build_location = Point2D(build_pos.x, build_pos.y)
             elif action_type.is_building:
-                random_point = random.choice([building.get_unit().position for building in self.idabot.building_manager.buildings])
-                build_pos = self.idabot.building_placer.get_build_location_near(Point2DI(int(random_point.x), int(random_point.y)), action_type)
+                build_pos = self.idabot.our_building_placer.get_build_location(action_type)
+                build_pos = Point2DI(int(build_pos.x), int(build_pos.y))
                 build_location = Point2D(build_pos.x, build_pos.y)
             task = None
 

@@ -81,7 +81,7 @@ class BuildingManager:
         def squared_distance(p1: Point2D, p2: Point2D) -> float:
             return (p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2
 
-        for unit in self.idabot.get_my_units():
+        for unit in self.ida_bot.get_my_units():
             if unit.unit_type.is_refinery and squared_distance(unit.position, geyser.position) < 1:
                 return unit
 
