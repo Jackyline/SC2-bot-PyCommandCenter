@@ -15,7 +15,9 @@ class ScoutUnit:
         self.goal = None
         self.manager = scout_manager
         self.strategy_manager = strategy_manager
+        self.health = scout_unit.hit_points
         self.num = number
+        self.attack = False
 
     def get_unit(self):
         return self.unit
@@ -36,10 +38,23 @@ class ScoutUnit:
         return self.unit.is_alive
 
     def reached_goal(self, current_frame):
+        if self.health > self.unit.hit_points:
+            self.health = self.unit.hit_points
+            self.attack = True
+            self.manager.visited.append(self.goal)
+            self.manager.frame_stamps.append(current_frame)
+            for cur_goal in self.manager.goals:
+                if cur_goal.equal(self.goal):
+                    self.manager.goals.remove(cur_goal)
+            goal = self.manager.bot.base_location_manager.get_player_starting_base_location(
+                player_constant=PLAYER_SELF)
+            self.set_goal(goal.position)
+            return True
         if self.goal is None:
             return True
         else:
             if self.unit.position.distance(self.goal) < 5:
+                self.health = self.unit.hit_points
                 self.manager.visited.append(self.goal)
                 self.manager.frame_stamps.append(current_frame)
                 if self.manager.scouts_requested < 1 and len(self.manager.bot.unit_manager.scout_units) < 2:
@@ -57,7 +72,7 @@ class ScoutUnit:
                 return False
 
     def set_goal(self, goal):
-        if self.reached_goal(self.manager.bot.current_frame):
+        if self.reached_goal(self.manager.bot.current_frame) or self.attack:
             self.unit.move(goal)
             self.goal = goal
             self.manager.goals.append(goal)

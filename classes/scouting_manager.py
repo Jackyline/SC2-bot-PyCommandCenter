@@ -119,6 +119,9 @@ class ScoutingManager:
                     self.send_away_one_scout_to_enemy()
             else:
                 if scout.reached_goal(self.bot.current_frame) or scout.get_unit().is_idle:
+                    if scout.attack:
+                        scout.attack = False
+                        return
                     self.go_to_most_interested(scout)
 
     def send_away_one_scout_to_enemy(self):
