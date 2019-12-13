@@ -36,13 +36,14 @@ class MilitaryUnit:
         self.exploration = 0.0 # Set this to 0 to use the learned policy
         self.total_reward = 0
 
-
+        self.max_delay = 50
         self.action_end_frame = idabot.current_frame # Used to set how long until the action should be updated
         self.concussive_shells = True  # The marauder ability "concussive shells", #TODO: se till att detta sätts när den är gäller, fråga dylan?
 
         self.attack_range = self.get_unit_type().attack_range
         self.movement_speed = self.get_unit_type().movement_speed
         self.sight_range = self.get_unit_type().sight_range
+
 
         type_id = self.get_unit_type_id()
         # Specifika variabler för olika enheter
@@ -99,8 +100,9 @@ class MilitaryUnit:
         elif self.attack_animation_offset == -1:
             self.in_combat_on_step_not_trained(e_in_sight, enemies_that_can_attack, allies_in_sight, enemies_in_range)
 
-        elif self.attacked and self.get_weapon_cooldown() == 0:
+        elif self.attacked and self.get_weapon_cooldown() == 0 and self.max_delay > 0:
             self.action_end_frame += 1
+            self.max_delay -= 1
 
         elif self.idabot.current_frame > self.action_end_frame:
             self.in_combat_on_step(e_in_sight, enemies_that_can_attack, allies_in_sight, enemies_in_range)
@@ -154,6 +156,7 @@ class MilitaryUnit:
             #print("attack")
             self.attack_action()
             self.attacked = True
+            self.max_delay = 50
             if self.get_weapon_cooldown() == 0:
                 self.action_end_frame = self.idabot.current_frame + self.attack_animation_offset
             else:
@@ -161,6 +164,7 @@ class MilitaryUnit:
         elif action_to_take == 1:
             #print("retreat")
             self.retreat_action()
+            self.max_delay = 50
             self.action_end_frame = self.idabot.current_frame
 
         self.state = new_state

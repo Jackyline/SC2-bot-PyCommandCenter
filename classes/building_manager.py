@@ -62,6 +62,9 @@ class BuildingManager:
     def get_under_construction_of_type(self, type : UnitType):
         return [b for b in self.under_construction if b.get_unit_type() ==  type]
 
+    def get_total_buildings_of_type(self, type: UnitType):
+        return [b for b in self.buildings + self.under_construction if b.get_unit_type() == type]
+
     def get_my_producers(self, unit_type: UnitType):
         """ Returns a list of units which can build or train units of type unit_type """
         producers = []

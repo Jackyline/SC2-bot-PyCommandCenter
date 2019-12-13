@@ -286,9 +286,32 @@ class UnitManager:
         return any(unit.unit_type == unit_type for unit_type in self.WORKER_TYPES)
 
     def command_group(self, task, group):
-        for unit in group:
-            if not unit.is_in_combat():
-                unit.attack_move(task.pos)
+        defending_base = False
+        for unit in self.visible_enemies:
+            for command_center in self.idabot.building_manager.get_total_buildings_of_type(UnitType(UNIT_TYPEID.TERRAN_COMMANDCENTER,self.idabot)):
+                if self.get_distance_to(unit, command_center.get_unit()) < 40:
+                    # Attack if enemies close to our base
+                    for unit2 in group:
+                        if not unit2.is_in_combat():
+                            unit2.attack_move(unit.position)
+                    defending_base = True
+                    break
+        if not defending_base:
+            for unit in group:
+                if not unit.is_in_combat():
+                    unit.attack_move(task.pos)
+
+    def get_distance_to(self,unit1, unit2):
+        """
+        Return the distance to a unit, if units is none 10 will be returned
+        :param unit:
+        :return:
+        """
+
+        return math.sqrt((unit1.position.x - unit2.position.x)**2 +
+                                 (unit1.position.y - unit2.position.y)**2)
+
+
 
     def command_unit(self, unit, task : Task):
         """
