@@ -1,11 +1,11 @@
 from classes.hmm import HiddenMarkovModel
-from classes.scout_unit import ScoutUnit
 import strategy.strategy
 from library import *
 from classes.task import Task
 from classes.task_type import TaskType
 import math
 
+Point2D.distance = lambda self, other: math.sqrt((self.x - other.x) ** 2 + (self.y - other.y) ** 2)
 
 class ScoutingManager:
 
@@ -205,7 +205,21 @@ class ScoutingManager:
             for i in range(len(points)):
                 points[i] = Point2D((points[i][0] + 0.5) * self.width_ratio, ((self.rows - points[i][1]) + 0.5)
                                     * self.height_ratio)
+            points[0] = self.get_nearby_enemy(points[0])
             return points[0]
+
+    def get_nearby_enemy(self, point):
+        best_goal = Point2D(self.enemy_base.position)
+        low_dist = best_goal.distance(point)
+        enemy_units = list(set(self.bot.get_all_units()) - set(self.bot.get_my_units()))
+        for unit in enemy_units:
+            if unit.player == PLAYER_ENEMY and \
+                    unit.unit_type not in self.neutral_units:
+                if unit.position.distance(point) < low_dist:
+                    best_goal = unit.position
+                    low_dist = unit.position.distance(point)
+        return best_goal
+
 
     def print_debug(self):
         last_captured_frame = '0'
