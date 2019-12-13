@@ -58,14 +58,14 @@ class HiddenMarkovModel:
             for position, units in log[frame].items():
                 x_position = int(position[:len(position)//2])
                 y_position = int(position[len(position)//2:])
-                #BUG HÄR, SÄG TILL NÄR NI FÅR DEN!!!
-                list_position = self.emission_matrix[x_position][y_position]
-                # Added new line.
-                prob_units = self.calculate_probability_cell(x_position, y_position, len(units))
+                if self.check_in_range(x_position, y_position):
+                    list_position = self.emission_matrix[x_position][y_position]
+                    # Added new line.
+                    prob_units = self.calculate_probability_cell(x_position, y_position, len(units))
 
-                n_units_frame = (frame, prob_units)
-                if n_units_frame not in list_position:
-                    list_position.append(n_units_frame)
+                    n_units_frame = (frame, prob_units)
+                    if n_units_frame not in list_position:
+                        list_position.append(n_units_frame)
 
     def update_time_matrix(self, current_frame, log):
         """
