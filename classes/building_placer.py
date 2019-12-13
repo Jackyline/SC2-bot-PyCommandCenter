@@ -3,17 +3,23 @@ from library import *
 class BuildingPlacer():
     def __init__(self, start_location, ida_bot: IDABot):
         if start_location.x == 125.5 and start_location.y == 30.5:
-            file = "resources/bottom_right/"
+            self.file = "resources/bottom_right/"
         else:
-            file = "resources/top_left/"
+            self.file = "resources/top_left/"
 
-        self.supply_depot_pos = list(np.load(file+"supply_depot_pos.npy"))
-        self.unit_builders_pos = list(np.load(file+"unit_builders_pos.npy"))
-        self.rest_buildings = list(np.load(file+"rest_buildings_pos.npy"))
+        self.supply_depot_pos = list(np.load(self.file+"supply_depot_pos.npy"))
+        self.unit_builders_pos = list(np.load(self.file+"unit_builders_pos.npy"))
+        self.rest_buildings = list(np.load(self.file+"rest_buildings_pos.npy"))
         self.ida_bot = ida_bot
 
     def get_build_location(self, unit_type):
         id = unit_type.unit_typeid
+        if not self.supply_depot_pos:
+            self.supply_depot_pos = list(np.load(self.file+"supply_depot_pos.npy"))
+        if not self.unit_builders_pos:
+            self.unit_builders_pos = list(np.load(self.file+"unit_builders_pos.npy"))
+        if not self.rest_buildings:
+            self.rest_buildings = list(np.load(self.file+"rest_buildings_pos.npy"))
         if id == UNIT_TYPEID.TERRAN_SUPPLYDEPOT and len(self.supply_depot_pos) > 0:
             pos= self.supply_depot_pos.pop(0)
             return Point2D(pos[0], pos[1])
