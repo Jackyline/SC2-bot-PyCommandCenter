@@ -73,6 +73,10 @@ class ScoutUnit:
 
     def set_goal(self, goal):
         if self.reached_goal(self.manager.bot.current_frame) or self.attack:
+            if self.goal is not None:
+                for cur_goal in self.manager.goals:
+                    if cur_goal.equal(self.goal):
+                        self.manager.goals.remove(cur_goal)
             self.unit.move(goal)
             self.goal = goal
             self.manager.goals.append(goal)
@@ -88,7 +92,7 @@ class ScoutUnit:
                 # since last time
                 if len(self.manager.frame_stamps) > 1 and len(self.manager.visited) > 1:
                     first_time_visited = self.manager.frame_stamps[0]
-                    if (current_frame - first_time_visited) > 8000:
+                    if (current_frame - first_time_visited) > 3000:
                         first_visited = self.manager.visited[0]
                         self.check_in_visited(point, True)
                         self.check_if_goal_is_active(point, width_ratio, height_ratio)
