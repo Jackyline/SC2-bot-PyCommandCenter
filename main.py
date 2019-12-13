@@ -80,7 +80,7 @@ class MyAgent(IDABot):
         # then run specific AI parts
         self.scout_manager.on_step()
         self.assignment_manager.on_step()
-        #self.print_debug.on_step()
+        self.print_debug.on_step()
 
         # Generate jobs depending on strategy
         self.handle_strategy()

@@ -46,6 +46,12 @@ class BuildingStrategy:
         self.actions = {}
         for key, value in action_id.items():
             self.actions[value] = key
+        self.first_buildings = [UnitType(UNIT_TYPEID.TERRAN_SUPPLYDEPOT, self.idabot),
+                                UnitType(UNIT_TYPEID.TERRAN_BARRACKS, self.idabot),
+                                UnitType(UNIT_TYPEID.TERRAN_REFINERY, self.idabot),
+                                UnitType(UNIT_TYPEID.TERRAN_REFINERY, self.idabot),
+                                UnitType(UNIT_TYPEID.TERRAN_COMMANDCENTER, self.idabot)]
+
 
 
     def update_obs(self, observations):
@@ -56,11 +62,32 @@ class BuildingStrategy:
 
     def action(self):
 
+        if len(self.first_buildings) > 0 and self.idabot.current_frame < 4500:
+            if not self.idabot.current_frame % 25 == 0:
+                return
+            for unit_type in self.first_buildings:
+                if unit_type.unit_typeid in [UNIT_TYPEID.TERRAN_COMMANDCENTER, UNIT_TYPEID.TERRAN_REFINERY] and len([unit for unit in
+                                             [*self.idabot.building_manager.get_under_construction_of_type(unit_type),
+                                             *self.idabot.building_manager.get_buildings_of_type(unit_type)]]) >= 2:
+                    self.first_buildings.remove(unit_type)
+                elif not unit_type.unit_typeid in [UNIT_TYPEID.TERRAN_COMMANDCENTER, UNIT_TYPEID.TERRAN_REFINERY] and\
+                        unit_type.unit_typeid in [unit.get_unit().unit_type.unit_typeid for unit in
+                                             [*self.idabot.building_manager.get_under_construction_of_type(unit_type),
+                                             *self.idabot.building_manager.get_buildings_of_type(unit_type)]]:
+                    self.first_buildings.remove(unit_type)
+
+            if len(self.first_buildings) > 0 and self.resource_manager.can_afford(self.first_buildings[0]):
+                self.add_task(self.first_buildings[0])
+            else:
+                self.add_task(UnitType(UNIT_TYPEID.TERRAN_SCV, self.idabot))
+            return
+
         gas = self.resource_manager.get_gas()
         minerals = self.resource_manager.get_minerals()
         # If we have enough resources, produce some important tasks that our network won't predict too often
 
-        required_minerals = 500 if len(self.idabot.building_manager.get_buildings_of_type(self.name_to_type("CommandCenter"))) < 3 else 200
+        required_minerals = 500 if len(self.idabot.building_manager.get_buildings_of_type(self.name_to_type("CommandCenter")) +
+                                       self.idabot.building_manager.get_under_construction_of_type(self.name_to_type("CommandCenter"))) < 3 else 200
         if minerals < 400:
             count = 100
         elif minerals < 600:
@@ -130,6 +157,14 @@ class BuildingStrategy:
                                 ]
 
             if wanted_units:
+                if self.idabot.max_supply - self.idabot.current_supply < 5:
+                    self.add_task(self.name_to_type("SupplyDepot"))
+                if minerals > 500:
+                    self.add_task(self.name_to_type("Cyclone"))
+                    self.add_task(self.name_to_type("SiegeTank"))
+                    self.add_task(self.name_to_type("Marauder"))
+                    self.add_task(self.name_to_type("Banshee"))
+
                 index = random.randint(0, len(wanted_units) - 1)
 
                 task = wanted_units[index]
@@ -170,8 +205,14 @@ class BuildingStrategy:
 
         action = action_name[self.actions[str(action)]]
         action_type = self.name_to_type(action)
-        if len(self.idabot.building_manager.get_buildings_of_type(self.name_to_type("CommandCenter"))) >= 3 \
-                and action == "CommandCenter":
+
+        if action_type.unit_typeid in [UNIT_TYPEID.TERRAN_BARRACKS, UNIT_TYPEID.TERRAN_STARPORT, UNIT_TYPEID.TERRAN_FACTORY] and \
+                len(self.idabot.building_manager.get_total_buildings_of_type(action_type)) >= 3:
+            action_type = self.name_to_type("Marauder")
+            action = "Marauder"
+
+        if action == "CommandCenter" and len(self.idabot.building_manager.get_buildings_of_type(self.name_to_type("CommandCenter")) +
+                self.idabot.building_manager.get_under_construction_of_type(self.name_to_type("CommandCenter"))) >= 3:
             action_type = self.name_to_type("Marauder")
             action = "Marauder"
         if len(self.idabot.building_manager.get_buildings_of_type(self.name_to_type("BarracksTechLab"))) > 0 and action == "Marine":
