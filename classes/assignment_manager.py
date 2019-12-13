@@ -122,11 +122,10 @@ class AssignmentManager:
 
                         assignment_type.assignments = new_assignments
 
-                    # Re-command all groups to their tasks, they might either have new units or new tasks
-                    for task, group in assignment_type.assignments.items():
-                        self.unit_manager.command_group(task, group)
                 else:
                     assignment_type.assignments = self.unit_manager.create_coalition(assignment_type.tasks)
+
+                assignment_type.update()
             else:
                 assignments = self.calc_assignments(assignment_type)
                 assignment_type.update(assignments)
@@ -341,9 +340,10 @@ class MilitaryAssignments:
     def toString(self):
         return "military assignments"
 
-    def update(self, new_assignments: dict):
-        self.assignments = new_assignments
-        for task, group in new_assignments.items():
+    def update(self):
+        self.tasks.clear()
+        # Command all units in the assigned groups
+        for task, group in self.assignments.items():
             self.unit_manager.command_group(task, group)
 
     def add_task(self, task):

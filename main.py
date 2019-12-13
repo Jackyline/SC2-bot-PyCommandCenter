@@ -107,6 +107,10 @@ class MyAgent(IDABot):
         if curr_seconds - self.last_handled_strategy < HANDLE_STRATEGY_DELAY:
             return
 
+        # The previous tasks generated have not yet been assigned, don't create new tasks
+        if self.assignment_manager.military_assignments.tasks:
+            return
+
         # Calculate new predicted strategy
         strategy = self.strategy_network.get_strategy()
 
@@ -161,7 +165,7 @@ class MyAgent(IDABot):
 
 
 def main():
-    coordinator = Coordinator(r"C:\New starcraft\StarCraft II\Versions\Base69232\SC2_x64.exe")
+    coordinator = Coordinator(r"D:\StarCraft II\Versions\Base69232\SC2_x64.exe")
 
     bot1 = MyAgent()
     #bot2 = StupidAgent2()

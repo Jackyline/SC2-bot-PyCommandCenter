@@ -236,7 +236,7 @@ class UnitManager:
     def create_coalition(self, tasks):
         '''
         Tell csg to generate new coalitions from scratch.
-        :param nr_coalitions: How many coalitions to divide units into
+        :param tasks: The tasks that needs coalitions
         :return: None, update internal state for coalitions (self.cs)
         '''
         info = {}
@@ -250,8 +250,6 @@ class UnitManager:
         info["militaryUnits"][type(tasks[0])] = tasks
 
         assignments = self.csg.create_coalition(info["militaryUnits"])
-        for task, group in assignments.items():
-            self.command_group(task, group)
         return assignments
 
 
