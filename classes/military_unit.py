@@ -116,11 +116,12 @@ class MilitaryUnit:
         elif self.get_unit_type_id() == UNIT_TYPEID.TERRAN_LIBERATORAG:
             self.get_unit().ability(ABILITY_ID.MORPH_LIBERATORAAMODE)
 
+
     def in_combat_on_step_not_trained(self, e_in_sight, enemies_that_can_attack, allies_in_sight, enemies_in_range):
         if self.get_unit_type_id() == UNIT_TYPEID.TERRAN_SIEGETANK:
             self.get_unit().ability(ABILITY_ID.MORPH_SIEGEMODE)
         elif self.get_unit_type_id() == UNIT_TYPEID.TERRAN_LIBERATOR:
-            self.get_unit().ability(ABILITY_ID.MORPH_LIBERATORAGMODE)
+            self.get_unit().ability(ABILITY_ID.MORPH_LIBERATORAGMODE, self.get_closest_enemy().position)
     def in_combat_on_step(self, e_in_sight, enemies_that_can_attack, allies_in_sight, enemies_in_range):
         """
         The on step function for when a unit is in combat,
@@ -130,6 +131,10 @@ class MilitaryUnit:
         :param enemies_in_range:  all enemies within a range of 6 #TODO: se on_step
         :return: None
         """
+        if self.get_unit_type_id() == UNIT_TYPEID.TERRAN_CYCLONE:
+            closest = self.get_close_flying()
+            if closest:
+                self.get_unit().ability(ABILITY_ID.EFFECT_LOCKON, closest)
         self.attacked = False
         reward = get_reward(self.hp)  # reward must be calculated before self.hp is updated (which happens in update_in_sight())
         #if self.get_weapon_cooldown() == 0: # This is to give the unit a little more incentive to attack
@@ -169,7 +174,6 @@ class MilitaryUnit:
             self.retreat_action()
             self.max_delay = 50
             self.action_end_frame = self.idabot.current_frame
-
         self.state = new_state
         self.old_action = action_to_take
 
@@ -195,6 +199,14 @@ class MilitaryUnit:
             self.stop()
             self.first_tick_in_combat = True
         self.in_combat = True if e_in_sight else False
+
+    def get_close_flying(self):
+        flying = []
+        for enemy in self.e_in_sight:
+            if enemy.is_flying:
+                flying.append(enemy)
+
+        return self.__get_closest_enemy(flying) if flying else None
 
     def update_hp(self):
         # Updates self.hp

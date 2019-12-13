@@ -30,6 +30,8 @@ class Strategy():
         # Output from model
         res = self.model.calculate(inputs)
 
+        print(res)
+
         self.last_res = res
 
         # Get new predicted strategy, OFFENSIVE or DEFENSIVE

@@ -4,6 +4,17 @@ import random
 import math
 import numpy as np
 from classes.building_placer import BuildingPlacer
+class StupidAgent3(IDABot):
+    def __init__(self):
+        IDABot.__init__(self)
+
+    def on_game_start(self):
+        IDABot.on_game_start(self)
+
+    def on_step(self):
+        IDABot.on_step(self)
+
+
 class StupidAgent2(IDABot):
     def __init__(self):
         IDABot.__init__(self)

@@ -86,8 +86,10 @@ class BuildingStrategy:
         minerals = self.resource_manager.get_minerals()
         # If we have enough resources, produce some important tasks that our network won't predict too often
 
-        self.max_command_centers = (len(self.idabot.unit_manager.worker_units) // 16) + 2
-
+        if len(self.idabot.building_manager.get_total_buildings_of_type(self.name_to_type("CommandCenter"))) > 2:
+            self.max_command_centers = (len(self.idabot.unit_manager.worker_units) // 16) + 1
+        else:
+            self.max_command_centers = (len(self.idabot.unit_manager.worker_units) // 16) + 2
         required_minerals = 500 if len(self.idabot.building_manager.get_buildings_of_type(self.name_to_type("CommandCenter")) +
                                        self.idabot.building_manager.get_under_construction_of_type(self.name_to_type("CommandCenter"))) < 3 else 200
         if minerals < 400:
@@ -166,8 +168,8 @@ class BuildingStrategy:
                     self.add_task(self.name_to_type("SupplyDepot"))
                 if minerals > 500:
                     if gas > 200:
-                        self.add_task(self.name_to_type("Cyclone"))
                         self.add_task(self.name_to_type("SiegeTank"))
+                        self.add_task(self.name_to_type("Cyclone"))
                         self.add_task(self.name_to_type("Marauder"))
                         self.add_task(self.name_to_type("Marauder"))
                         self.add_task(self.name_to_type("Marauder"))
@@ -179,6 +181,7 @@ class BuildingStrategy:
                         self.add_task(self.name_to_type("Hellion"))
                         self.add_task(self.name_to_type("Hellion"))
                         self.add_task(self.name_to_type("Hellion"))
+
                 index = random.randint(0, len(wanted_units) - 1)
 
                 task = wanted_units[index]
@@ -265,8 +268,8 @@ class BuildingStrategy:
                 #action_type = self.get_random_techlab()
                 task = Task(TaskType.ADD_ON, construct_building=action_type)
             elif action_type.is_refinery:
-                for manager in self.idabot.base_location_manager.get_occupied_base_locations(PLAYER_SELF):
-                    for geyser in manager.geysers:
+                for base_location in reversed(list(self.idabot.base_location_manager.get_occupied_base_locations(PLAYER_SELF))):
+                    for geyser in self.idabot.get_geysers(base_location):
                         if self.get_refinery(geyser) is None:
                             task = Task(TaskType.BUILD, pos=geyser.position, geyser=geyser,
                                         construct_building=action_type)

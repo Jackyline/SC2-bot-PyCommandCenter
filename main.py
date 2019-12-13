@@ -14,8 +14,9 @@ from classes.building_strategy import BuildingStrategy
 from strategy.training_data import ALL_BUILDINGS, UNIT_TYPES
 from strategy.strategy import StrategyName
 from classes.task import Task, TaskType
-from classes.stupid_agent import StupidAgent, StupidAgent2
+from classes.stupid_agent import StupidAgent, StupidAgent2, StupidAgent3
 from classes.building_placer import BuildingPlacer
+import math
 import random
 # Only handle the predicted strategy this often (seconds)
 HANDLE_STRATEGY_DELAY = 5
@@ -96,6 +97,16 @@ class MyAgent(IDABot):
                     mineral_fields.append(unit)
         return mineral_fields
 
+    def get_geysers(self, base_location: BaseLocation):
+        geysers = []
+        for geyser in base_location.geysers:
+            for unit in self.get_all_units():
+                if unit.unit_type.is_geyser \
+                        and geyser.tile_position.x == unit.tile_position.x \
+                        and geyser.tile_position.y == unit.tile_position.y:
+                    geysers.append(unit)
+        return geysers
+
     def handle_strategy(self):
         """
         Generates jobs depending on our chosen strategy
@@ -125,7 +136,11 @@ class MyAgent(IDABot):
             offensive_groups = 1
             defensive_groups = 0
 
-            attack_pos = self.scout_manager.get_enemy_target()
+            closest_enemy = self.get_closest_enemy_building()
+            if not closest_enemy:
+                attack_pos = self.scout_manager.get_enemy_target()
+            else:
+                attack_pos = closest_enemy.position
         else:  # strategy == StrategyName.DEFENSIVE
             offensive_groups = 0
             defensive_groups = len(command_centers)
@@ -144,6 +159,37 @@ class MyAgent(IDABot):
         # Add all generated tasks to assignment_manager
         for task in [*offensive_tasks, *defensive_tasks]:
             self.assignment_manager.add_task(task)
+    def get_closest_enemy_building(self):
+        enemies = [unit for unit in self.get_all_units() if unit.player == PLAYER_ENEMY]
+        return self.get_closest_enemy(enemies)
+
+
+    def get_closest_enemy(self, unit_list):
+        """
+        gets the closest enemy
+        :return: closest unit
+        """
+        own_pos = self.base_location_manager.get_player_starting_base_location(PLAYER_SELF).position
+        if len(unit_list) == 0:
+            return None
+        closest_enemy = unit_list[0]
+        closest_distance = self.get_distance_to(own_pos, closest_enemy.position)
+        for enemy in unit_list:
+            distance = self.get_distance_to(own_pos, closest_enemy.position)
+            if distance < closest_distance:
+                closest_distance = distance
+                closest_enemy = enemy
+        return closest_enemy
+
+    def get_distance_to(self, pos1, pos2):
+        """
+        Return the distance to a unit, if units is none 10 will be returned
+        :param unit:
+        :return:
+        """
+
+        return math.sqrt((pos1.x - pos2.x) ** 2 +
+                         (pos1.y - pos2.y) ** 2)
 
     def get_choke_point(self, position : Point2D):
         if self.base_right is None:
@@ -167,12 +213,12 @@ class MyAgent(IDABot):
 def main():
     coordinator = Coordinator(r"C:\New starcraft\StarCraft II\Versions\Base69232\SC2_x64.exe")
 
-    bot1 = MyAgent()
-    #bot2 = MyAgent)
+    bot1 = StupidAgent3()
+    bot2 = MyAgent()
 
     participant_1 = create_participants(Race.Terran, bot1)
-    #participant_2 = create_participants(Race.Terran, bot2)
-    participant_2 = create_computer(Race.Terran, Difficulty.Easy)
+    participant_2 = create_participants(Race.Terran, bot2)
+    #participant_2 = create_computer(Race.Terran, Difficulty.Hard)
 
     coordinator.set_real_time(False)
     coordinator.set_participants([participant_1, participant_2])
