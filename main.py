@@ -48,7 +48,7 @@ class MyAgent(IDABot):
                                    (26.5, 137.5): Point2D(30, 133), (22.75, 113.5): Point2D(31, 118),
                                    (59.5, 24.5): Point2D(51, 36), (95.75, 37.5): Point2D(88, 49),
                                    (24.25, 83.5): Point2D(44, 95), (127.75, 139.5): Point2D(115, 135),
-                                   (127.75, 84.5): Point2D(123, 98), (127.75, 28.5): Point2D(119, 47)}
+                                   (127.75, 84.5): Point2D(123, 98), (127.75, 28.5): Point2D(110, 55)}
 
         self.choke_points_left = {(58.75, 99.0): Point2D(58, 80), (24.25, 139.5): Point2D(33, 121),
                                   (127.75, 139.5): Point2D(124, 106), (92.5, 143.5): Point2D(100, 128),
@@ -81,7 +81,7 @@ class MyAgent(IDABot):
         # then run specific AI parts
         self.scout_manager.on_step()
         self.assignment_manager.on_step()
-        #self.print_debug.on_step()
+        self.print_debug.on_step()
 
         # Generate jobs depending on strategy
         self.handle_strategy()
@@ -213,12 +213,12 @@ class MyAgent(IDABot):
 def main():
     coordinator = Coordinator(r"C:\New starcraft\StarCraft II\Versions\Base69232\SC2_x64.exe")
 
-    bot1 = StupidAgent3()
-    bot2 = MyAgent()
+    bot2 = StupidAgent3()
+    bot1 = MyAgent()
 
     participant_1 = create_participants(Race.Terran, bot1)
-    participant_2 = create_participants(Race.Terran, bot2)
-    #participant_2 = create_computer(Race.Terran, Difficulty.Hard)
+    #participant_2 = create_participants(Race.Terran, bot2)
+    participant_2 = create_computer(Race.Terran, Difficulty.Hard)
 
     coordinator.set_real_time(False)
     coordinator.set_participants([participant_1, participant_2])

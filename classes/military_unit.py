@@ -122,6 +122,8 @@ class MilitaryUnit:
             self.get_unit().ability(ABILITY_ID.MORPH_SIEGEMODE)
         elif self.get_unit_type_id() == UNIT_TYPEID.TERRAN_LIBERATOR:
             self.get_unit().ability(ABILITY_ID.MORPH_LIBERATORAGMODE, self.get_closest_enemy().position)
+
+
     def in_combat_on_step(self, e_in_sight, enemies_that_can_attack, allies_in_sight, enemies_in_range):
         """
         The on step function for when a unit is in combat,

@@ -25,7 +25,11 @@ class BuildingManager:
         for building in buildings:
             if not building in [b.get_unit() for b in self.buildings + self.under_construction]:
                 # Building is not in self.buildings, add it
+
                 building_unit = BuildingUnit(building)
+                if building.unit_type.is_addon:
+                    closest = self.find_closest_building(building_unit)
+                    closest.has_techlab = True
                 if not building.is_completed:
                     self.under_construction.append(building_unit)
                 else:
@@ -44,6 +48,17 @@ class BuildingManager:
         if len(buildings) != len(self.buildings) + len(self.under_construction):
             self.buildings = [b for b in self.buildings if b.get_unit() in buildings]
             self.under_construction = [b for b in self.under_construction if b.get_unit() in buildings]
+
+    def find_closest_building(self, building):
+        closest_building = self.buildings[0]
+        closest_distance = self.ida_bot.get_distance_to(closest_building.get_unit().position, building.get_unit().position)
+
+        for building2 in [unit for unit in self.buildings if not unit.get_unit().unit_type.is_addon]:
+            distance = self.ida_bot.get_distance_to(building.get_unit().position, building2.get_unit().position)
+            if distance < closest_distance:
+                closest_building = building2
+                closest_distance = distance
+        return closest_building
 
     def get_geysers(self, base_location: BaseLocation):
         """

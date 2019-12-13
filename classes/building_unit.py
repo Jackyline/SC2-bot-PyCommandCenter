@@ -9,6 +9,7 @@ class BuildingUnit:
     def __init__(self, unit: Unit):
         self.unit = unit
         self.task = None
+        self.has_techlab = False
 
     def get_unit(self):
         return self.unit

@@ -134,7 +134,7 @@ class AssignmentManager:
 
     def on_step(self):
         # Add recommended nr of gas and mining tasks
-        if self.ida_bot.current_frame % 100 == 0:
+        if self.ida_bot.current_frame % 50 == 0:
             self.generate_gas_tasks()
             self.generate_mining_tasks()
 
@@ -359,18 +359,30 @@ class BuildingAssignments:
         self.building_manager = building_manager
         self.assignments = {}  # dict<task, worker_unit>
         self.tasks = []
+        self.needs_techlab = [UNIT_TYPEID.TERRAN_MARAUDER,
+                              UNIT_TYPEID.TERRAN_SIEGETANK,
+                              UNIT_TYPEID.TERRAN_BANSHEE]
 
     def utility_func(self, building, task):
 
-        profit = 0
+        profit = 1000
+
+
+
         if task.task_type is TaskType.TRAIN:
             if building.get_unit() in self.building_manager.get_my_producers(task.produce_unit):
                 profit += 1000
+                if task.produce_unit.unit_typeid in self.needs_techlab and building.has_techlab:
+                    profit += 500
+                if task.produce_unit.unit_typeid not in self.needs_techlab and not building.has_techlab:
+                    profit  += 200
+
+
         elif task.task_type is TaskType.ADD_ON:
             if building.get_unit() in self.building_manager.get_my_producers(task.construct_building):
-                profit += 1000
-        if building.is_training:
-            profit -= 100
+                profit += 10000
+        if building.get_unit().is_training:
+            profit -= 10000
 
         if profit < 0:
             profit = 0
