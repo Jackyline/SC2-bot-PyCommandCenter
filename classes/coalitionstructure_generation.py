@@ -63,8 +63,11 @@ class CoalitionstructureGenerator:
         self.q_list = deepcopy(self.v_list)
 
         #Calculate optimal coalition structure with f and get it from r list
-        self.f(coalition)
-        cs = self.get_r(coalition)
+        if coalition[self.task_index] == 1:
+            cs = [coalition]
+        else:
+            self.f(coalition)
+            cs = self.get_r(coalition)
 
         # Create the output coalition structure by designating a unit (by id) for each unit the coalition should have.
 

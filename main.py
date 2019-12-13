@@ -168,7 +168,7 @@ def main():
     coordinator = Coordinator(r"C:\New starcraft\StarCraft II\Versions\Base69232\SC2_x64.exe")
 
     bot1 = MyAgent()
-    #bot2 = MyAgent()
+    #bot2 = MyAgent)
 
     participant_1 = create_participants(Race.Terran, bot1)
     #participant_2 = create_participants(Race.Terran, bot2)

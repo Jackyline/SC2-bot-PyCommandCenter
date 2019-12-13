@@ -199,7 +199,7 @@ class ScoutingManager:
 
         # Worst case, HMM has highest prob 0.0 and scout has not reached their base for new info
         if most_likely[0] is 0.0:
-            return Point2D(self.enemy_base.position)
+            return self.enemy_base.position
         else:
             points = most_likely[1]
             for i in range(len(points)):
@@ -209,7 +209,8 @@ class ScoutingManager:
             return points[0]
 
     def get_nearby_enemy(self, point):
-        best_goal = Point2D(self.enemy_base.position.x, self.enemy_base.position.y)
+
+        best_goal = self.enemy_base.position
         low_dist = best_goal.distance(point)
         enemy_units = list(set(self.bot.get_all_units()) - set(self.bot.get_my_units()))
         for unit in enemy_units:

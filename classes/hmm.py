@@ -2,7 +2,7 @@ import numpy as np
 import math
 import munkres
 
-abort_time = 3000  # Can be set to whatever feels right, after certain time remove object.
+abort_time = 2500  # Can be set to whatever feels right, after certain time remove object.
 average_speed = 0.2  # The SCV moves in this speed, which is a good average for all units.
 
 
@@ -58,13 +58,14 @@ class HiddenMarkovModel:
             for position, units in log[frame].items():
                 x_position = int(position[:len(position)//2])
                 y_position = int(position[len(position)//2:])
-                list_position = self.emission_matrix[x_position][y_position]
-                # Added new line.
-                prob_units = self.calculate_probability_cell(x_position, y_position, len(units))
+                if self.check_in_range(x_position, y_position):
+                    list_position = self.emission_matrix[x_position][y_position]
+                    # Added new line.
+                    prob_units = self.calculate_probability_cell(x_position, y_position, len(units))
 
-                n_units_frame = (frame, prob_units)
-                if n_units_frame not in list_position:
-                    list_position.append(n_units_frame)
+                    n_units_frame = (frame, prob_units)
+                    if n_units_frame not in list_position:
+                        list_position.append(n_units_frame)
 
     def update_time_matrix(self, current_frame, log):
         """
@@ -87,8 +88,8 @@ class HiddenMarkovModel:
                             del map_cell[k]
                             self.remove_probability_trans_matrix(i, j, n_units_frame[1], n_units_frame)
                         elif prob_units > 0.1:
-                            self.change_probability_trans_matrix(i, j, prob_units, n_units_frame[0], current_frame,
-                                                                 self.add_probability_trans_matrix)
+                            self.fwd(i, j, prob_units, n_units_frame[0], current_frame,
+                                     self.add_probability_trans_matrix)
                 map_cell.sort(key=self.get_time)
 
     def get_time(self, elem):
@@ -115,8 +116,8 @@ class HiddenMarkovModel:
         prob_unit = nr_units / possible_paths
         return prob_unit
 
-    def change_probability_trans_matrix(self, x_cell_pos, y_cell_pos, prob_units, time_spotted, current_time,
-                                        change_trans_matrix):
+    def fwd(self, x_cell_pos, y_cell_pos, prob_units, time_spotted, current_time,
+            change_trans_matrix):
         """
         Change probability in the given cell and it neighbours depending on the time since it was spotted.
         :param x_cell_pos: The x-position of the map cell
@@ -140,8 +141,8 @@ class HiddenMarkovModel:
                         new_time = time_spotted + (math.sqrt(self.cell_size) / average_speed)
                         prob_units = self.calculate_probability_cell(x, y, prob_units)
                         if prob_units > 0.1:
-                            self.change_probability_trans_matrix(x, y, prob_units, new_time, current_time,
-                                                                 change_trans_matrix)
+                            self.fwd(x, y, prob_units, new_time, current_time,
+                                     change_trans_matrix)
 
     def add_probability_trans_matrix(self, x, y, prob_units, n_units_frame):
         if prob_units > 0.1:
