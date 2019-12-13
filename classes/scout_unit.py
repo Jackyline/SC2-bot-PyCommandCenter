@@ -53,7 +53,7 @@ class ScoutUnit:
         if self.goal is None:
             return True
         else:
-            if self.unit.position.distance(self.goal) < 5:
+            if self.unit.position.distance(self.goal) < 8:
                 self.health = self.unit.hit_points
                 self.manager.visited.append(self.goal)
                 self.manager.frame_stamps.append(current_frame)
