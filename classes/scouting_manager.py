@@ -39,6 +39,8 @@ class ScoutingManager:
                               UnitType(UNIT_TYPEID.NEUTRAL_COLLAPSIBLETERRANTOWERRAMPRIGHT, bot),
                               UnitType(UNIT_TYPEID.NEUTRAL_DEBRISRAMPLEFT, bot),
                               UnitType(UNIT_TYPEID.NEUTRAL_DEBRISRAMPRIGHT, bot),
+                              UnitType(UNIT_TYPEID.NEUTRAL_MINERALFIELD, bot),
+                              UnitType(UNIT_TYPEID.NEUTRAL_MINERALFIELD750, bot),
                               UnitType(UNIT_TYPEID.NEUTRAL_DESTRUCTIBLEDEBRIS6X6, bot),
                               UnitType(UNIT_TYPEID.NEUTRAL_DESTRUCTIBLEDEBRISRAMPDIAGONALHUGEBLUR, bot),
                               UnitType(UNIT_TYPEID.NEUTRAL_DESTRUCTIBLEDEBRISRAMPDIAGONALHUGEULBR, bot),
@@ -64,7 +66,8 @@ class ScoutingManager:
                               UnitType(UNIT_TYPEID.NEUTRAL_UNBUILDABLEPLATESDESTRUCTIBLE, bot),
                               UnitType(UNIT_TYPEID.NEUTRAL_UTILITYBOT, bot),
                               UnitType(UNIT_TYPEID.NEUTRAL_VESPENEGEYSER, bot),
-                              UnitType(UNIT_TYPEID.NEUTRAL_XELNAGATOWER, bot)
+                              UnitType(UNIT_TYPEID.NEUTRAL_XELNAGATOWER, bot),
+                              UnitType(UNIT_TYPEID.TERRAN_ARMORY, bot)
                               ]
 
     def on_step(self):
