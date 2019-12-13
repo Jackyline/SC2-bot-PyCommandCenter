@@ -45,6 +45,8 @@ class Strategy():
         if not len(self.idabot.unit_manager.military_units) > military_required_to_attack:
             new_strategy = StrategyName.DEFENSIVE
 
+        if self.idabot.current_supply > 170:
+            new_strategy = StrategyName.OFFENSIVE
 
         # Update our strategy to OFFENSIVE, if network predicts so and we have enough military units.
         if new_strategy == StrategyName.OFFENSIVE:

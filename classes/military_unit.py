@@ -113,11 +113,14 @@ class MilitaryUnit:
     def not_trained_on_step(self):
         if self.get_unit_type_id() == UNIT_TYPEID.TERRAN_SIEGETANKSIEGED:
             self.get_unit().ability(ABILITY_ID.MORPH_UNSIEGE)
+        elif self.get_unit_type_id() == UNIT_TYPEID.TERRAN_LIBERATORAG:
+            self.get_unit().ability(ABILITY_ID.MORPH_LIBERATORAAMODE)
 
     def in_combat_on_step_not_trained(self, e_in_sight, enemies_that_can_attack, allies_in_sight, enemies_in_range):
         if self.get_unit_type_id() == UNIT_TYPEID.TERRAN_SIEGETANK:
             self.get_unit().ability(ABILITY_ID.MORPH_SIEGEMODE)
-
+        elif self.get_unit_type_id() == UNIT_TYPEID.TERRAN_LIBERATOR:
+            self.get_unit().ability(ABILITY_ID.MORPH_LIBERATORAGMODE)
     def in_combat_on_step(self, e_in_sight, enemies_that_can_attack, allies_in_sight, enemies_in_range):
         """
         The on step function for when a unit is in combat,

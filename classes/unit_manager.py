@@ -139,6 +139,8 @@ class UnitManager:
         self.marine_q_table.on_step()
         self.cyclone_q_table.on_step()
         self.helion_q_table.on_step()
+        for worker in self.worker_units:
+            worker.on_step()
 
     def update_military_units(self):
         unit: MilitaryUnit
@@ -215,6 +217,17 @@ class UnitManager:
                         if unit.get_unit_type_id() == UNIT_TYPEID.TERRAN_SIEGETANK and\
                                 latest_unit.id == unit.get_id():
                             unit.update_unit_type(latest_unit)
+
+                elif latest_unit.unit_type.unit_typeid == UNIT_TYPEID.TERRAN_LIBERATOR:
+                    for unit in self.military_units:
+                        if unit.get_unit_type_id() == UNIT_TYPEID.TERRAN_LIBERATORAG and latest_unit.id == unit.get_id():
+                            unit.update_unit_type(latest_unit)
+
+                elif latest_unit.unit_type.unit_typeid == UNIT_TYPEID.TERRAN_LIBERATORAG:
+                    for unit in self.military_units:
+                        if unit.get_unit_type_id() == UNIT_TYPEID.TERRAN_LIBERATOR and latest_unit.id == unit.get_id():
+                            unit.update_unit_type(latest_unit)
+
 
     def update_dead_units(self, unit_list):
         '''
@@ -320,7 +333,7 @@ class UnitManager:
 
         Om det unit är byggnad och task train_unit finns det ingen garanti för att byggnaden kan producera uniten, får kolla med can_produce
         """
-        print("Commanding unit: ", unit.get_id(), "to do task", task.task_type)
+        #print("Commanding unit: ", unit.get_id(), "to do task", task.task_type)
 
 
         if task.task_type is TaskType.SCOUT:
@@ -341,6 +354,7 @@ class UnitManager:
         elif task.task_type is TaskType.BUILD:
             if task.construct_building.is_refinery:
                 self.idabot.resource_manager.use(task.construct_building)
+                unit.building_start_frame = self.idabot.current_frame + 500
                 unit.get_unit().build_target(task.construct_building, task.geyser)
             else:
                 self.idabot.resource_manager.use(task.construct_building)

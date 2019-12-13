@@ -37,6 +37,8 @@ class BuildingManager:
                 elif not self.ida_bot.unit_manager.combat_shield:
                     building.ability(ABILITY_ID.RESEARCH_COMBATSHIELD)
                     self.ida_bot.unit_manager.combat_shield = True
+            elif building.unit_type.unit_typeid == UNIT_TYPEID.TERRAN_SUPPLYDEPOT and not building.is_being_constructed:
+                building.ability(ABILITY_ID.MORPH_SUPPLYDEPOT_LOWER)
 
         # Remove buildings that no longer exists i.e. are destroyed
         if len(buildings) != len(self.buildings) + len(self.under_construction):

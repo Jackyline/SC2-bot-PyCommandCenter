@@ -209,7 +209,7 @@ class ScoutingManager:
             return points[0]
 
     def get_nearby_enemy(self, point):
-        best_goal = Point2D(self.enemy_base.position)
+        best_goal = Point2D(self.enemy_base.position.x, self.enemy_base.position.y)
         low_dist = best_goal.distance(point)
         enemy_units = list(set(self.bot.get_all_units()) - set(self.bot.get_my_units()))
         for unit in enemy_units:

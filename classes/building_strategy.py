@@ -52,7 +52,7 @@ class BuildingStrategy:
                                 UnitType(UNIT_TYPEID.TERRAN_REFINERY, self.idabot),
                                 UnitType(UNIT_TYPEID.TERRAN_COMMANDCENTER, self.idabot)]
 
-
+        self.max_command_centers = 3
 
     def update_obs(self, observations):
         pass
@@ -85,6 +85,8 @@ class BuildingStrategy:
         gas = self.resource_manager.get_gas()
         minerals = self.resource_manager.get_minerals()
         # If we have enough resources, produce some important tasks that our network won't predict too often
+
+        self.max_command_centers = (len(self.idabot.unit_manager.worker_units) // 16) + 2
 
         required_minerals = 500 if len(self.idabot.building_manager.get_buildings_of_type(self.name_to_type("CommandCenter")) +
                                        self.idabot.building_manager.get_under_construction_of_type(self.name_to_type("CommandCenter"))) < 3 else 200
@@ -121,8 +123,6 @@ class BuildingStrategy:
                                 self.name_to_type("Barracks"),
                                 self.name_to_type("Factory"),
                                 self.name_to_type("Starport"),
-                                self.name_to_type("Medivac"),
-                                self.name_to_type("Medivac"),
                                 self.name_to_type("Battlecruiser"),
                                 self.name_to_type("Battlecruiser"),
                                 self.name_to_type("SiegeTank"),
@@ -136,8 +136,9 @@ class BuildingStrategy:
                                 self.name_to_type("Cyclone"),
                                 self.name_to_type("Banshee"),
                                 self.name_to_type("Banshee"),
-                                self.name_to_type("Liberator"),
-                                self.name_to_type("Liberator"),
+                                self.name_to_type("Banshee"),
+                                self.name_to_type("Banshee"),
+                                self.name_to_type("Banshee"),
                                 self.name_to_type("Liberator"),
                                 self.name_to_type("Marauder"),
                                 self.name_to_type("Marauder"),
@@ -157,14 +158,27 @@ class BuildingStrategy:
                                 ]
 
             if wanted_units:
+
+                if minerals > 600 and gas < 200:
+                    self.add_task(self.name_to_type("Refinery"))
+
                 if self.idabot.max_supply - self.idabot.current_supply < 5:
                     self.add_task(self.name_to_type("SupplyDepot"))
                 if minerals > 500:
-                    self.add_task(self.name_to_type("Cyclone"))
-                    self.add_task(self.name_to_type("SiegeTank"))
-                    self.add_task(self.name_to_type("Marauder"))
-                    self.add_task(self.name_to_type("Banshee"))
-
+                    if gas > 200:
+                        self.add_task(self.name_to_type("Cyclone"))
+                        self.add_task(self.name_to_type("SiegeTank"))
+                        self.add_task(self.name_to_type("Marauder"))
+                        self.add_task(self.name_to_type("Marauder"))
+                        self.add_task(self.name_to_type("Marauder"))
+                        self.add_task(self.name_to_type("Banshee"))
+                    else:
+                        self.add_task(self.name_to_type("Marine"))
+                        self.add_task(self.name_to_type("Marine"))
+                        self.add_task(self.name_to_type("Marine"))
+                        self.add_task(self.name_to_type("Hellion"))
+                        self.add_task(self.name_to_type("Hellion"))
+                        self.add_task(self.name_to_type("Hellion"))
                 index = random.randint(0, len(wanted_units) - 1)
 
                 task = wanted_units[index]
@@ -210,9 +224,11 @@ class BuildingStrategy:
                 len(self.idabot.building_manager.get_total_buildings_of_type(action_type)) >= 3:
             action_type = self.name_to_type("Marauder")
             action = "Marauder"
-
+        if action_type.unit_typeid == UNIT_TYPEID.TERRAN_ENGINEERINGBAY:
+            action_type = self.name_to_type("Marauder")
+            action = "Marauder"
         if action == "CommandCenter" and len(self.idabot.building_manager.get_buildings_of_type(self.name_to_type("CommandCenter")) +
-                self.idabot.building_manager.get_under_construction_of_type(self.name_to_type("CommandCenter"))) >= 3:
+                self.idabot.building_manager.get_under_construction_of_type(self.name_to_type("CommandCenter"))) >= self.max_command_centers:
             action_type = self.name_to_type("Marauder")
             action = "Marauder"
         if len(self.idabot.building_manager.get_buildings_of_type(self.name_to_type("BarracksTechLab"))) > 0 and action == "Marine":
@@ -228,8 +244,9 @@ class BuildingStrategy:
 
     def add_task(self, action_type):
         built_prerequisites = self.get_built_prerequisites(action_type)
-        if built_prerequisites is not None:
+        if not built_prerequisites is None and not built_prerequisites.unit_typeid == UNIT_TYPEID.INVALID:
             self.add_task(built_prerequisites)
+
         if self.resource_manager.can_afford(action_type):
             location_near = self.idabot.base_location_manager.get_player_starting_base_location(
                 PLAYER_SELF).depot_position
@@ -253,12 +270,15 @@ class BuildingStrategy:
                         if self.get_refinery(geyser) is None:
                             task = Task(TaskType.BUILD, pos=geyser.position, geyser=geyser,
                                         construct_building=action_type)
-                            #print("Adding Task: ", task.task_type, "Action_type: ", action_type)
+                            print("Adding Task: ", task.task_type, "Action_type: ", action_type)
                             self.assignment_manager.add_task(task)
                             return
                 return
             elif action_type.is_building:
-                if len(self.idabot.building_manager.get_buildings_of_type(self.name_to_type("CommandCenter"))) >= 3 \
+                if action_type.unit_typeid == UNIT_TYPEID.TERRAN_ENGINEERINGBAY:
+                    action_type = self.name_to_type("Marauder")
+                    task = Task(TaskType.TRAIN, produce_unit=action_type)
+                elif len(self.idabot.building_manager.get_buildings_of_type(self.name_to_type("CommandCenter"))) >= self.max_command_centers \
                         and action_type.unit_typeid == UNIT_TYPEID.TERRAN_COMMANDCENTER:
                     action_type = self.name_to_type("Marauder")
                     task = Task(TaskType.TRAIN, produce_unit=action_type)
@@ -266,7 +286,7 @@ class BuildingStrategy:
                     task = Task(TaskType.BUILD, pos=build_location, build_position=build_pos,
                                 construct_building=action_type)
 
-            #print("Adding Task: ", task.task_type, "Action_type: ", action_type)
+            print("Adding Task: ", task.task_type, "Action_type: ", action_type)
             self.assignment_manager.add_task(task)
 
     def get_random_techlab(self):
@@ -284,7 +304,7 @@ class BuildingStrategy:
             return None
 
         requirement_building_type = UnitType(action_type.required_structure, self.idabot)
-        buildings = self.idabot.building_manager.buildings
+        buildings = self.idabot.building_manager.buildings + self.idabot.building_manager.under_construction
         our_building_types = [building.get_unit_type() for building in buildings]
 
         if action_type.unit_typeid == UNIT_TYPEID.TERRAN_TECHLAB:

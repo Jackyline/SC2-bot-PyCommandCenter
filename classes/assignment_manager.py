@@ -188,7 +188,7 @@ class AssignmentManager:
     def generate_gas_tasks(self):
         if self.worker_assignments.get_available_units(): # Only generate if there are available workers
             for refinary in self.building_manager.get_buildings_of_type(UnitType(UNIT_TYPEID.TERRAN_REFINERY, self.ida_bot)):
-                for i in range(2):
+                for i in range(3):
                     self.last_tick_mining_tasks += 1
                     self.worker_assignments.add_task(Task(task_type=TaskType.GAS, pos=refinary.get_unit().position))
 
@@ -228,7 +228,7 @@ class WorkerAssignments:
         if not worker.task is None and worker.task == task: # valuable to do the same task as before
             profit += 1000
         if task.task_type == TaskType.SCOUT:
-            profit += 10000
+            profit += 5000
         elif task.task_type == TaskType.BUILD:
             profit += 10000
         elif task.task_type is TaskType.GAS:
