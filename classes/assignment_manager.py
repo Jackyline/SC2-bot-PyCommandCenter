@@ -100,11 +100,19 @@ class AssignmentManager:
                     # base is built and that attack strategy always has 4 attack groups and one defend group that moves
                     # Assign tasks such that the group that is already defending keeps the defending task and the attack
                     # groups gets a attack task
+                    new_assignments = {}
                     if checked_new_tasks.count(True) == 1: # Attack strategy
-                        new_assignments = {}
                         new_assignments[assignment_type.tasks[0]] = list(assignment_type.assignments.values())[0]
                         assignment_type.assignments = new_assignments
+                    else:
+                        # Check if any of the new defend tasks differ from old ones
+                        for old_task in assignment_type.assignments.keys():
+                            if old_task not in assignment_type.tasks:
+                                # At least one defend task differs, assign new tasks to existing groups
+                                for group in assignment_type.assignments.values():
+                                    new_assignments[assignment_type.tasks.pop(0)] = group
 
+                    assignment_type.assignments = new_assignments
 
                 else:
                     assignment_type.assignments = self.unit_manager.create_coalition(assignment_type.tasks)
