@@ -281,17 +281,21 @@ class UnitManager:
         :param tasks: The tasks that needs coalitions
         :return: None, update internal state for coalitions (self.cs)
         '''
-        info = {}
-        info["militaryUnits"] = {
-            military_type.get_unit_type(): self.get_units_of_type(military_type.get_unit_type())
-            for military_type in self.military_units
-            if "militaryUnits" not in info
-               or military_type.get_unit_type() not in info["militaryUnits"]
-        }
-        # Add tasks as "fake" units of that are of type type(Task(...))
-        info["militaryUnits"][type(tasks[0])] = tasks
+        attack_air_units = []
+        attack_ground_units = []
+        for unit in self.military_units:
+            if self.can_attack_air(unit.get_unit_type()):
+                attack_air_units.append(unit)
+            else:
+                attack_ground_units.append(unit)
 
-        assignments = self.csg.create_coalition(info["militaryUnits"])
+        # Ignore unit types and only have two type, can attack air and can't attack air units
+        input_dict = {"ground": attack_ground_units, "air": attack_air_units}
+
+        # Add tasks as "fake" units of that are of type type(Task(...))
+        input_dict[type(tasks[0])] = tasks
+
+        assignments = self.csg.create_coalition(input_dict)
         return assignments
 
 
