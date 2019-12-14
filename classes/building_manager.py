@@ -3,13 +3,27 @@ from classes.building_unit import BuildingUnit
 from collections import defaultdict
 from classes.task_type import TaskType
 from classes.task import Task
-
+import random
 class BuildingManager:
     def __init__(self, ida_bot : IDABot):
         self.ida_bot = ida_bot
         self.buildings = []                         #:[BuildingUnit]
         self.under_construction = []                      #:[BuildingUnit]
-
+        self.engineering_abilities = [ABILITY_ID.RESEARCH_TERRANINFANTRYWEAPONSLEVEL1,
+                ABILITY_ID.RESEARCH_TERRANINFANTRYARMORLEVEL1,
+                ABILITY_ID.RESEARCH_TERRANINFANTRYWEAPONSLEVEL2,
+                ABILITY_ID.RESEARCH_TERRANINFANTRYARMORLEVEL2,
+                ABILITY_ID.RESEARCH_TERRANINFANTRYWEAPONSLEVEL3,
+                ABILITY_ID.RESEARCH_TERRANINFANTRYARMORLEVEL3]
+        self.armory_abilities = [ABILITY_ID.RESEARCH_TERRANVEHICLEWEAPONSLEVEL1,
+                                 ABILITY_ID.RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL1,
+                                 ABILITY_ID.RESEARCH_TERRANSHIPWEAPONSLEVEL1,
+                                 ABILITY_ID.RESEARCH_TERRANVEHICLEWEAPONSLEVEL2,
+                                 ABILITY_ID.RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL2,
+                                 ABILITY_ID.RESEARCH_TERRANSHIPWEAPONSLEVEL2,
+                                 ABILITY_ID.RESEARCH_TERRANVEHICLEWEAPONSLEVEL3,
+                                 ABILITY_ID.RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL3,
+                                 ABILITY_ID.RESEARCH_TERRANSHIPWEAPONSLEVEL3]
 
     def on_step(self, buildings : [Unit]):
         """ Update internal lists 'buildings' and 'under_construction'. """
@@ -45,32 +59,25 @@ class BuildingManager:
             if building.unit_type.unit_typeid == UNIT_TYPEID.TERRAN_BARRACKSTECHLAB and not building.is_being_constructed and self.ida_bot.current_frame > 5000:
                     building.ability(ABILITY_ID.RESEARCH_CONCUSSIVESHELLS)
                     building.ability(ABILITY_ID.RESEARCH_COMBATSHIELD)
-            if building.unit_type.unit_typeid == UNIT_TYPEID.TERRAN_ENGINEERINGBAY and \
-                not building.is_being_constructed and \
-                not building.is_training and \
-                self.ida_bot.current_frame > 10000 and \
-                    self.ida_bot.minerals > 300 and self.ida_bot.gas > 200:
-                building.ability(ABILITY_ID.RESEARCH_TERRANINFANTRYWEAPONSLEVEL1)
-                building.ability(ABILITY_ID.RESEARCH_TERRANINFANTRYARMORLEVEL1)
-                building.ability(ABILITY_ID.RESEARCH_TERRANINFANTRYWEAPONSLEVEL2)
-                building.ability(ABILITY_ID.RESEARCH_TERRANINFANTRYARMORLEVEL2)
-                building.ability(ABILITY_ID.RESEARCH_TERRANINFANTRYWEAPONSLEVEL3)
-                building.ability(ABILITY_ID.RESEARCH_TERRANINFANTRYARMORLEVEL3)
-            if building.unit_type.unit_typeid == UNIT_TYPEID.TERRAN_ARMORY and \
+            elif building.unit_type.unit_typeid == UNIT_TYPEID.TERRAN_FACTORYTECHLAB and not building.is_being_constructed and self.ida_bot.current_frame > 8000:
+                    building.ability(ABILITY_ID.RESEARCH_RAPIDFIRELAUNCHERS)
+            elif building.unit_type.unit_typeid == UNIT_TYPEID.TERRAN_STARPORTTECHLAB and not building.is_being_constructed and self.ida_bot.current_frame > 10000:
+                    building.ability(ABILITY_ID.RESEARCH_BANSHEEHYPERFLIGHTROTORS)
+
+            elif building.unit_type.unit_typeid == UNIT_TYPEID.TERRAN_ENGINEERINGBAY and \
                     not building.is_being_constructed and \
                     not building.is_training and \
                     self.ida_bot.current_frame > 10000 and \
                     self.ida_bot.minerals > 300 and self.ida_bot.gas > 200:
-                building.ability(ABILITY_ID.RESEARCH_TERRANVEHICLEWEAPONSLEVEL1)
-                building.ability(ABILITY_ID.RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL1)
-                building.ability(ABILITY_ID.RESEARCH_TERRANSHIPWEAPONSLEVEL1)
-                building.ability(ABILITY_ID.RESEARCH_TERRANVEHICLEWEAPONSLEVEL2)
-                building.ability(ABILITY_ID.RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL2)
-                building.ability(ABILITY_ID.RESEARCH_TERRANSHIPWEAPONSLEVEL2)
-                building.ability(ABILITY_ID.RESEARCH_TERRANVEHICLEWEAPONSLEVEL3)
-                building.ability(ABILITY_ID.RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL3)
-                building.ability(ABILITY_ID.RESEARCH_TERRANSHIPWEAPONSLEVEL3)
 
+                building.ability(random.choice(self.engineering_abilities))
+
+            elif building.unit_type.unit_typeid == UNIT_TYPEID.TERRAN_ARMORY and \
+                    not building.is_being_constructed and \
+                    not building.is_training and \
+                    self.ida_bot.current_frame > 10000 and \
+                    self.ida_bot.minerals > 300 and self.ida_bot.gas > 200:
+                building.ability(random.choice(self.armory_abilities))
         # Remove buildings that no longer exists i.e. are destroyed
         if len(buildings) != len(self.buildings) + len(self.under_construction):
             self.buildings = [b for b in self.buildings if b.get_unit() in buildings]

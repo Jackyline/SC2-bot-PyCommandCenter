@@ -221,8 +221,8 @@ def main():
     bot2 = MyAgent()
 
     participant_1 = create_participants(Race.Terran, bot1)
-    participant_2 = create_participants(Race.Terran, bot2)
-    #participant_2 = create_computer(Race.Terran, Difficulty.Medium)
+    #participant_2 = create_participants(Race.Terran, bot2)
+    participant_2 = create_computer(Race.Terran, Difficulty.Hard)
 
     coordinator.set_real_time(False)
     coordinator.set_participants([participant_1, participant_2])

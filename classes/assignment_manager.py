@@ -353,7 +353,8 @@ class BuildingAssignments:
 
 
         elif task.task_type is TaskType.ADD_ON:
-            if building.get_unit() in self.building_manager.get_my_producers(task.construct_building):
+            if building.get_unit() in self.building_manager.get_my_producers(task.construct_building) and \
+                    building.has_techlab == False:
                 profit += 10000
         if building.get_unit().is_training:
             profit -= 10000

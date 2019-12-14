@@ -103,7 +103,7 @@ class BuildingStrategy:
         # If we have enough resources, produce some important tasks that our network won't predict too often
 
         if len(self.idabot.building_manager.get_total_buildings_of_type(self.name_to_type("CommandCenter"))) > 2:
-            self.max_command_centers = (len(self.idabot.unit_manager.worker_units) // 16) + 1
+            self.max_command_centers = (len(self.idabot.unit_manager.worker_units) // 16) + 2
         else:
             self.max_command_centers = (len(self.idabot.unit_manager.worker_units) // 16) + 2
         required_minerals = 500 if len(self.idabot.building_manager.get_buildings_of_type(self.name_to_type("CommandCenter")) +
