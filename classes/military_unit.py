@@ -276,8 +276,8 @@ class MilitaryUnit:
             position = position * 1.1
         pos_diffx = (position.x - my_pos.x)
         pos_diffy = (position.y - my_pos.y)
-        position.x += pos_diffx * 5
-        position.y += pos_diffy * 5
+        position.x += pos_diffx * 2
+        position.y += pos_diffy * 2
         return position
 
     def move_to(self, location):

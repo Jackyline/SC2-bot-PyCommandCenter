@@ -105,7 +105,7 @@ class BuildingStrategy:
         if len(self.idabot.building_manager.get_total_buildings_of_type(self.name_to_type("CommandCenter"))) > 2:
             self.max_command_centers = (len(self.idabot.unit_manager.worker_units) // 16) + 2
         else:
-            self.max_command_centers = (len(self.idabot.unit_manager.worker_units) // 16) + 2
+            self.max_command_centers = (len(self.idabot.unit_manager.worker_units) // 16) + 1
         required_minerals = 500 if len(self.idabot.building_manager.get_buildings_of_type(self.name_to_type("CommandCenter")) +
                                        self.idabot.building_manager.get_under_construction_of_type(self.name_to_type("CommandCenter"))) < 3 else 200
         if minerals < 400:
@@ -188,7 +188,7 @@ class BuildingStrategy:
                     self.add_task(self.name_to_type("Armory"))
                     self.armory = True
 
-                if minerals > 600 and gas < 200:
+                if minerals > 600 and gas < 300:
                     self.add_task(self.name_to_type("Refinery"))
 
                 if self.idabot.max_supply - self.idabot.current_supply < 5:

@@ -131,9 +131,11 @@ class MyAgent(IDABot):
         self.last_handled_strategy = curr_seconds
 
         # Get all of our command centers
-        command_centers = self.building_manager.get_buildings_of_type(UnitType(UNIT_TYPEID.TERRAN_COMMANDCENTER, self)) + \
-                          self.building_manager.get_under_construction_of_type(UnitType(UNIT_TYPEID.TERRAN_COMMANDCENTER, self))
-
+        base_location_manager : BaseLocationManager = self.base_location_manager
+        baselocations = list(base_location_manager.get_occupied_base_locations(PLAYER_SELF))
+        #command_centers = self.building_manager.get_buildings_of_type(UnitType(UNIT_TYPEID.TERRAN_COMMANDCENTER, self)) + \
+        #                  self.building_manager.get_under_construction_of_type(UnitType(UNIT_TYPEID.TERRAN_COMMANDCENTER, self))
+        #baselocations = list(reversed(list(baselocations)))
         if strategy == StrategyName.OFFENSIVE:
             offensive_groups = 1
             defensive_groups = 0
@@ -147,7 +149,12 @@ class MyAgent(IDABot):
                 attack_pos = closest_enemy.position
         else:  # strategy == StrategyName.DEFENSIVE
             offensive_groups = 0
-            defensive_groups = len(command_centers)
+            if len(baselocations) <= 2:
+                defensive_groups = 1
+            elif len(baselocations) <= 3:
+                defensive_groups = 2
+            else:
+                defensive_groups = 3
 
         # Generate all offensive tasks
         offensive_tasks = [Task(task_type=TaskType.ATTACK,
@@ -156,9 +163,9 @@ class MyAgent(IDABot):
 
         # Generate all defensive tasks
         defensive_tasks = [Task(task_type=TaskType.DEFEND,
-                                pos=self.get_choke_point(command_centers[i % len(command_centers)].get_pos()))
+                                pos=self.get_choke_point(baselocations[i].depot_position))
                            # Loop through all bases we have and
-                           for i in range(defensive_groups) if command_centers]
+                           for i in range(defensive_groups) if baselocations]
 
         # Add all generated tasks to assignment_manager
         for task in [*offensive_tasks, *defensive_tasks]:
