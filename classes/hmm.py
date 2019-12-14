@@ -87,7 +87,7 @@ class HiddenMarkovModel:
                                 del log[n_units_frame[0]]
                             del map_cell[k]
                             self.remove_probability_trans_matrix(i, j, n_units_frame[1], n_units_frame)
-                        elif prob_units > 0.1:
+                        elif prob_units > 0.5:
                             self.fwd(i, j, prob_units, n_units_frame[0], current_frame,
                                      self.add_probability_trans_matrix)
                 map_cell.sort(key=self.get_time)
@@ -140,12 +140,12 @@ class HiddenMarkovModel:
                     if steps >= 1:
                         new_time = time_spotted + (math.sqrt(self.cell_size) / average_speed)
                         prob_units = self.calculate_probability_cell(x, y, prob_units)
-                        if prob_units > 0.1:
+                        if prob_units > 0.5:
                             self.fwd(x, y, prob_units, new_time, current_time,
                                      change_trans_matrix)
 
     def add_probability_trans_matrix(self, x, y, prob_units, n_units_frame):
-        if prob_units > 0.1:
+        if prob_units > 0.5:
             if n_units_frame not in self.emission_matrix[x][y]:
                 self.emission_matrix[x][y].append(n_units_frame)
                 self.trans_matrix[y][x] = self.trans_matrix[y][x] + prob_units
