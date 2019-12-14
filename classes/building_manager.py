@@ -35,12 +35,9 @@ class BuildingManager:
                 else:
                     self.buildings.append(building_unit)
             if building.unit_type.unit_typeid == UNIT_TYPEID.TERRAN_BARRACKSTECHLAB and not building.is_being_constructed:
-                if not self.ida_bot.unit_manager.concussive_shells:
                     building.ability(ABILITY_ID.RESEARCH_CONCUSSIVESHELLS)
-                    self.ida_bot.unit_manager.concussive_shells = True
-                elif not self.ida_bot.unit_manager.combat_shield:
                     building.ability(ABILITY_ID.RESEARCH_COMBATSHIELD)
-                    self.ida_bot.unit_manager.combat_shield = True
+
             #elif building.unit_type.unit_typeid == UNIT_TYPEID.TERRAN_SUPPLYDEPOT and not building.is_being_constructed:
             #    building.ability(ABILITY_ID.MORPH_SUPPLYDEPOT_LOWER)
 
@@ -120,6 +117,7 @@ class BuildingManager:
             if task.produce_unit.unit_typeid == UNIT_TYPEID.TERRAN_SCV and len(self.ida_bot.unit_manager.worker_units) > 50:
                 return
             if building.get_unit() in self.get_my_producers(task.produce_unit):
+                self.ida_bot.resource_manager.use(task.produce_unit)
                 building.train(task.produce_unit)
                 building.set_task(task)
 

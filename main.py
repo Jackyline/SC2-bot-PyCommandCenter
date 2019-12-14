@@ -39,7 +39,7 @@ class MyAgent(IDABot):
         # Last time that strategy was handled by generating tasks etc
         self.last_handled_strategy = 0
         self.first_tick = True
-
+        self.block = False
         self.base_right = None
         self.choke_points_right = {(24.25, 28.5): Point2D(30, 60), (56.25, 130.5): Point2D(53, 118),
                                    (58.75, 99.0): Point2D(47, 92), (129.25, 54.5): Point2D(107, 64),
@@ -48,7 +48,7 @@ class MyAgent(IDABot):
                                    (26.5, 137.5): Point2D(30, 133), (22.75, 113.5): Point2D(31, 118),
                                    (59.5, 24.5): Point2D(51, 36), (95.75, 37.5): Point2D(88, 49),
                                    (24.25, 83.5): Point2D(44, 95), (127.75, 139.5): Point2D(115, 135),
-                                   (127.75, 84.5): Point2D(123, 98), (127.75, 28.5): Point2D(110, 55)}
+                                   (127.75, 84.5): Point2D(123, 98), (127.75, 28.5): Point2D(116, 43)}
 
         self.choke_points_left = {(58.75, 99.0): Point2D(58, 80), (24.25, 139.5): Point2D(33, 121),
                                   (127.75, 139.5): Point2D(124, 106), (92.5, 143.5): Point2D(100, 128),
@@ -59,6 +59,7 @@ class MyAgent(IDABot):
                                   (95.75, 37.5): Point2D(98, 49), (63.75, 51.0): Point2D(79, 53),
                                   (129.25, 54.5): Point2D(121, 50), (127.75, 28.5): Point2D(117, 37)}
 
+        self.messages = ["We estimate the probability of winning to be over 95%", "Suck a dick", "Trash", "Eslöööööööv", "Heil Hitler", "Wir kommt für dich mein führer"]
     def on_game_start(self):
         self.our_building_placer = BuildingPlacer(self.start_location, self)
         IDABot.on_game_start(self)
@@ -77,7 +78,8 @@ class MyAgent(IDABot):
         self.unit_manager.on_step(self.get_all_units())
         self.building_manager.on_step(self.get_my_units())
         self.building_strategy.action()
-
+        if self.current_frame % 5000 == 0:
+            self.send_chat(random.choice(self.messages[1:]))
         # then run specific AI parts
         self.scout_manager.on_step()
         self.assignment_manager.on_step()
@@ -135,7 +137,9 @@ class MyAgent(IDABot):
         if strategy == StrategyName.OFFENSIVE:
             offensive_groups = 1
             defensive_groups = 0
-
+            if not self.block:
+                self.block = True
+                self.send_chat(self.messages[0])
             closest_enemy = self.get_closest_enemy_building()
             if not closest_enemy:
                 attack_pos = self.scout_manager.get_enemy_target()
@@ -213,7 +217,7 @@ class MyAgent(IDABot):
 def main():
     coordinator = Coordinator(r"C:\New starcraft\StarCraft II\Versions\Base69232\SC2_x64.exe")
 
-    bot2 = StupidAgent3()
+    #bot1 = StupidAgent3()
     bot1 = MyAgent()
 
     participant_1 = create_participants(Race.Terran, bot1)

@@ -237,11 +237,12 @@ class UnitManager:
         for current_unit in unit_list:
             if not current_unit.is_alive(): # TODO: är denna true när en enhet är i ett refinary?
                 # current_unit.die()
-                if current_unit is ScoutUnit:
+                if type(current_unit) is ScoutUnit:
                     # Mark the goal is visited if the unit died, prevents suicide mission next
                     self.idabot.scout_manager.visited.append(current_unit.get_goal())
                     self.idabot.scout_manager.frame_stamps.append(self.idabot.current_frame)
-                    self.idabot.scout_manager.goals.remove(current_unit.get_goal())
+                    if current_unit.get_goal() in self.idabot.scout_manager.goals:
+                        self.idabot.scout_manager.goals.remove(current_unit.get_goal())
                 if current_unit.get_unit().unit_type.is_combat_unit:
                     print("TOTAL REWARD:", current_unit.total_reward)
                 unit_list.remove(current_unit)

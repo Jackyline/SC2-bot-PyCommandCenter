@@ -100,27 +100,8 @@ class AssignmentManager:
                     # base is built and that attack strategy always has 4 attack groups and one defend group that moves
                     # Assign tasks such that the group that is already defending keeps the defending task and the attack
                     # groups gets a attack task
-                    if checked_new_tasks.count(True) == 4: # Attack strategy
-                        defend_group = None
-                        attack_groups = None
-
-                        # Find the group that is assigned defend to use later
-                        for task in assignment_type.assignments:
-                            if task.task_type is TaskType.DEFEND:
-                                defend_group = assignment_type.assignments[task]
-                                attack_groups = list(assignment_type.assignments.values())
-                                attack_groups.remove(defend_group)
-                                break
-
-                        # Assign the previous defend group to defend and previous attack groups to attack
-                        new_assignments = {}
-                        for i, task in enumerate(assignment_type.tasks):
-                            if task.task_type is TaskType.DEFEND:
-                                new_assignments[task] = defend_group
-                            else:
-                                new_assignments[task] = attack_groups.pop(0)
-
-                        assignment_type.assignments = new_assignments
+                    if checked_new_tasks.count(True) == 1: # Attack strategy
+                        assignment_type.assignments[assignment_type.tasks[0]] = list(assignment_type.assignments.values())[0]
 
                 else:
                     assignment_type.assignments = self.unit_manager.create_coalition(assignment_type.tasks)
@@ -174,16 +155,6 @@ class AssignmentManager:
                     nr_mining_jobs -= 1
                     if nr_mining_jobs == 0:
                         return
-            """
-            for base in self.ida_bot.minerals_in_base:
-                for i in range(2*len(self.ida_bot.minerals_in_base[base])):
-                    self.worker_assignments.add_task(Task(task_type=TaskType.MINING,
-                                                          pos=Point2D(base.depot_position.x, base.depot_position.y),
-                                                          base_location=base))
-                    nr_mining_jobs -= 1
-                    if nr_mining_jobs == 0:
-                        return
-            """
 
     def generate_gas_tasks(self):
         if self.worker_assignments.get_available_units(): # Only generate if there are available workers

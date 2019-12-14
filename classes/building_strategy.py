@@ -52,6 +52,7 @@ class BuildingStrategy:
                                 UnitType(UNIT_TYPEID.TERRAN_SUPPLYDEPOT, self.idabot),
                                 UnitType(UNIT_TYPEID.TERRAN_REFINERY, self.idabot),
                                 UnitType(UNIT_TYPEID.TERRAN_REFINERY, self.idabot),
+                                UnitType(UNIT_TYPEID.TERRAN_SUPPLYDEPOT, self.idabot),
                                 UnitType(UNIT_TYPEID.TERRAN_BARRACKSTECHLAB, self.idabot),
                                 UnitType(UNIT_TYPEID.TERRAN_COMMANDCENTER, self.idabot),
                                 UnitType(UNIT_TYPEID.TERRAN_BARRACKS, self.idabot)]
@@ -70,9 +71,13 @@ class BuildingStrategy:
             if not self.idabot.current_frame % 25 == 0:
                 return
             for unit_type in self.first_buildings:
-                if unit_type.unit_typeid in [UNIT_TYPEID.TERRAN_COMMANDCENTER, UNIT_TYPEID.TERRAN_REFINERY, UNIT_TYPEID.TERRAN_BARRACKS, UNIT_TYPEID.TERRAN_SUPPLYDEPOT] and len([unit for unit in
+                if unit_type.unit_typeid in [UNIT_TYPEID.TERRAN_COMMANDCENTER, UNIT_TYPEID.TERRAN_REFINERY, UNIT_TYPEID.TERRAN_BARRACKS] and len([unit for unit in
                                              [*self.idabot.building_manager.get_under_construction_of_type(unit_type),
                                              *self.idabot.building_manager.get_buildings_of_type(unit_type)]]) >= 2:
+                    self.first_buildings.remove(unit_type)
+                elif unit_type.unit_typeid == UNIT_TYPEID.TERRAN_SUPPLYDEPOT and len([unit for unit in
+                                             [*self.idabot.building_manager.get_under_construction_of_type(unit_type),
+                                             *self.idabot.building_manager.get_buildings_of_type(unit_type)]]) >= 3:
                     self.first_buildings.remove(unit_type)
                 elif not unit_type.unit_typeid in [UNIT_TYPEID.TERRAN_COMMANDCENTER, UNIT_TYPEID.TERRAN_REFINERY, UNIT_TYPEID.TERRAN_BARRACKS, UNIT_TYPEID.TERRAN_SUPPLYDEPOT] and\
                         unit_type.unit_typeid in [unit.get_unit().unit_type.unit_typeid for unit in
@@ -86,9 +91,9 @@ class BuildingStrategy:
             if not UNIT_TYPEID.TERRAN_BARRACKSTECHLAB in [unit_type.unit_typeid for unit_type in self.first_buildings]:
                 self.add_task(UnitType(UNIT_TYPEID.TERRAN_SCV, self.idabot))
                 self.add_task(UnitType(UNIT_TYPEID.TERRAN_MARAUDER, self.idabot))
+                self.add_task(UnitType(UNIT_TYPEID.TERRAN_MARINE, self.idabot))
             else:
                 self.add_task(UnitType(UNIT_TYPEID.TERRAN_SCV, self.idabot))
-                self.add_task(UnitType(UNIT_TYPEID.TERRAN_MARINE, self.idabot))
             return
 
         gas = self.resource_manager.get_gas()
@@ -181,10 +186,12 @@ class BuildingStrategy:
                     if gas > 200:
                         self.add_task(self.name_to_type("SiegeTank"))
                         self.add_task(self.name_to_type("Cyclone"))
+                        self.add_task(self.name_to_type("Cyclone"))
                         self.add_task(self.name_to_type("Marauder"))
                         self.add_task(self.name_to_type("Marauder"))
                         self.add_task(self.name_to_type("Marauder"))
                         self.add_task(self.name_to_type("Banshee"))
+                        self.add_task(self.name_to_type("VikingFighter"))
 
 
                         self.add_task(self.name_to_type("Marine"))
@@ -243,6 +250,9 @@ class BuildingStrategy:
                 len(self.idabot.building_manager.get_total_buildings_of_type(action_type)) >= 3:
             action_type = self.name_to_type("Marauder")
             action = "Marauder"
+        if action_type.unit_typeid == UNIT_TYPEID.TERRAN_MEDIVAC:
+            action_type = self.name_to_type("Banshee")
+            action = "Banshee"
         if action_type.unit_typeid == UNIT_TYPEID.TERRAN_ENGINEERINGBAY:
             action_type = self.name_to_type("Marauder")
             action = "Marauder"
