@@ -113,8 +113,7 @@ class MilitaryUnit:
     def not_trained_on_step(self):
         if self.get_unit_type_id() == UNIT_TYPEID.TERRAN_SIEGETANKSIEGED:
             self.get_unit().ability(ABILITY_ID.MORPH_UNSIEGE)
-        elif self.get_unit_type_id() == UNIT_TYPEID.TERRAN_LIBERATORAG:
-            self.get_unit().ability(ABILITY_ID.MORPH_LIBERATORAAMODE)
+        self.get_unit().ability(ABILITY_ID.MORPH_LIBERATORAAMODE)
 
 
     def in_combat_on_step_not_trained(self, e_in_sight, enemies_that_can_attack, allies_in_sight, enemies_in_range):

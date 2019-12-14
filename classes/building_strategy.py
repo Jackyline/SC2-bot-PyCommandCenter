@@ -183,7 +183,9 @@ class BuildingStrategy:
                 if self.idabot.max_supply - self.idabot.current_supply < 5:
                     self.add_task(self.name_to_type("SupplyDepot"))
                 if minerals > 500:
-                    if gas > 200:
+
+
+                    if gas > 200 and len(self.idabot.building_manager.get_total_buildings_of_type(UnitType(UNIT_TYPEID.TERRAN_FACTORY, self.idabot))) > 0:
                         self.add_task(self.name_to_type("SiegeTank"))
                         self.add_task(self.name_to_type("Cyclone"))
                         self.add_task(self.name_to_type("Cyclone"))
@@ -198,8 +200,6 @@ class BuildingStrategy:
                     else:
                         self.add_task(self.name_to_type("Marine"))
                         self.add_task(self.name_to_type("Marine"))
-                        self.add_task(self.name_to_type("Hellion"))
-                        self.add_task(self.name_to_type("Hellion"))
                         self.add_task(self.name_to_type("Hellion"))
 
                 if minerals > 700:

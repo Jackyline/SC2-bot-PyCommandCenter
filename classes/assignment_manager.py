@@ -101,7 +101,10 @@ class AssignmentManager:
                     # Assign tasks such that the group that is already defending keeps the defending task and the attack
                     # groups gets a attack task
                     if checked_new_tasks.count(True) == 1: # Attack strategy
-                        assignment_type.assignments[assignment_type.tasks[0]] = list(assignment_type.assignments.values())[0]
+                        new_assignments = {}
+                        new_assignments[assignment_type.tasks[0]] = list(assignment_type.assignments.values())[0]
+                        assignment_type.assignments = new_assignments
+
 
                 else:
                     assignment_type.assignments = self.unit_manager.create_coalition(assignment_type.tasks)

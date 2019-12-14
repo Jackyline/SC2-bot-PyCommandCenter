@@ -22,7 +22,7 @@ class ScoutingManager:
         self.hmm = None  # Need map size, which means it has to be created in the on_step.
         self.scouts_requested = 0
         self.enemy_base = None
-
+        self.timer = 0
         self.last_run = 0
 
         self.neutral_units = [UnitType(UNIT_TYPEID.NEUTRAL_BATTLESTATIONMINERALFIELD, bot),
@@ -71,7 +71,7 @@ class ScoutingManager:
                               ]
 
     def on_step(self):
-
+        self.timer += 1
 
         curr_seconds = self.bot.current_frame // 10
 
@@ -94,7 +94,8 @@ class ScoutingManager:
         # If nr of scouts is less than 2, ask for more.
 
         for i in range(1 - len(self.bot.unit_manager.scout_units)):
-            if self.scouts_requested < 1 and len(self.bot.unit_manager.scout_units) < 1:
+            if self.scouts_requested < 1 and len(self.bot.unit_manager.scout_units) < 1 and self.timer > 5000:
+                self.timer = 0
                 self.ask_for_scout()
                 self.scouts_requested += 1
 

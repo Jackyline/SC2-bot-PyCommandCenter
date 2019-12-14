@@ -34,7 +34,7 @@ class BuildingManager:
                     self.under_construction.append(building_unit)
                 else:
                     self.buildings.append(building_unit)
-            if building.unit_type.unit_typeid == UNIT_TYPEID.TERRAN_BARRACKSTECHLAB and not building.is_being_constructed:
+            if building.unit_type.unit_typeid == UNIT_TYPEID.TERRAN_BARRACKSTECHLAB and not building.is_being_constructed and self.ida_bot.current_frame > 5000:
                     building.ability(ABILITY_ID.RESEARCH_CONCUSSIVESHELLS)
                     building.ability(ABILITY_ID.RESEARCH_COMBATSHIELD)
 
