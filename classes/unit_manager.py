@@ -153,7 +153,11 @@ class UnitManager:
                 distance = unit.get_distance_to(enemy)
 
                 if math.floor(distance) <= enemy.unit_type.attack_range:
-                    e_that_can_attack.append(enemy)
+                    if self.can_attack_air(enemy.unit_type) and unit.get_unit().is_flying:
+                        e_that_can_attack.append(enemy)
+                    elif self.can_attack_ground(enemy.unit_type) and not unit.get_unit().is_flying:
+                        e_that_can_attack.append(enemy)
+
                 if math.floor(distance) <= unit.sight_range:
                     e_in_sight.append(enemy)
                 if distance <= unit.attack_range:
@@ -163,7 +167,31 @@ class UnitManager:
                 if distance <= unit.sight_range and ally != unit:
                     a_in_sight.append(ally)
 
+            if not self.can_attack_air(unit.get_unit_type()):
+                e_in_sight = list(filter(lambda x: not x.is_flying, e_in_sight))
+                e_in_range = list(filter(lambda x: not x.is_flying, e_in_range))
+            if not self.can_attack_ground(unit.get_unit_type()):
+                e_in_sight = list(filter(lambda x: x.is_flying, e_in_sight))
+                e_in_range = list(filter(lambda x: x.is_flying, e_in_range))
+
             unit.on_step(e_in_sight, e_that_can_attack, a_in_sight, e_in_range)
+
+    def can_attack_air(self, unit_type : UnitType):
+        can_attack = [UNIT_TYPEID.TERRAN_CYCLONE,
+                      UNIT_TYPEID.TERRAN_MARINE,
+                      UNIT_TYPEID.TERRAN_VIKINGFIGHTER]
+        if unit_type.unit_typeid in can_attack:
+            return True
+        else:
+            return False
+
+    def can_attack_ground(self, unit_type : UnitType):
+        can_not_attack = [UNIT_TYPEID.TERRAN_VIKINGFIGHTER]
+
+        if unit_type.unit_typeid in can_not_attack:
+            return False
+        else:
+            return True
 
     def add_new_units(self, latest_units_list, known_units, unit_type_checker, unit_class):
         for latest_unit in latest_units_list:

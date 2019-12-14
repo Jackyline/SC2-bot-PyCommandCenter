@@ -13,7 +13,9 @@ class StupidAgent3(IDABot):
 
     def on_step(self):
         IDABot.on_step(self)
-
+        for military_unit in  self.get_my_units():
+            pos = military_unit.position
+            self.map_tools.draw_text(position=pos, text= "Positon: ("+str(pos.x)+","+str(pos.y)+")")
 
 class StupidAgent2(IDABot):
     def __init__(self):
@@ -67,6 +69,7 @@ class StupidAgent(IDABot):
     def on_step(self):
         IDABot.on_step(self)
 
+        print("saving info")
         for unit in self.get_my_units():
             if unit in self.buildings or not unit.unit_type.is_building or unit.unit_type.unit_typeid == UNIT_TYPEID.TERRAN_COMMANDCENTER:
                 continue

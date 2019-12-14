@@ -42,24 +42,24 @@ class MyAgent(IDABot):
         self.block = False
         self.base_right = None
         self.choke_points_right = {(24.25, 28.5): Point2D(30, 60), (56.25, 130.5): Point2D(53, 118),
-                                   (58.75, 99.0): Point2D(47, 92), (129.25, 54.5): Point2D(107, 64),
-                                   (63.75, 51.0): Point2D(57, 73), (93.25, 69.0): Point2D(80, 81),
+                                   (58.75, 99.0): Point2D(47, 92), (129.25, 54.5): Point2D(113, 58),
+                                   (63.75, 51.0): Point2D(57, 73), (93.25, 69.0): Point2D(76, 84),
                                    (88.25, 117.0): Point2D(73, 115), (92.5, 143.5): Point2D(77, 134),
                                    (26.5, 137.5): Point2D(30, 133), (22.75, 113.5): Point2D(31, 118),
                                    (59.5, 24.5): Point2D(51, 36), (95.75, 37.5): Point2D(88, 49),
                                    (24.25, 83.5): Point2D(44, 95), (127.75, 139.5): Point2D(115, 135),
-                                   (127.75, 84.5): Point2D(123, 98), (127.75, 28.5): Point2D(116, 43)}
+                                   (127.75, 84.5): Point2D(123, 98), (127.75, 28.5): Point2D(116, 44)}
 
-        self.choke_points_left = {(58.75, 99.0): Point2D(58, 80), (24.25, 139.5): Point2D(33, 121),
+        self.choke_points_left = {(58.75, 99.0): Point2D(58, 80), (24.25, 139.5): Point2D(36, 124),
                                   (127.75, 139.5): Point2D(124, 106), (92.5, 143.5): Point2D(100, 128),
-                                  (56.25, 130.5): Point2D(64, 120), (22.75, 113.5): Point2D(45, 104),
+                                  (56.25, 130.5): Point2D(64, 120), (22.75, 113.5): Point2D(38, 110),
                                   (127.75, 84.5): Point2D(113, 77), (24.25, 28.5): Point2D(37, 32),
                                   (24.25, 83.5): Point2D(29, 72), (88.25, 117.0): Point2D(96, 92),
                                   (93.25, 69.0): Point2D(108, 71), (59.5, 24.5): Point2D(71, 31),
                                   (95.75, 37.5): Point2D(98, 49), (63.75, 51.0): Point2D(79, 53),
                                   (129.25, 54.5): Point2D(121, 50), (127.75, 28.5): Point2D(117, 37)}
 
-        self.messages = ["We estimate the probability of winning to be over 95%", "Suck a dick", "Trash", "Eslöööööööv", "Heil Hitler", "Wir kommt für dich mein führer"]
+        self.messages = ["We estimate the probability of winning to be over 95%", "Eslöööööööv" ]
     def on_game_start(self):
         self.our_building_placer = BuildingPlacer(self.start_location, self)
         IDABot.on_game_start(self)
@@ -217,12 +217,12 @@ class MyAgent(IDABot):
 def main():
     coordinator = Coordinator(r"C:\New starcraft\StarCraft II\Versions\Base69232\SC2_x64.exe")
 
-    #bot1 = StupidAgent3()
     bot1 = MyAgent()
+    bot2 = MyAgent()
 
     participant_1 = create_participants(Race.Terran, bot1)
-    #participant_2 = create_participants(Race.Terran, bot2)
-    participant_2 = create_computer(Race.Terran, Difficulty.Hard)
+    participant_2 = create_participants(Race.Terran, bot2)
+    #participant_2 = create_computer(Race.Terran, Difficulty.Medium)
 
     coordinator.set_real_time(False)
     coordinator.set_participants([participant_1, participant_2])

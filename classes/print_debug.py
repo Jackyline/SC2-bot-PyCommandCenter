@@ -67,6 +67,10 @@ class PrintDebug:
                 task = task.task_type.name
             self.ida_bot.map_tools.draw_text(position=worker.get_unit().position, text=str(task))
 
+        for military_unit in  self.unit_manager.military_units:
+            pos = military_unit.get_unit().position
+            self.ida_bot.map_tools.draw_text(position=pos, text= "Positon: ("+str(pos.x)+","+str(pos.y)+")")
+
         if not self.print_on_unit:
             return
 

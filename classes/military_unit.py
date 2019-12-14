@@ -356,7 +356,6 @@ class MilitaryUnit:
         self.movement_speed = self.get_unit_type().movement_speed
         self.sight_range = self.get_unit_type().sight_range
 
-
     def stop(self):
         self.get_unit().stop()
 

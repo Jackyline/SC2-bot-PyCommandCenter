@@ -22,6 +22,14 @@ class BuildingManager:
                 self.buildings.append(b)
 
         #Add undiscovered buildings to self.buildings and self.under_construction
+
+        for building in self.buildings:
+            if building.get_unit().unit_type.unit_typeid == UNIT_TYPEID.TERRAN_SUPPLYDEPOT and not building.get_unit().is_being_constructed:
+                if building.lowered_until == 0:
+                    building.get_unit().ability(ABILITY_ID.MORPH_SUPPLYDEPOT_LOWER)
+                    building.lowered_until = self.ida_bot.current_frame + 500
+                elif building.lowered_until < self.ida_bot.current_frame:
+                    building.get_unit().ability(ABILITY_ID.MORPH_SUPPLYDEPOT_RAISE)
         for building in buildings:
             if not building in [b.get_unit() for b in self.buildings + self.under_construction]:
                 # Building is not in self.buildings, add it
@@ -37,9 +45,31 @@ class BuildingManager:
             if building.unit_type.unit_typeid == UNIT_TYPEID.TERRAN_BARRACKSTECHLAB and not building.is_being_constructed and self.ida_bot.current_frame > 5000:
                     building.ability(ABILITY_ID.RESEARCH_CONCUSSIVESHELLS)
                     building.ability(ABILITY_ID.RESEARCH_COMBATSHIELD)
-
-            #elif building.unit_type.unit_typeid == UNIT_TYPEID.TERRAN_SUPPLYDEPOT and not building.is_being_constructed:
-            #    building.ability(ABILITY_ID.MORPH_SUPPLYDEPOT_LOWER)
+            if building.unit_type.unit_typeid == UNIT_TYPEID.TERRAN_ENGINEERINGBAY and \
+                not building.is_being_constructed and \
+                not building.is_training and \
+                self.ida_bot.current_frame > 10000 and \
+                    self.ida_bot.minerals > 300 and self.ida_bot.gas > 200:
+                building.ability(ABILITY_ID.RESEARCH_TERRANINFANTRYWEAPONSLEVEL1)
+                building.ability(ABILITY_ID.RESEARCH_TERRANINFANTRYARMORLEVEL1)
+                building.ability(ABILITY_ID.RESEARCH_TERRANINFANTRYWEAPONSLEVEL2)
+                building.ability(ABILITY_ID.RESEARCH_TERRANINFANTRYARMORLEVEL2)
+                building.ability(ABILITY_ID.RESEARCH_TERRANINFANTRYWEAPONSLEVEL3)
+                building.ability(ABILITY_ID.RESEARCH_TERRANINFANTRYARMORLEVEL3)
+            if building.unit_type.unit_typeid == UNIT_TYPEID.TERRAN_ARMORY and \
+                    not building.is_being_constructed and \
+                    not building.is_training and \
+                    self.ida_bot.current_frame > 10000 and \
+                    self.ida_bot.minerals > 300 and self.ida_bot.gas > 200:
+                building.ability(ABILITY_ID.RESEARCH_TERRANVEHICLEWEAPONSLEVEL1)
+                building.ability(ABILITY_ID.RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL1)
+                building.ability(ABILITY_ID.RESEARCH_TERRANSHIPWEAPONSLEVEL1)
+                building.ability(ABILITY_ID.RESEARCH_TERRANVEHICLEWEAPONSLEVEL2)
+                building.ability(ABILITY_ID.RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL2)
+                building.ability(ABILITY_ID.RESEARCH_TERRANSHIPWEAPONSLEVEL2)
+                building.ability(ABILITY_ID.RESEARCH_TERRANVEHICLEWEAPONSLEVEL3)
+                building.ability(ABILITY_ID.RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL3)
+                building.ability(ABILITY_ID.RESEARCH_TERRANSHIPWEAPONSLEVEL3)
 
         # Remove buildings that no longer exists i.e. are destroyed
         if len(buildings) != len(self.buildings) + len(self.under_construction):
@@ -114,7 +144,7 @@ class BuildingManager:
                     building_tmp.set_task(task)
 
         elif task.task_type is TaskType.TRAIN:
-            if task.produce_unit.unit_typeid == UNIT_TYPEID.TERRAN_SCV and len(self.ida_bot.unit_manager.worker_units) > 50:
+            if task.produce_unit.unit_typeid == UNIT_TYPEID.TERRAN_SCV and len(self.ida_bot.unit_manager.worker_units) > 60:
                 return
             if building.get_unit() in self.get_my_producers(task.produce_unit):
                 self.ida_bot.resource_manager.use(task.produce_unit)

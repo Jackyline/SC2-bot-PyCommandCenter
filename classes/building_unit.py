@@ -10,6 +10,7 @@ class BuildingUnit:
         self.unit = unit
         self.task = None
         self.has_techlab = False
+        self.lowered_until = 0
 
     def get_unit(self):
         return self.unit
