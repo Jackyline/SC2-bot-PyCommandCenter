@@ -41,7 +41,7 @@ class Strategy():
         curr_seconds = self.idabot.current_frame // 24
 
         # Requires between 10 and 40 military units to attack
-        military_required_to_attack = min(max((curr_seconds * 5) // 60, 10), 40)
+        military_required_to_attack = min(max((curr_seconds * 2) // 60, 10), 40)
         #military_required_to_attack = 200
         # Should not be allowed to be offensive if not enough military units
         if not len(self.idabot.unit_manager.military_units) > military_required_to_attack:
