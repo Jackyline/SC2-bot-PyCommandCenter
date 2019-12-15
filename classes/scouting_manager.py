@@ -67,7 +67,6 @@ class ScoutingManager:
                               UnitType(UNIT_TYPEID.NEUTRAL_UTILITYBOT, bot),
                               UnitType(UNIT_TYPEID.NEUTRAL_VESPENEGEYSER, bot),
                               UnitType(UNIT_TYPEID.NEUTRAL_XELNAGATOWER, bot),
-                              UnitType(UNIT_TYPEID.TERRAN_ARMORY, bot)
                               ]
 
     def on_step(self):
@@ -94,7 +93,7 @@ class ScoutingManager:
         # If nr of scouts is less than 2, ask for more.
 
         for i in range(1 - len(self.bot.unit_manager.scout_units)):
-            if self.scouts_requested < 1 and len(self.bot.unit_manager.scout_units) < 1 and self.timer > 1000:
+            if self.scouts_requested < 1 and len(self.bot.unit_manager.scout_units) < 1 and self.timer > 5000:
                 self.timer = 0
                 self.ask_for_scout()
                 self.scouts_requested += 1

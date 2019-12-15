@@ -109,8 +109,9 @@ class AssignmentManager:
                         for old_task in assignment_type.assignments.keys():
                             if old_task not in assignment_type.tasks:
                                 # At least one defend task differs, assign new tasks to existing groups
-                                for group in assignment_type.assignments.values():
-                                    new_assignments[assignment_type.tasks.pop(0)] = group
+                                groups = list(assignment_type.assignments.values())
+                                for task in assignment_type.tasks:
+                                    new_assignments[task] = groups.pop(0)
 
                     assignment_type.assignments = new_assignments
 

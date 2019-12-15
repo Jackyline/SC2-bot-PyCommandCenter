@@ -9,7 +9,7 @@ class QTable:
         self.read_table()
 
     def on_step(self):
-        if self.idabot.current_frame % 100 == 0:
+        if self.idabot.current_frame % 1000 == 0:
 
             #print("saved_table")
             #print(self.q_table)

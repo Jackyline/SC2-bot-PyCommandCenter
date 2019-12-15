@@ -151,7 +151,7 @@ class BuildingManager:
                     building_tmp.set_task(task)
 
         elif task.task_type is TaskType.TRAIN:
-            if task.produce_unit.unit_typeid == UNIT_TYPEID.TERRAN_SCV and len(self.ida_bot.unit_manager.worker_units) > 70:
+            if task.produce_unit.unit_typeid == UNIT_TYPEID.TERRAN_SCV and len(self.ida_bot.unit_manager.worker_units) > 80:
                 return
             if building.get_unit() in self.get_my_producers(task.produce_unit):
                 self.ida_bot.resource_manager.use(task.produce_unit)

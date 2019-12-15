@@ -106,18 +106,32 @@ class BuildingStrategy:
             self.max_command_centers = (len(self.idabot.unit_manager.worker_units) // 16) + 2
         else:
             self.max_command_centers = (len(self.idabot.unit_manager.worker_units) // 16) + 1
+        if self.max_command_centers > 6:
+            self.max_command_centers = 6
+
         required_minerals = 500 if len(self.idabot.building_manager.get_buildings_of_type(self.name_to_type("CommandCenter")) +
                                        self.idabot.building_manager.get_under_construction_of_type(self.name_to_type("CommandCenter"))) < 3 else 200
         if minerals < 400:
             count = 100
         elif minerals < 600:
-            count = 50
+            count = 60
         else:
-            count = 20
+            count = 50
 
-        if self.idabot.current_frame < 7000 and self.idabot.current_frame % 25 == 0:
+        if self.idabot.current_frame % 1000 == 0:
+            self.engineering_bay = False
+            self.armory = False
+
+        if self.idabot.current_frame < 10000 and self.idabot.current_frame % 25 == 0:
             self.add_task(UnitType(UNIT_TYPEID.TERRAN_MARINE, self.idabot))
             self.add_task(UnitType(UNIT_TYPEID.TERRAN_MARAUDER, self.idabot))
+
+        if len(self.idabot.unit_manager.worker_units) > 38 and \
+            len(self.idabot.building_manager.get_total_buildings_of_type(self.name_to_type("CommandCenter"))) < 3:
+            self.add_task(UnitType(UNIT_TYPEID.TERRAN_COMMANDCENTER, self.idabot))
+        elif len(self.idabot.unit_manager.worker_units) > 50 and \
+            len(self.idabot.building_manager.get_total_buildings_of_type(self.name_to_type("CommandCenter"))) < 4:
+            self.add_task(UnitType(UNIT_TYPEID.TERRAN_COMMANDCENTER, self.idabot))
 
         if self.idabot.current_frame % count == 0 and minerals > required_minerals and gas > 100:
             # Marauder, siege tank, hellion, techlab
@@ -129,10 +143,8 @@ class BuildingStrategy:
                                 self.name_to_type("Marauder"),
                                 self.name_to_type("Marauder"),
                                 self.name_to_type("Marauder"),
-                                self.name_to_type("Marauder"),
-                                self.name_to_type("Marauder"),
                                 ]
-            if curr_seconds > 30 and len(self.idabot.building_manager.get_buildings_of_type(self.name_to_type("CommandCenter"))) < 3:
+            if curr_seconds > 30 and len(self.idabot.building_manager.get_buildings_of_type(self.name_to_type("CommandCenter"))) < self.max_command_centers:
                 wanted_units = [*wanted_units,
                                 self.name_to_type("CommandCenter"),
                                 self.name_to_type("CommandCenter"),
@@ -145,8 +157,6 @@ class BuildingStrategy:
                                 self.name_to_type("Barracks"),
                                 self.name_to_type("Factory"),
                                 self.name_to_type("Starport"),
-                                self.name_to_type("Battlecruiser"),
-                                self.name_to_type("Battlecruiser"),
                                 self.name_to_type("SiegeTank"),
                                 self.name_to_type("SiegeTank"),
                                 self.name_to_type("SiegeTank"),
@@ -162,18 +172,13 @@ class BuildingStrategy:
                                 self.name_to_type("Liberator"),
                                 self.name_to_type("Marauder"),
                                 self.name_to_type("Marauder"),
-                                self.name_to_type("Marauder"),
-                                self.name_to_type("Marauder"),
                                 self.name_to_type("Marauder")
                                 ]
             if curr_seconds > 180:  # After 3 mins, can predict to build any of these
                 wanted_units = [*wanted_units,
                                 self.name_to_type("SiegeTank"),
                                 self.name_to_type("SiegeTank"),
-                                self.name_to_type("SiegeTank"),
-                                self.name_to_type("Hellion"),
-                                self.name_to_type("Hellion"),
-                                self.name_to_type("Hellion"),
+                                self.name_to_type("Cyclone"),
                                 self.name_to_type("TechLab")
                                 ]
 
@@ -188,20 +193,20 @@ class BuildingStrategy:
                     self.add_task(self.name_to_type("Armory"))
                     self.armory = True
 
-                if minerals > 600 and gas < 300:
+                if minerals > 500 and gas < 300:
                     self.add_task(self.name_to_type("Refinery"))
 
                 if self.idabot.max_supply - self.idabot.current_supply < 5:
                     self.add_task(self.name_to_type("SupplyDepot"))
-                if minerals > 500:
+                if minerals > 420:
 
 
                     if gas > 200 and len(self.idabot.building_manager.get_total_buildings_of_type(UnitType(UNIT_TYPEID.TERRAN_FACTORY, self.idabot))) > 0:
                         self.add_task(self.name_to_type("SiegeTank"))
                         self.add_task(self.name_to_type("Cyclone"))
                         self.add_task(self.name_to_type("Cyclone"))
-                        self.add_task(self.name_to_type("Marauder"))
-                        self.add_task(self.name_to_type("Marauder"))
+                        self.add_task(self.name_to_type("Cyclone"))
+                        self.add_task(self.name_to_type("Marine"))
                         self.add_task(self.name_to_type("Marauder"))
                         self.add_task(self.name_to_type("Banshee"))
                         self.add_task(self.name_to_type("VikingFighter"))
@@ -211,10 +216,18 @@ class BuildingStrategy:
                     else:
                         self.add_task(self.name_to_type("Marine"))
                         self.add_task(self.name_to_type("Marine"))
+                        self.add_task(self.name_to_type("Marine"))
                         self.add_task(self.name_to_type("Hellion"))
+                        self.add_task(self.name_to_type("Hellion"))
+                        self.add_task(self.name_to_type("Cyclone"))
+                        self.add_task(self.name_to_type("Cyclone"))
 
-                if minerals > 700:
+                if minerals > 500:
                     self.add_task(random.choice([self.name_to_type("Barracks"),self.name_to_type("Factory"),self.name_to_type("Starport")]))
+
+                if minerals > 1000 and gas > 500:
+                    self.add_task(self.name_to_type("Thor"))
+                    self.add_task(self.name_to_type("Thor"))
 
                 index = random.randint(0, len(wanted_units) - 1)
 
@@ -258,7 +271,7 @@ class BuildingStrategy:
         action_type = self.name_to_type(action)
 
         if action_type.unit_typeid in [UNIT_TYPEID.TERRAN_BARRACKS, UNIT_TYPEID.TERRAN_STARPORT, UNIT_TYPEID.TERRAN_FACTORY] and \
-                len(self.idabot.building_manager.get_total_buildings_of_type(action_type)) >= 3:
+                len(self.idabot.building_manager.get_total_buildings_of_type(action_type)) >= 3 and self.idabot.minerals < 1000:
             action_type = self.name_to_type("Marauder")
             action = "Marauder"
         elif action_type.unit_typeid == UNIT_TYPEID.TERRAN_MEDIVAC:
@@ -266,13 +279,12 @@ class BuildingStrategy:
             action = "Banshee"
         elif action_type.unit_typeid == UNIT_TYPEID.TERRAN_ENGINEERINGBAY and \
                 len(self.idabot.building_manager.get_total_buildings_of_type(self.name_to_type("EngineeringBay"))) > 0:
-            action_type = self.name_to_type("Marauder")
-            action = "Marauder"
+            action_type = self.name_to_type("Cyclone")
+            action = "Cyclone"
         elif action_type.unit_typeid == UNIT_TYPEID.TERRAN_MISSILETURRET:
             action_type = self.name_to_type("Marauder")
             action = "Marauder"
-        elif action == "CommandCenter" and len(self.idabot.building_manager.get_buildings_of_type(self.name_to_type("CommandCenter")) +
-                self.idabot.building_manager.get_under_construction_of_type(self.name_to_type("CommandCenter"))) >= self.max_command_centers:
+        elif action == "CommandCenter" and len(self.idabot.building_manager.get_total_buildings_of_type(self.name_to_type("CommandCenter"))) >= self.max_command_centers:
             action_type = self.name_to_type("Marauder")
             action = "Marauder"
         elif len(self.idabot.building_manager.get_buildings_of_type(self.name_to_type("BarracksTechLab"))) > 0 and action == "Marine":
@@ -321,7 +333,7 @@ class BuildingStrategy:
 
                 if action_type.unit_typeid in [UNIT_TYPEID.TERRAN_BARRACKS, UNIT_TYPEID.TERRAN_STARPORT,
                                                UNIT_TYPEID.TERRAN_FACTORY] and \
-                        len(self.idabot.building_manager.get_total_buildings_of_type(action_type)) >= 3:
+                        len(self.idabot.building_manager.get_total_buildings_of_type(action_type)) >= 3 and self.idabot.minerals < 1000:
                     action_type = self.name_to_type("Cyclone")
                     action = Task(TaskType.TRAIN, produce_unit=action_type)
 
@@ -333,7 +345,7 @@ class BuildingStrategy:
                         len(self.idabot.building_manager.get_total_buildings_of_type(self.name_to_type("EngineeringBay"))) > 0:
                     action_type = self.name_to_type("Marauder")
                     task = Task(TaskType.TRAIN, produce_unit=action_type)
-                elif len(self.idabot.building_manager.get_buildings_of_type(self.name_to_type("CommandCenter"))) >= self.max_command_centers \
+                elif len(self.idabot.building_manager.get_total_buildings_of_type(self.name_to_type("CommandCenter"))) >= self.max_command_centers \
                         and action_type.unit_typeid == UNIT_TYPEID.TERRAN_COMMANDCENTER:
                     action_type = self.name_to_type("Marauder")
                     task = Task(TaskType.TRAIN, produce_unit=action_type)

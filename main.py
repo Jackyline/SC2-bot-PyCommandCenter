@@ -41,20 +41,20 @@ class MyAgent(IDABot):
         self.first_tick = True
         self.block = False
         self.base_right = None
-        self.choke_points_right = {(24.25, 28.5): Point2D(30, 60), (56.25, 130.5): Point2D(53, 118),
+        self.choke_points_right = {(24.25, 28.5): Point2D(57, 73), (56.25, 130.5): Point2D(53, 118),
                                    (58.75, 99.0): Point2D(47, 92), (129.25, 54.5): Point2D(113, 58),
                                    (63.75, 51.0): Point2D(57, 73), (93.25, 69.0): Point2D(76, 84),
                                    (88.25, 117.0): Point2D(73, 115), (92.5, 143.5): Point2D(77, 134),
                                    (26.5, 137.5): Point2D(30, 133), (22.75, 113.5): Point2D(31, 118),
-                                   (59.5, 24.5): Point2D(51, 36), (95.75, 37.5): Point2D(88, 49),
+                                   (59.5, 24.5): Point2D(57, 73), (95.75, 37.5): Point2D(88, 49),
                                    (24.25, 83.5): Point2D(44, 95), (127.75, 139.5): Point2D(115, 135),
-                                   (127.75, 84.5): Point2D(123, 98), (127.75, 28.5): Point2D(116, 44)}
+                                   (127.75, 84.5): Point2D(76, 84), (127.75, 28.5): Point2D(116, 44)}
 
         self.choke_points_left = {(58.75, 99.0): Point2D(58, 80), (24.25, 139.5): Point2D(36, 124),
-                                  (127.75, 139.5): Point2D(124, 106), (92.5, 143.5): Point2D(100, 128),
+                                  (127.75, 139.5): Point2D(95, 90), (92.5, 143.5): Point2D(95, 90),
                                   (56.25, 130.5): Point2D(64, 120), (22.75, 113.5): Point2D(38, 110),
                                   (127.75, 84.5): Point2D(113, 77), (24.25, 28.5): Point2D(37, 32),
-                                  (24.25, 83.5): Point2D(29, 72), (88.25, 117.0): Point2D(96, 92),
+                                  (24.25, 83.5): Point2D(58, 80), (88.25, 117.0): Point2D(76, 84),
                                   (93.25, 69.0): Point2D(108, 71), (59.5, 24.5): Point2D(71, 31),
                                   (95.75, 37.5): Point2D(98, 49), (63.75, 51.0): Point2D(79, 53),
                                   (129.25, 54.5): Point2D(121, 50), (127.75, 28.5): Point2D(117, 37)}
@@ -78,12 +78,12 @@ class MyAgent(IDABot):
         self.unit_manager.on_step(self.get_all_units())
         self.building_manager.on_step(self.get_my_units())
         self.building_strategy.action()
-        if self.current_frame % 5000 == 0:
-            self.send_chat(random.choice(self.messages[1:]))
+        #if self.current_frame % 5000 == 0:
+            #self.send_chat(random.choice(self.messages[1:]))
         # then run specific AI parts
         self.scout_manager.on_step()
         self.assignment_manager.on_step()
-        self.print_debug.on_step()
+        #self.print_debug.on_step()
 
         # Generate jobs depending on strategy
         self.handle_strategy()
@@ -132,10 +132,10 @@ class MyAgent(IDABot):
 
         # Get all of our command centers
         base_location_manager : BaseLocationManager = self.base_location_manager
-        baselocations = list(base_location_manager.get_occupied_base_locations(PLAYER_SELF))
+        commandcenters = self.building_manager.get_total_buildings_of_type(UnitType(UNIT_TYPEID.TERRAN_COMMANDCENTER, self))
         #command_centers = self.building_manager.get_buildings_of_type(UnitType(UNIT_TYPEID.TERRAN_COMMANDCENTER, self)) + \
         #                  self.building_manager.get_under_construction_of_type(UnitType(UNIT_TYPEID.TERRAN_COMMANDCENTER, self))
-        #baselocations = list(reversed(list(baselocations)))
+        commandcenters = list(reversed(list(commandcenters)))
         if strategy == StrategyName.OFFENSIVE:
             offensive_groups = 1
             defensive_groups = 0
@@ -149,9 +149,9 @@ class MyAgent(IDABot):
                 attack_pos = closest_enemy.position
         else:  # strategy == StrategyName.DEFENSIVE
             offensive_groups = 0
-            if len(baselocations) <= 2:
+            if len(commandcenters) <= 2:
                 defensive_groups = 1
-            elif len(baselocations) <= 3:
+            elif len(commandcenters) <= 3:
                 defensive_groups = 2
             else:
                 defensive_groups = 3
@@ -163,15 +163,18 @@ class MyAgent(IDABot):
 
         # Generate all defensive tasks
         defensive_tasks = [Task(task_type=TaskType.DEFEND,
-                                pos=self.get_choke_point(baselocations[i].depot_position))
+                                pos=self.get_choke_point(commandcenters[i].get_unit().position))
                            # Loop through all bases we have and
-                           for i in range(defensive_groups) if baselocations]
+                           for i in range(defensive_groups) if commandcenters]
 
         # Add all generated tasks to assignment_manager
         for task in [*offensive_tasks, *defensive_tasks]:
             self.assignment_manager.add_task(task)
+
     def get_closest_enemy_building(self):
-        enemies = [unit for unit in self.get_all_units() if unit.player == PLAYER_ENEMY]
+        enemies = [unit for unit in self.get_all_units() if unit.player == PLAYER_ENEMY and unit.unit_type.is_combat_unit]
+        if not enemies:
+            enemies = [unit for unit in self.get_all_units() if unit.player == PLAYER_ENEMY]
         return self.get_closest_enemy(enemies)
 
 
@@ -225,7 +228,7 @@ def main():
     coordinator = Coordinator(r"C:\New starcraft\StarCraft II\Versions\Base69232\SC2_x64.exe")
 
     bot1 = MyAgent()
-    bot2 = MyAgent()
+    bot2 = StupidAgent3()
 
     participant_1 = create_participants(Race.Terran, bot1)
     #participant_2 = create_participants(Race.Terran, bot2)
